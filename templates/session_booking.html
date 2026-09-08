@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Book 1-on-1 Mentor Session — DBERT Platform" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-session-booking has-sidebar">
+{% set active_page = 'sessions' %}
+{% include '_intern_sidebar.html' %}
+
+
+    <div class="booking-container">
+        <div class="header-box">
+            <h1>1-on-1 Mentor Sessions</h1>
+            <p style="color: var(--tx-muted); margin: 0;">Schedule personalized 1-on-1 guidance sessions with industry experts (Available 14:00 – 20:15 IST).</p>
+        </div>
+
+        <h2 style="font-size: 1.25rem; font-family: var(--f-display); color: var(--tx-head); margin-bottom: 1.25rem;">Available Mentor Slots</h2>
+
+        <div class="slots-grid">
+            {% if available_slots %}
+                {% for slot in available_slots %}
+                <div class="card slot-card">
+                    <div>
+                        <h3 class="mentor-name">👨‍🏫 {{ slot.mentor_name }}</h3>
+                        <div class="slot-time">🕒 {{ slot.start_time }} – {{ slot.end_time.split(' ')[1] }}</div>
+                    </div>
+                    <button data-act-click="bookSlot" data-arg-click='[{{ slot.id|tojson }}]' class="btn btn-primary" style="padding: 0.65rem 1rem; font-size: 0.875rem;">
+                        Book 1-on-1 Session →
+                    </button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card" style="grid-column: 1 / -1; padding: 2.5rem; text-align: center;">
+                    <p style="color: var(--tx-muted); margin: 0;">No open mentor slots available right now. New slots are added daily between 14:00 – 20:15 IST.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card bookings-card">
+            <h2 style="margin: 0 0 1.5rem 0; font-family: var(--f-display); color: var(--tx-head);">My Scheduled Sessions</h2>
+
+            {% if my_bookings %}
+                {% for b in my_bookings %}
+                <div class="booking-item">
+                    <div>
+                        <strong style="color: var(--tx-head); font-size: 1.05rem;">Session with {{ b.mentor_name }}</strong>
+                        <div style="font-family: var(--f-mono); font-size: 0.875rem; color: var(--tx-muted); margin-top: 0.25rem;">
+                            🕒 {{ b.start_time }} – {{ b.end_time.split(' ')[1] }}
+                        </div>
+                    </div>
+                    {% if b.meeting_link %}
+                    <a href="{{ b.meeting_link }}" target="_blank" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        🎥 Join Meeting ↗
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 2rem; color: var(--tx-muted);">
+                    You have no upcoming mentor sessions booked. Select an open slot above to reserve your session.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce() }}">
+        function bookSlot(slotId) {
+            if (!confirm('Confirm booking for this 1-on-1 mentor session?')) return;
+
+            fetch(`/mentors/slots/${slotId}/book`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Booking failed.');
+                }
+            })
+            .catch(() => alert('Server error during booking.'));
+        }
+    </script>
+</body>
+</html>

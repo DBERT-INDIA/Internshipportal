@@ -1,0 +1,29 @@
+{# Staff / admin nav config → _app_shell.html.  Build phase: 1
+   All 8 hrefs and active_page values carried over unchanged from the old
+   118-line partial. Split into two groups purely for scanability — the old
+   flat list mixed staff queues with admin destinations.
+   Note: the violet accent the old staff sidebar used is gone; per spec §2
+   violet is reserved for AI/tutor features, and gold is the only brand accent. #}
+
+{% set brand = {'mark': 'S', 'title': 'DBERT Operations', 'sub': 'Staff & Reviewer Queue'} %}
+
+{% set nav_groups = [
+  {'label': 'Review queues', 'items': [
+    {'href': '/staff/dashboard',       'icon': 'fa-solid fa-list-check',     'label': 'Dashboard Queues',    'match': ['staff_dashboard']},
+    {'href': '/staff/projects',        'icon': 'fa-solid fa-code-commit',    'label': 'Project Queue',       'match': ['staff_projects']},
+    {'href': '/staff/tasks',           'icon': 'fa-solid fa-tasks',          'label': 'Task Submissions',    'match': ['staff_tasks']},
+    {'href': '/staff/mentor-slots',    'icon': 'fa-solid fa-clock',          'label': 'Mentor Availability', 'match': ['staff_mentor_slots']}
+  ]},
+  {'label': 'Administration', 'items': [
+    {'href': '/admin/course-payments', 'icon': 'fa-solid fa-receipt',        'label': 'Course Payments',     'match': ['admin_payments']},
+    {'href': '/admin/cohorts',         'icon': 'fa-solid fa-users',          'label': 'Cohorts',             'match': ['admin_cohorts']},
+    {'href': '/admin/ledger',          'icon': 'fa-solid fa-wallet',         'label': 'Ledger & Earnings',   'match': ['admin_ledger']},
+    {'href': '/admin/ambassador-payouts','icon': 'fa-solid fa-gift',         'label': 'Ambassador Payouts',  'match': ['admin_payouts']},
+    {'href': '/admin',                 'icon': 'fa-solid fa-shield-halved',  'label': 'Admin Master',        'match': ['admin_main']}
+  ]}
+] %}
+
+{# /staff/logout is GET-only (app.py:4526) — unlike the other three roles. #}
+{% set logout = {'href': '/staff/logout', 'label': 'Staff Logout', 'method': 'get'} %}
+
+{% include '_app_shell.html' %}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Company Login" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone">
+  <div class="card auth-card">
+    <div class="auth-logo"><i class="fa-solid fa-briefcase"></i></div>
+    <h1>Company Login</h1>
+    <p class="sub">Manage your job &amp; internship posts on DBERT.</p>
+
+    <form id="f" data-prevent-submit>
+      <div class="field">
+        <label for="coEmail">Work email</label>
+        <input id="coEmail" name="email" type="email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="coPassword">Password</label>
+        <input id="coPassword" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      <div class="msg" id="msg"></div>
+    </form>
+
+    <p class="auth-alt">New here? <a href="/company/signup">Create a company account</a></p>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    document.getElementById('f').addEventListener('submit', function(){
+      var fd=new FormData(this), body={}; fd.forEach(function(v,k){ body[k]=v; });
+      var msg=document.getElementById('msg'); msg.className='msg'; msg.textContent='…';
+      fetch('/company/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ window.location.href=d.redirect; }
+          else { msg.className='msg err'; msg.textContent=d.message||'Error'; }
+        }).catch(function(){ msg.className='msg err'; msg.textContent='Network error'; });
+    });
+</script>
+</body>
+</html>

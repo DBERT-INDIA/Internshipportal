@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full %}{{ 'Edit' if post else 'New' }} post · DBERT Jobs{% endset %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-post-form">
+  <!-- UAT #34: company nav shell (Dashboard / Posts / Log out) -->
+  <div class="topbar"><div class="topbar-in">
+    <a href="/company" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;"><span class="brand-icon"><i class="fas fa-briefcase"></i></span><b>DBERT Jobs</b></a>
+    <nav style="margin-left:auto;display:flex;gap:18px;align-items:center;font-size:13px;font-weight:600;">
+      <a href="/company"><i class="fas fa-gauge"></i> Dashboard</a>
+      <a href="/company"><i class="fas fa-rectangle-list"></i> Posts</a>
+      <a href="#" data-act-click="companyLogout" data-prevent-click><i class="fas fa-arrow-right-from-bracket"></i> Log out</a>
+    </nav>
+  </div></div>
+  <div class="wrap">
+    <h1>{{ 'Edit post' if post else 'New post' }}</h1>
+    <p class="sub"><a href="/company"><i class="fas fa-arrow-left"></i> Dashboard</a>{% if post %} · status: <strong style="color:var(--tx-ink);">{{ post.status }}</strong>{% endif %}</p>
+    <div class="card">
+      <form id="f" data-prevent-submit>
+        <div class="two">
+          <div><label>Type</label>
+            <select name="post_type">
+              <option value="job" {% if post and post.post_type=='job' %}selected{% endif %}>Job</option>
+              <option value="internship" {% if post and post.post_type=='internship' %}selected{% endif %}>Internship</option>
+            </select>
+          </div>
+          <div><label>Domain</label>
+            <select name="domain">
+              {% for d in domains %}<option value="{{ d }}" {% if post and post.domain==d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <label>Title</label><input name="title" value="{{ post.title if post else '' }}" required>
+        <label>Description</label><textarea name="description" rows="4">{{ post.description if post else '' }}</textarea>
+        <label>Responsibilities</label><textarea name="responsibilities" rows="3">{{ post.responsibilities if post else '' }}</textarea>
+        <label>Skills</label><input name="skills" id="skills" value="{{ post.skills if post else '' }}" placeholder="React, SQL, …">
+        <div id="skillSuggest" class="skill-suggest"></div>
+        <div class="hint" id="skillSuggestHint" style="display:none;">Suggested for this domain — click to add.</div>
+        <div class="two">
+          <div><label>Location</label><input name="location" value="{{ post.location if post else '' }}"></div>
+          <div><label>Work mode</label>
+            <select name="work_mode">
+              {% for m in ['remote','hybrid','onsite'] %}<option value="{{ m }}" {% if post and post.work_mode==m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <!-- UAT #37D: ask Paid/Unpaid first; reveal wage fields only when Paid. -->
+        <label>Compensation</label>
+        <select name="compensation" id="compensation" data-act-change="onCompChange">
+          <option value="paid">Paid (stipend)</option>
+          <option value="unpaid">Unpaid</option>
+        </select>
+        <div class="two" id="wageBlock" style="margin-top:12px;">
+          <div><label>Stipend min (₹)</label><input name="stipend_min" type="number" value="{{ post.stipend_min if post and post.stipend_min is not none else '' }}"></div>
+          <div><label>Stipend max (₹)</label><input name="stipend_max" type="number" value="{{ post.stipend_max if post and post.stipend_max is not none else '' }}"></div>
+          <div><label>Pay period</label>
+            <select name="pay_period">
+              {% set _pp = post.pay_period if post else 'month' %}
+              {% for pp in ['month','week','day','hour','year'] %}<option value="{{ pp }}" {% if _pp==pp %}selected{% endif %}>{{ pp }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="two">
+          <div><label>Duration</label><input name="duration" value="{{ post.duration if post else '' }}" placeholder="3 months"></div>
+          <div><label>Openings</label><input name="openings" type="number" value="{{ post.openings if post else 1 }}"></div>
+          <div><label>Apply by</label><input name="apply_by" id="apply_by" type="date" value="{{ post.apply_by if post else '' }}"><div class="hint">Defaults to 15 days from today — change if you like.</div></div>
+        </div>
+        {% if post %}
+        <div class="two">
+          <div><label>Listing expiry (extend)</label><input name="expires_at" id="expires_at" type="date" value="{{ post.expires_at[:10] if post.expires_at else '' }}"><div class="hint">Post stops appearing on the board after this date. Leave blank for no fixed expiry — push it out to keep the post live longer.</div></div>
+        </div>
+        {% endif %}
+        <label>Eligibility</label><textarea name="eligibility" rows="2">{{ post.eligibility if post else '' }}</textarea>
+
+        <label>Preferred certifications</label>
+        <div id="certs"><span class="hint">Loading courses…</span></div>
+        <div class="hint">From the DBERT AI Tutor catalogue. Optional.</div>
+
+        <button type="submit" id="save">{{ 'Save changes' if post else 'Save draft' }}</button>
+        {% if post %}
+          {% if post.status == 'published' %}
+          <button type="button" class="danger" data-act-click="act" data-arg-click='["unpublish"]'>Unpublish</button>
+          {% else %}
+          <button type="button" class="ghost" data-act-click="act" data-arg-click='["publish"]'>Publish</button>
+          {% endif %}
+          <button type="button" class="danger" data-act-click="delPost">Delete post</button>
+        {% endif %}
+        <div class="msg" id="msg"></div>
+      </form>
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    /* Was inline on the logout link. /company/logout answers with JSON, not a
+       redirect, so this stays a fetch rather than becoming a POST form. */
+    function companyLogout(){
+      fetch('/company/logout',{method:'POST'})
+        .then(function(){ location.href='/company/login'; })
+        .catch(function(){ location.href='/company/login'; });
+    }
+
+    var POST_ID = {{ post.id if post else 'null' }};
+    {# certifications_json is raw DB text dropped straight into a <script nonce="{{ csp_nonce() }}">. A
+       stored "</script>" would close the tag and execute whatever followed, so
+       the sequence is neutralised the same way _job_posting_jsonld does it. #}
+    var SAVED_CERTS = {{ ((post.certifications_json or '[]') if post else '[]')|replace('</', '<\\/')|safe }};
+    var IS_NEW = {{ 'true' if not post else 'false' }};
+    var IS_UNPAID_INIT = {{ 'true' if (post and post.is_unpaid) else 'false' }};
+
+    // UAT #37B: map the 4 canonical display-name domains → tutor course domain_slug.
+    var DOMAIN_SLUG = {'AI Agent Development':'ai_agent','Data Analyst':'data_science','Full Stack Development':'full_stack','Python Automation':'python_automation'};
+    // UAT #37E: curated per-domain skill suggestions (display-name keyed).
+    var DOMAIN_SKILLS = {
+      'Full Stack Development':['HTML','CSS','JavaScript','React','Node.js','Express','REST APIs','SQL','MongoDB','Git','TypeScript','Tailwind','Next.js','Authentication','Deployment'],
+      'Data Analyst':['Excel','SQL','Python','Pandas','NumPy','Data Cleaning','Data Visualization','Power BI','Tableau','Statistics','Matplotlib','Dashboards','A/B Testing','Storytelling'],
+      'AI Agent Development':['Python','LLMs','Prompt Engineering','LangChain','RAG','Vector DBs','OpenAI/Gemini APIs','Embeddings','Function Calling','Agents','FastAPI','Fine-tuning'],
+      'Python Automation':['Python','Selenium','BeautifulSoup','Requests','Pandas','Web Scraping','REST APIs','Cron/Schedulers','Openpyxl','Regex','Automation Scripts','Bots','CLI tools']
+    };
+    var ALL_COURSES = [];
+    function currentDomain(){ var s=document.getElementById('f').domain; return s?s.value:''; }
+
+    // UAT #37B: certifications filtered to the selected domain's courses (re-render on domain change).
+    function renderCerts(){
+      var box=document.getElementById('certs'); var slug=DOMAIN_SLUG[currentDomain()];
+      var chosen={}; (SAVED_CERTS||[]).forEach(function(c){ chosen[c.course_id]=1; });
+      var list=ALL_COURSES.filter(function(c){ return !slug || c.domain_slug===slug; });
+      if(!list.length){ box.innerHTML='<span class="hint">No courses for this domain yet — you can still post.</span>'; return; }
+      box.innerHTML='';
+      list.forEach(function(c){
+        var lab=document.createElement('label');
+        lab.innerHTML='<input type="checkbox" value="'+c.id+'" data-title="'+(c.title||'').replace(/"/g,'&quot;')+'" '+(chosen[c.id]?'checked':'')+'> '+c.title;
+        box.appendChild(lab);
+      });
+    }
+    fetch('/api/public/courses').then(function(r){ return r.json(); }).then(function(d){
+      ALL_COURSES=(d&&d.courses)||[]; renderCerts();
+    }).catch(function(){ document.getElementById('certs').innerHTML='<span class="hint">Course list unavailable — you can still post.</span>'; });
+
+    // UAT #37E: skill suggestion chips (domain dictionary + Title keyword-boost).
+    function skillsInList(){ return document.getElementById('skills').value.split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean); }
+    function renderSkillSuggest(){
+      var wrap=document.getElementById('skillSuggest'), hint=document.getElementById('skillSuggestHint');
+      var base=(DOMAIN_SKILLS[currentDomain()]||[]).slice();
+      var title=(document.getElementById('f').title.value||'').toLowerCase();
+      base.sort(function(a,b){ var ta=title.indexOf(a.toLowerCase())>=0?0:1, tb=title.indexOf(b.toLowerCase())>=0?0:1; return ta-tb; });
+      if(!base.length){ wrap.innerHTML=''; hint.style.display='none'; return; }
+      hint.style.display='block'; var have=skillsInList();
+      wrap.innerHTML=base.map(function(s){
+        var added=have.indexOf(s.toLowerCase())>=0;
+        return '<span class="skill-chip'+(added?' added':'')+'" '+actAttr('click','addSkill',[s])+'>'+(added?'✓ ':'+ ')+s+'</span>';
+      }).join('');
+    }
+    function addSkill(s){
+      var inp=document.getElementById('skills'); if(skillsInList().indexOf(s.toLowerCase())>=0) return;
+      inp.value=(inp.value.trim()? inp.value.replace(/,\s*$/,'')+', ':'')+s; renderSkillSuggest();
+    }
+
+    // UAT #37D: Paid/Unpaid toggle reveals/hides the wage block.
+    function onCompChange(){ document.getElementById('wageBlock').classList.toggle('hidden', document.getElementById('compensation').value==='unpaid'); }
+
+    // init: compensation state, apply-by default (+15d for new posts), domain/title listeners.
+    document.getElementById('compensation').value = IS_UNPAID_INIT ? 'unpaid' : 'paid';
+    onCompChange();
+    (function(){ var ab=document.getElementById('apply_by'); if(IS_NEW && !ab.value){ var d=new Date(); d.setDate(d.getDate()+15); ab.value=d.toISOString().slice(0,10); } })();
+    document.getElementById('f').domain.addEventListener('change', function(){ renderCerts(); renderSkillSuggest(); });
+    document.getElementById('f').title.addEventListener('input', renderSkillSuggest);
+    document.getElementById('skills').addEventListener('input', renderSkillSuggest);
+    renderSkillSuggest();
+
+    function collect(){
+      var f = document.getElementById('f');
+      var certs = [];
+      document.querySelectorAll('#certs input:checked').forEach(function(cb){
+        certs.push({course_id: parseInt(cb.value,10), title: cb.getAttribute('data-title')});
+      });
+      var unpaid = f.compensation.value==='unpaid';
+      var payload = {
+        post_id: POST_ID, post_type: f.post_type.value, domain: f.domain.value, title: f.title.value,
+        description: f.description.value, responsibilities: f.responsibilities.value, skills: f.skills.value,
+        location: f.location.value, work_mode: f.work_mode.value,
+        stipend_min: unpaid?'':f.stipend_min.value, stipend_max: unpaid?'':f.stipend_max.value,
+        pay_period: unpaid?'':f.pay_period.value,
+        is_unpaid: unpaid, duration: f.duration.value, openings: f.openings.value,
+        apply_by: f.apply_by.value, eligibility: f.eligibility.value, certifications: certs
+      };
+      // T6: expires_at only exists in the DOM when editing an existing post.
+      if (f.expires_at) payload.expires_at = f.expires_at.value;
+      return payload;
+    }
+    function msg(t, ok){ var m=document.getElementById('msg'); m.className='msg '+(ok?'ok':'err'); m.textContent=t; }
+    document.getElementById('f').addEventListener('submit', function(){
+      fetch('/company/posts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(collect())})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ if(POST_ID===null){ window.location.href='/company/posts/'+d.post_id; } else { msg('Saved.', true); } }
+          else msg(d.message||'Error', false);
+        }).catch(function(){ msg('Network error', false); });
+    });
+    function act(kind){
+      fetch('/company/posts/'+POST_ID+'/'+kind, {method:'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){ if(d.status==='success') location.reload(); else msg(d.message||'Error', false); })
+        .catch(function(){ msg('Network error', false); });
+    }
+    function delPost(){
+      if(!confirm('Delete this post? Existing applicants will be kept, but the post will stop appearing anywhere on the board. This cannot be undone from here.')) return;
+      fetch('/company/posts/'+POST_ID+'/delete', {method:'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ window.location.href='/company'; }
+          else msg(d.message||'Error', false);
+        }).catch(function(){ msg('Network error', false); });
+    }
+  </script>
+</body>
+</html>

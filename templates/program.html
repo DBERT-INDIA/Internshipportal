@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{# Title/description/canonical preserved byte-for-byte; this page is indexed and
+   carries Course structured data. #}
+{% set page_title_full = "Paid Program — Guaranteed Placement Opportunity | DBERT" %}
+{% set page_desc %}{{ PROGRAM_META_DESC | default("DBERT Paid Program: 15 days training + 45-day production role + a guaranteed placement opportunity with our hiring partners on completion.") }}{% endset %}
+{% set page_canonical = SITE_ORIGIN ~ "/program" %}
+{% include "_head.html" %}
+
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="DBERT"/>
+  <meta property="og:title" content="DBERT Paid Program — Guaranteed Placement Opportunity"/>
+  <meta property="og:description" content="Skip the wait. 15 days training + 45-day production role + a guaranteed placement opportunity with our hiring partners on completion + certification. ₹1,599 (all taxes included)."/>
+  <meta property="og:url" content="{{ SITE_ORIGIN }}/program"/>
+  {% if OG_IMAGE_URL %}<meta property="og:image" content="{{ OG_IMAGE_URL }}"/>{% endif %}
+  <meta name="twitter:card" content="{% if OG_IMAGE_URL %}summary_large_image{% else %}summary{% endif %}"/>
+  <meta name="twitter:title" content="DBERT Paid Program — Guaranteed Placement Opportunity"/>
+  <meta name="twitter:description" content="15 days training + 45-day production + a guaranteed placement opportunity with our hiring partners on completion + certification. ₹1,599 incl. taxes."/>
+  {% if OG_IMAGE_URL %}<meta name="twitter:image" content="{{ OG_IMAGE_URL }}"/>{% endif %}
+<script nonce="{{ csp_nonce() }}" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": "DBERT Paid Program — Guaranteed Placement Opportunity",
+    "description": "15 days of hands-on training plus a minimum 45-day production role with mentor sessions, leading to a guaranteed placement opportunity with our hiring partners, Offer Letter and Certificate of Completion on completion + certification.",
+    "provider": {"@type": "Organization", "name": "DBERT", "sameAs": "{{ SITE_ORIGIN }}"},
+    "offers": {"@type": "Offer", "price": "{{ paid_amount }}", "priceCurrency": "INR", "category": "Paid", "url": "{{ SITE_ORIGIN }}/program"},
+    "hasCourseInstance": {"@type": "CourseInstance", "courseMode": "online", "courseWorkload": "P60D"}
+  }
+  </script>
+  <script nonce="{{ csp_nonce() }}" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is placement guaranteed in the DBERT paid program?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. A placement opportunity with DBERT or one of our hiring and channel partners is guaranteed on successful completion of the training and the 45-day production role, along with certification."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the fee for the DBERT paid program?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The program fee is Rs. 1,599 (all taxes included). This is a one-time committed seat fee and is non-refundable."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What domains are covered in the program?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The program covers four domains: AI Agent Development, Data Analyst, Full Stack Development, and Python Automation."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What duration is the DBERT paid program?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The program is 60 days long, consisting of 15 days of hands-on training followed by a 45-day production role."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="program">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="topbar-brand" href="/"><span class="brand-icon"><i class="fas fa-cube"></i></span><span class="brand-text"><h2>DBERT</h2><p>Paid Program</p></span></a>
+      <a class="topbar-link" href="/">&larr; Internships</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="hero">
+      <span class="pill"><i class="fas fa-shield-halved"></i> Guaranteed placement opportunity on completion</span>
+      <h1>Launch your career with a <span class="grad">guaranteed placement opportunity</span></h1>
+      <p>Skip the wait and the uncertainty. Secure your seat today and follow a proven path from training to a real production role to a guaranteed placement opportunity with our hiring partners on completion + certification.</p>
+    </div>
+
+    <!-- Journey -->
+    <div class="glass-card">
+      <div class="card-h"><i class="fas fa-route" style="color:var(--gold);"></i> Your journey</div>
+      <ul class="journey">
+        <li><div class="ji"><i class="fas fa-graduation-cap"></i></div><div><h4>15 days of hands-on training</h4><p>Build job-ready skills in your chosen domain.</p></div></li>
+        <li><div class="ji"><i class="fas fa-laptop-code"></i></div><div><h4>Minimum 45-day production role</h4><p>Work on live projects — real work, real experience.</p></div></li>
+        <li><div class="ji"><i class="fas fa-user-tie"></i></div><div><h4>Mentor sessions throughout</h4><p>Guidance at every step of the program.</p></div></li>
+        <li><div class="ji"><i class="fas fa-handshake"></i></div><div><h4>Guaranteed placement opportunity</h4><p>With DBERT or one of our hiring &amp; channel partners on completion + certification.</p></div></li>
+        <li><div class="ji"><i class="fas fa-certificate"></i></div><div><h4>Offer Letter &amp; Certificate of Completion</h4><p>Verifiable for academic and industry use.</p></div></li>
+      </ul>
+    </div>
+
+    <!-- Price + domains -->
+    <div class="glass-card">
+      <div class="price-row"><span class="price">&#8377;{{ '{:,}'.format(paid_amount) }}</span><span class="price-sub">one-time &middot; all taxes included</span></div>
+      <p style="color:var(--tx-muted);font-size:13.5px;line-height:1.7;">No selection lottery, no waiting to be shortlisted — your place is confirmed the moment you enrol.</p>
+      <div style="margin-top:16px;">
+        <div class="field-label">Open to all four DBERT domains</div>
+        <div class="domains">
+          <span class="domain-tag">&#129302; AI Agent Development</span>
+          <span class="domain-tag">&#128202; Data Analyst</span>
+          <span class="domain-tag">&#128187; Full Stack Development</span>
+          <span class="domain-tag">&#9881;&#65039; Python Automation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMS — always shown BEFORE any CTA -->
+    <div class="glass-card terms-card">
+      <div class="card-h" style="font-size:15px;color:var(--amber);"><i class="fas fa-circle-info"></i> Good to know before you enrol</div>
+      <p>Your placement, Offer Letter, and Certificate are <strong>guaranteed when you successfully complete the training and your 45-day production period</strong> — finish the program and your placement is assured.</p>
+      <p>Enrolment is a committed seat, so the <strong>&#8377;{{ '{:,}'.format(paid_amount) }} fee is non-refundable</strong>.</p>
+      <p>Open to all four DBERT domains: AI Agent Development, Data Analyst, Full Stack Development, and Python Automation.</p>
+      <p style="color:var(--tx-muted);">By enrolling you confirm you've read and accepted these terms.</p>
+    </div>
+
+    <!-- CTA / ENROL ZONE (auth-aware; filled by JS) -->
+    <div class="glass-card" id="ctaZone">
+      <div id="ctaLoading" style="text-align:center;color:var(--tx-muted);font-size:13px;">Loading…</div>
+
+      <!-- anonymous -->
+      <div class="hidden" id="ctaAnon" style="text-align:center;">
+        <div class="card-h" style="justify-content:center;">Ready to secure your seat?</div>
+        <p style="color:var(--tx-muted);font-size:13.5px;margin-bottom:18px;">Create your account to enrol in the paid program.</p>
+        <a class="btn-primary" id="anonCta" href="/#signup"><i class="fas fa-rocket"></i> Sign up &amp; enrol</a>
+      </div>
+
+      <!-- not eligible: interview required -->
+      <div class="hidden" id="ctaInterview">
+        <div class="info-banner"><i class="fas fa-robot"></i><span>The paid program opens right after you complete your short virtual interview. It only takes a few minutes.</span></div>
+        <div style="text-align:center;margin-top:16px;"><a class="btn-primary" href="/interview"><i class="fas fa-play"></i> Take my interview</a></div>
+      </div>
+
+      <!-- already on free track / paid-enrolled -->
+      <div class="hidden" id="ctaInfo"><div class="info-banner"><i class="fas fa-circle-check"></i><span id="ctaInfoText"></span></div>
+        <div style="text-align:center;margin-top:16px;"><a class="btn-primary" href="/profile"><i class="fas fa-user"></i> Go to my portal</a></div>
+      </div>
+
+      <!-- eligible: enrol form -->
+      <div class="hidden" id="ctaForm">
+        <div class="card-h"><i class="fas fa-lock" style="color:var(--green);"></i> Confirm your seat &mdash; &#8377;{{ '{:,}'.format(paid_amount) }}</div>
+        <div class="hidden" id="paidRejectNote"><div class="info-banner" style="color:var(--amber);"><i class="fas fa-circle-exclamation"></i><span>We couldn't verify your previous payment &mdash; please re-upload your payment proof to continue.</span></div></div>
+        <div class="field-label">Pay to UPI ID</div>
+        <div class="upi-id-box"><span id="upiId">{{ upi_id }}</span><button type="button" data-act-click="copyUpi" aria-label="Copy UPI"><i class="fas fa-copy"></i></button></div>
+        <p style="color:var(--tx-muted);font-size:12px;margin-bottom:14px;">Amount: <strong style="color:var(--gold);">&#8377;{{ '{:,}'.format(paid_amount) }}</strong> (all taxes included, non-refundable) &middot; use any UPI app.</p>
+        <div style="margin-bottom:14px;">
+          <label class="field-label" for="paidJoining">Choose your joining Monday *</label>
+          <select id="paidJoining" class="field-select"><option value="">-- Select --</option></select>
+        </div>
+        <div style="margin-bottom:6px;">
+          <label class="field-label">Upload payment screenshot *</label>
+          <div class="file-wrap"><input type="file" id="paidFile" accept=".png,.jpg,.jpeg,.pdf" data-act-change="onPaidFile" data-arg-change='["$el"]'/><i class="fas fa-cloud-upload-alt"></i> <span id="paidFileName">Click or drop your payment proof (PNG, JPG, PDF · max 6MB)</span></div>
+        </div>
+        <label class="chk-row"><input type="checkbox" id="paidAgree"/><span>I confirm I've read and accepted the terms above, including that the &#8377;{{ '{:,}'.format(paid_amount) }} fee is non-refundable and my placement is guaranteed on successful completion of the program.</span></label>
+        <div class="err" id="paidErr"><i class="fas fa-circle-exclamation"></i><span></span></div>
+        <button class="btn-primary" id="paidSubmit" data-act-click="submitPaid" style="width:100%;"><i class="fas fa-check-circle"></i> Confirm enrolment</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a href="/">Internships</a> &middot; <a href="mailto:careers@dbert.info">careers@dbert.info</a>
+      <p style="margin-top:8px;">&copy; 2026 DBERT. MSME Registered.</p>
+    </div>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+  dbertGA('paid_program_view', {});
+  const PAID_AMOUNT = {{ paid_amount }};
+  let _paidFile = null, _enrollShown = false;
+  function show(id){['ctaLoading','ctaAnon','ctaInterview','ctaInfo','ctaForm'].forEach(x=>document.getElementById(x).classList.toggle('hidden', x!==id));}
+  function copyUpi(){const v=document.getElementById('upiId').textContent;navigator.clipboard.writeText(v).then(()=>{}).catch(()=>{});}
+  function onPaidFile(inp){const f=inp.files[0];_paidFile=f||null;document.getElementById('paidFileName').textContent=f?f.name:'Click or drop your payment proof (PNG, JPG, PDF · max 6MB)';}
+
+  async function init(){
+    let me;
+    try{
+      const r=await fetch('/intern/me',{credentials:'include'});
+      if(r.status===401){ show('ctaAnon'); return; }
+      me=await r.json();
+    }catch(e){ show('ctaAnon'); return; }
+    if(!me||me.status!=='success'){ show('ctaAnon'); return; }
+    const apps=me.applications||[]; const latest=apps[0]||null;
+    const enr=me.enrollment;
+    const isRejectedPaid = !!(enr && enr.product==='paid_program' && enr.payment_status==='Rejected');
+    // A paid enrollment that is still pending/verifying shows the info card; a Rejected
+    // paid enrollment must fall through to the re-upload form instead.
+    if(enr && enr.product==='paid_program' && !isRejectedPaid){
+      document.getElementById('ctaInfoText').textContent='You\'re enrolled in the paid program — we\'re verifying your payment. Check your portal for updates.';
+      show('ctaInfo'); return;
+    }
+    if(me.paid_eligible){
+      // populate joining mondays then reveal the enrol form
+      try{const mr=await fetch('/upcoming-mondays',{credentials:'include'});const md=await mr.json();
+        const sel=document.getElementById('paidJoining');
+        (md.mondays||[]).forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+      }catch(e){}
+      document.getElementById('paidRejectNote').classList.toggle('hidden', !isRejectedPaid);
+      show('ctaForm');
+      if(!_enrollShown){ dbertGA('paid_enroll_started',{}); _enrollShown=true; }
+      return;
+    }
+    // not eligible — explain why
+    if(me.paid_reason==='already_enrolled_free'){
+      document.getElementById('ctaInfoText').textContent='You\'re already enrolled through the standard track. Reach out to us if you\'d like to discuss the paid program.';
+      show('ctaInfo'); return;
+    }
+    show('ctaInterview');
+  }
+
+  async function submitPaid(){
+    const err=document.getElementById('paidErr');err.classList.remove('show');
+    const jd=document.getElementById('paidJoining').value;
+    if(!jd){err.querySelector('span').textContent='Please choose your joining Monday.';err.classList.add('show');return;}
+    if(!_paidFile){err.querySelector('span').textContent='Please upload your payment screenshot.';err.classList.add('show');return;}
+    if(!document.getElementById('paidAgree').checked){err.querySelector('span').textContent='Please confirm you accept the terms.';err.classList.add('show');return;}
+    const btn=document.getElementById('paidSubmit');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Submitting…';
+    const fd=new FormData();fd.append('joining_date',jd);fd.append('payment_screenshot',_paidFile);
+    try{
+      const r=await fetch('/paid/enroll',{method:'POST',credentials:'include',body:fd});
+      const d=await r.json();
+      if(d.status==='success'){ dbertGA('paid_enroll_submitted',{amount:PAID_AMOUNT}); window.location.href=d.redirect||'/profile'; return; }
+      err.querySelector('span').textContent=d.message||'Could not submit. Please try again.';err.classList.add('show');
+      btn.disabled=false;btn.innerHTML='<i class="fas fa-check-circle"></i> Confirm enrolment';
+    }catch(e){err.querySelector('span').textContent='Network error. Please try again.';err.classList.add('show');btn.disabled=false;btn.innerHTML='<i class="fas fa-check-circle"></i> Confirm enrolment';}
+  }
+
+  document.querySelectorAll('#anonCta').forEach(a=>a.addEventListener('click',()=>dbertGA('paid_program_cta_click',{source:'program_anon'})));
+  document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

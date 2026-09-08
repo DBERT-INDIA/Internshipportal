@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Cohorts · DBERT Jobs" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="pg-company-cohorts has-company-sidebar">
+{% set active_page = 'company_cohorts' %}
+{% include '_company_sidebar.html' %}
+
+  <div class="topbar"><div class="topbar-in">
+    <a href="/company" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;"><span class="brand-icon"><i class="fas fa-briefcase"></i></span><b>DBERT Jobs</b></a>
+    <nav style="margin-left:auto;display:flex;gap:18px;align-items:center;font-size:13px;font-weight:600;">
+      <a href="/company"><i class="fas fa-gauge"></i> Dashboard</a>
+      <a href="/company/posts/new"><i class="fas fa-plus"></i> New Post</a>
+      <a href="/company/cohorts"><i class="fas fa-users-rectangle"></i> Cohorts</a>
+      <a href="#" data-act-click="companyLogout" data-prevent-click><i class="fas fa-arrow-right-from-bracket"></i> Log out</a>
+    </nav>
+  </div></div>
+  <div class="wrap">
+    <h1>Cohorts</h1>
+    <p class="sub">Host an open, virtual learning session (Zoom / Discord). Interns can join and learn the skills your roles need. Each cohort goes live after admin approval.</p>
+
+    <div class="card">
+      <div style="color:#fff;font-weight:700;margin-bottom:4px;"><i class="fas fa-plus" style="color:var(--gold);"></i> Host a new cohort</div>
+      <form id="f" data-prevent-submit>
+        <label>Title *</label>
+        <input id="title" placeholder="e.g. Intro to Applied AI — live workshop">
+        <label>Description</label>
+        <textarea id="description" rows="3" placeholder="What you'll cover and who it's for."></textarea>
+        <div class="row">
+          <div><label>Skills covered</label><input id="skills" placeholder="Python, LLMs, RAG"></div>
+          <div><label>Platform</label>
+            <select id="platform"><option>Zoom</option><option>Discord</option><option>Google Meet</option><option>Microsoft Teams</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Date &amp; time (IST) *</label><input id="starts_at" type="datetime-local"></div>
+          <div><label>Capacity (0 = unlimited)</label><input id="capacity" type="number" min="0" value="0"></div>
+        </div>
+        <label>Meeting link * <span style="color:var(--tx-muted);font-weight:400;">(shown to enrolled interns only)</span></label>
+        <input id="meeting_url" placeholder="https://zoom.us/j/… or https://discord.gg/…">
+        <button class="btn" data-act-click="createCohort">Submit for approval</button>
+        <div id="msg"></div>
+      </form>
+    </div>
+
+    <h2 style="color:#fff;font-size:1.1rem;margin:24px 0 10px;">Your cohorts</h2>
+    {% if cohorts %}
+      {% for c in cohorts %}
+      <div class="card">
+        <div class="c-head">
+          <div>
+            <div class="c-title">{{ c.title }}</div>
+            <div class="c-meta">{{ c.platform or 'Virtual' }} · {{ c.starts_at }} · {{ c.enrolled }} enrolled{% if c.capacity %} / {{ c.capacity }}{% endif %}</div>
+          </div>
+          <span class="badge b-{{ c.status }}">{{ c.status }}</span>
+        </div>
+        {% if c.description %}<p style="color:#c9d3dd;font-size:13px;margin:10px 0 0;">{{ c.description }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="card empty">No cohorts yet — host your first one above.</div>
+    {% endif %}
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    /* Was inline on the logout link. /company/logout answers with JSON, not a
+       redirect, so this stays a fetch rather than becoming a POST form. */
+    function companyLogout(){
+      fetch('/company/logout',{method:'POST'})
+        .then(function(){ location.href='/company/login'; })
+        .catch(function(){ location.href='/company/login'; });
+    }
+
+    function createCohort(){
+      var msg=document.getElementById('msg'); msg.className=''; msg.textContent='Submitting…';
+      var body={
+        title:document.getElementById('title').value,
+        description:document.getElementById('description').value,
+        skills:document.getElementById('skills').value,
+        platform:document.getElementById('platform').value,
+        starts_at:document.getElementById('starts_at').value.replace('T',' '),
+        capacity:document.getElementById('capacity').value,
+        meeting_url:document.getElementById('meeting_url').value
+      };
+      fetch('/company/cohorts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+        .then(function(r){return r.json();}).then(function(d){
+          if(d.status==='success'){ msg.className='ok'; msg.textContent=d.message; setTimeout(function(){location.reload();},900); }
+          else { msg.className='err'; msg.textContent=d.message||'Error'; }
+        }).catch(function(){ msg.className='err'; msg.textContent='Network error'; });
+    }
+  </script>
+</body>
+</html>

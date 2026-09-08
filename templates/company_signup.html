@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Create a Company Account" %}
+{% set page_desc = "Post jobs and internships on DBERT. Create a company account — posts go live after a quick admin approval." %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone">
+  <div class="card auth-card" style="max-width:460px">
+    <div class="auth-logo"><i class="fa-solid fa-briefcase"></i></div>
+    <h1>Post jobs &amp; internships on DBERT</h1>
+    <p class="sub">Create a company account. Posts go live after a quick admin approval.</p>
+
+    <form id="f" data-prevent-submit>
+      <div class="field">
+        <label for="suName">Company name *</label>
+        <input id="suName" name="name" autocomplete="organization" required>
+      </div>
+      <div class="field">
+        <label for="suEmail">Work email *</label>
+        <input id="suEmail" name="email" type="email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="suPhone">Phone</label>
+        <input id="suPhone" name="phone" type="tel" autocomplete="tel">
+      </div>
+      <div class="field">
+        <label for="suWebsite">Website</label>
+        <input id="suWebsite" name="website" type="url" placeholder="https://">
+      </div>
+      <div class="field">
+        <label for="suAbout">About</label>
+        <textarea id="suAbout" name="about" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label for="suPassword">Password *</label>
+        <input id="suPassword" name="password" type="password" autocomplete="new-password"
+               minlength="8" required>
+        <div class="hint">Minimum 8 characters.</div>
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      <div class="msg" id="msg"></div>
+    </form>
+
+    <p class="auth-alt">Already have an account? <a href="/company/login">Log in</a></p>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    document.getElementById('f').addEventListener('submit', function(){
+      var fd=new FormData(this), body={}; fd.forEach(function(v,k){ body[k]=v; });
+      var msg=document.getElementById('msg'); msg.className='msg'; msg.textContent='…';
+      fetch('/company/signup', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ msg.className='msg ok'; msg.textContent=d.message; window.location.href=d.redirect; }
+          else { msg.className='msg err'; msg.textContent=d.message||'Error'; }
+        }).catch(function(){ msg.className='msg err'; msg.textContent='Network error'; });
+    });
+</script>
+</body>
+</html>

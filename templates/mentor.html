@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "DBERT — Mentor Dashboard" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex,nofollow"/>
+</head>
+<body class="pg-mentor has-mentor-sidebar">
+{% set active_page = 'mentor_dashboard' %}
+{% include '_mentor_sidebar.html' %}
+
+
+<!-- ══════════════════════════════════════════
+     LOGIN SCREEN — Email + Password (v5.0)
+══════════════════════════════════════════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><i class="fas fa-chalkboard-teacher"></i></div>
+    <h1>Mentor Login</h1>
+    <p class="login-subtitle">DBERT — May 2026 Batch Review Portal</p>
+
+    <input
+      type="email"
+      id="loginEmail"
+      class="login-input"
+      placeholder="Mentor email address"
+      autocomplete="email"
+      data-act-keypress="focusPassword" data-key-keypress="Enter"
+    />
+
+    <div class="password-wrap">
+      <input
+        type="password"
+        id="loginPassword"
+        class="login-input"
+        placeholder="Password"
+        autocomplete="current-password"
+        data-act-keypress="doLogin" data-key-keypress="Enter"
+      />
+      <button class="toggle-pw" type="button" data-act-click="togglePw" tabindex="-1">
+        <i class="fas fa-eye" id="togglePwIcon"></i>
+      </button>
+    </div>
+
+    <button class="login-btn" id="loginBtn" data-act-click="doLogin">
+      <span id="loginBtnText"><i class="fas fa-unlock"></i>&nbsp; Login</span>
+      <span id="loginBtnSpinner" style="display:none;"><div class="spinner"></div></span>
+    </button>
+
+    <div id="loginError" class="login-error" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DASHBOARD
+══════════════════════════════════════════ -->
+<div id="dashboard" class="dashboard">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <div class="brand-icon"><i class="fas fa-code"></i></div>
+        <div class="brand-text">
+          <h2>DBERT</h2>
+          <p>Mentor Dashboard · v5.0</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="mentor-pill">
+          <i class="fas fa-user-tie" style="margin-right:6px;"></i>
+          <span id="mentor-name-display">Mentor</span>
+        </span>
+        <button class="logout-btn" data-act-click="doLogout">
+          <i class="fas fa-sign-out-alt"></i>&nbsp; Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner">
+      <div class="welcome-left">
+        <h2>Welcome back, <span id="welcome-name">Mentor</span>! 👋</h2>
+        <p>Review your assigned applications for the May 2026 batch below.</p>
+      </div>
+      <div class="domain-badge" id="domain-badge">
+        <i class="fas fa-laptop-code" style="margin-right:6px;"></i>
+        <span id="domain-badge-text">All Domains</span>
+      </div>
+    </div>
+
+    <!-- BATCH BANNER -->
+    <div class="batch-banner">
+      <i class="fas fa-calendar-check"></i>
+      <span>May Summer Batch 2026 starts on <strong>11 May 2026</strong> &nbsp;·&nbsp; Duration: <strong>2 Months</strong> &nbsp;·&nbsp; Certificate + LOR</span>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Assigned</div>
+        <div class="stat-value gold" id="stat-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending Review</div>
+        <div class="stat-value amber" id="stat-pending">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Selected</div>
+        <div class="stat-value green" id="stat-selected">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value red" id="stat-rejected">—</div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <input
+        type="text"
+        class="search-box"
+        id="searchInput"
+        placeholder="🔍 Search name or email..."
+        data-act-input="filterTable"
+      />
+      <select class="filter-select" id="statusFilter" data-act-change="filterTable">
+        <option value="">All Status</option>
+        <option value="Apply Pending">Apply Pending</option>
+        <option value="Under Review">Under Review</option>
+        <option value="On Hold">On Hold</option>
+        <option value="Selected">Selected</option>
+        <option value="Enrollment Pending">Enrollment Pending</option>
+        <option value="Enrolled">Enrolled</option>
+        <option value="Accepted">Accepted</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <button class="refresh-btn" data-act-click="loadApplications">
+        <i class="fas fa-sync-alt"></i>&nbsp; Refresh
+      </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th class="hide-sm">College</th>
+            <th class="hide-md">Course / Year</th>
+            <th class="hide-sm">City</th>
+            <th class="hide-sm">Applied</th>
+            <th>Intent</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appTableBody">
+          <tr class="loading-row">
+            <td colspan="8"><div class="spinner"></div>&nbsp; Loading applications...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /dashboard -->
+
+<!-- ══════════════════════════════════════════
+     REVIEW MODAL
+══════════════════════════════════════════ -->
+<div id="reviewModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h2><i class="fas fa-clipboard-check"></i>&nbsp; Review Application</h2>
+        <p id="modal-applicant-email">—</p>
+      </div>
+      <button class="modal-close" data-act-click="closeReviewModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Details -->
+      <div id="modal-details-wrap"></div>
+
+      <!-- Why Join -->
+      <div id="modal-why-wrap"></div>
+
+      <!-- Portfolio -->
+      <div id="modal-portfolio-wrap" style="margin-top:10px;"></div>
+
+      <!-- Intent Score -->
+      <div id="modal-intent-wrap" style="margin-top:12px;padding:12px 14px;background:rgba(226,185,111,0.04);border:1px solid rgba(226,185,111,0.1);border-radius:12px;"></div>
+
+      <!-- Phase 11.8 — AI interview assessment (read-only; shown BEFORE select/reject) -->
+      <div id="modal-interview-wrap" style="margin-top:12px;padding:12px 14px;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.18);border-radius:12px;">
+        <p style="color:#8a9ab5;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">AI INTERVIEW ASSESSMENT</p>
+        <div id="modal-interview-body" style="font-size:13px;color:#8a9ab5;">Loading…</div>
+      </div>
+
+      <!-- Current Status -->
+      <div id="modal-current-status" style="margin-top:12px;font-size:13px;color:#8a9ab5;"></div>
+
+      <!-- Enrollment info (if enrolled/accepted) -->
+      <div id="modal-enrollment-info" style="display:none;"></div>
+
+      <!-- Existing Note -->
+      <div id="modal-existing-note" style="display:none;margin-top:12px;padding:12px 14px;background:rgba(255,176,32,0.05);border:1px solid rgba(255,176,32,0.15);border-radius:10px;">
+        <p style="color:#8a9ab5;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px;">PREVIOUS NOTE</p>
+        <p id="modal-existing-note-text" style="color:#d0d8e8;font-size:13px;line-height:1.6;"></p>
+      </div>
+
+      <!-- Note input -->
+      <div class="note-section">
+        <label>
+          <i class="fas fa-sticky-note" style="color:#e2b96f;margin-right:6px;"></i>
+          Note / Feedback (optional — sent to applicant in email)
+        </label>
+        <textarea id="mentorNoteInput" class="note-textarea"
+          placeholder="Add your feedback, reasoning, or observation..."></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <!-- Mentor can ONLY set: Under Review, On Hold, Selected, Rejected — NOT Accepted/Enrolled -->
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" data-act-click="closeReviewModal">Cancel</button>
+        <button class="btn-modal-review" id="btnUnderReview" data-act-click="submitReview" data-arg-click='["Under Review"]'>
+          <i class="fas fa-search"></i>&nbsp; Under Review
+        </button>
+        <button class="btn-modal-hold" id="btnHold" data-act-click="submitReview" data-arg-click='["On Hold"]'>
+          <i class="fas fa-pause-circle"></i>&nbsp; Hold
+        </button>
+        <button class="btn-modal-reject" id="btnReject" data-act-click="submitReview" data-arg-click='["Rejected"]'>
+          <i class="fas fa-times-circle"></i>&nbsp; Reject
+        </button>
+        <button class="btn-modal-select" id="btnSelect" data-act-click="submitReview" data-arg-click='["Selected"]'>
+          <i class="fas fa-check-circle"></i>&nbsp; Select
+        </button>
+      </div>
+      <div class="modal-msg" id="modal-msg"></div>
+
+    </div>
+  </div>
+</div>
+
+<div id="_toast"></div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+     BUG-06: ALL fetch() paths use /... prefix (leading slash enforced)
+══════════════════════════════════════════ -->
+<script nonce="{{ csp_nonce() }}">
+'use strict';
+
+let _mentorData   = null;
+let _applications = [];
+let _currentAppId = null;
+
+// ── UTILS ─────────────────────────────────────────────────────
+function showToast(msg, type) {
+  const t = document.getElementById('_toast');
+  t.textContent   = msg;
+  t.style.color   = type === 'green' ? '#4caf50' : type === 'red' ? '#ff6b6b' : '#e2b96f';
+  t.style.opacity = '1';
+  t.style.display = 'block';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => { t.style.display = 'none'; }, 300);
+  }, 2800);
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent   = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function setBtnLoading(loading) {
+  document.getElementById('loginBtnText').style.display    = loading ? 'none' : 'inline';
+  document.getElementById('loginBtnSpinner').style.display = loading ? 'inline-block' : 'none';
+  document.getElementById('loginBtn').disabled = loading;
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  try {
+    const d = new Date(s);
+    if (isNaN(d)) return s.split(' ')[0];
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch(e) { return s.split(' ')[0]; }
+}
+
+function escHtml(s) {
+  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Phase 11.8 — read-only AI interview assessment for the mentor (own candidates only).
+async function loadMentorInterview(email){
+  const box = document.getElementById('modal-interview-body'); if(!box) return;
+  box.innerHTML = 'Loading…';
+  let data;
+  try{
+    const res = await fetch('/mentor/interview/' + encodeURIComponent(email), {credentials:'include'});
+    if(res.status === 403){ box.innerHTML = '<span style="color:#8a9ab5;">Not assigned to you.</span>'; return; }
+    data = await res.json();
+  }catch(e){ box.innerHTML = '<span style="color:#8a9ab5;">Could not load assessment.</span>'; return; }
+  if(!data || data.status !== 'success'){ box.innerHTML = '<span style="color:#8a9ab5;">No interview on record.</span>'; return; }
+  const attempts = data.attempts || [];
+  if(!attempts.length){ box.innerHTML = '<span style="color:#8a9ab5;">Candidate has not taken the interview yet.</span>'; return; }
+  const latest = attempts.find(a => a.status === 'completed') || attempts[0];
+  const ma = latest.mentor_assessment || {};
+  const rb = {low:'#ff6b6b',medium:'#ffb020',high:'#66bb6a',unknown:'#8a9ab5'}[(ma.readiness||'unknown').toLowerCase()] || '#8a9ab5';
+  const sig = ma.intent_signals || {};
+  const fb = {low:'#ff6b6b',medium:'#ffb020',high:'#66bb6a',unknown:'#8a9ab5'}[(ma.paid_program_fit||'unknown').toLowerCase()] || '#8a9ab5';
+  const list = arr => (Array.isArray(arr)&&arr.length)
+    ? '<ul style="margin:4px 0 8px 18px;color:#d0d8e8;">'+arr.map(x=>'<li>'+escHtml(x)+'</li>').join('')+'</ul>'
+    : '<span style="color:#8a9ab5;">—</span>';
+  const qa = (latest.questions||[]).map(q=>{
+    const ans=(latest.answers||{})[q.id]||(latest.answers||{})[String(q.id)]||'';
+    return '<div style="margin:8px 0;padding:8px 10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);border-radius:8px;"><div style="color:#fff;font-weight:600;">Q'+escHtml(q.id)+'. '+escHtml(q.text)+'</div><div style="color:#d0d8e8;margin-top:4px;white-space:pre-wrap;">'+(escHtml(ans)||'<em style="color:#8a9ab5;">no answer</em>')+'</div></div>';
+  }).join('');
+  box.innerHTML =
+    '<div style="margin-bottom:6px;"><strong style="color:#fff;">Readiness:</strong> <span style="color:'+rb+';font-weight:800;text-transform:capitalize;">'+escHtml(ma.readiness||'unknown')+'</span> <span style="color:#8a9ab5;">· attempt '+escHtml(latest.attempt_no||1)+'</span></div>'
+    +'<div style="color:#d0d8e8;margin-bottom:8px;">'+escHtml(ma.summary||'—')+'</div>'
+    +'<div style="margin:6px 0 10px;padding:8px 10px;background:rgba(226,185,111,.06);border:1px solid rgba(226,185,111,.2);border-radius:8px;">'
+      +'<div style="margin-bottom:4px;"><strong style="color:#fff;">Paid-program fit:</strong> <span style="color:'+fb+';font-weight:800;text-transform:capitalize;">'+escHtml(ma.paid_program_fit||'unknown')+'</span> <span style="color:#8a9ab5;font-size:11px;">(internal — never shown to candidate)</span></div>'
+      +((sig.willingness||sig.capability_gap||sig.need)?'<div style="color:#d0d8e8;font-size:12.5px;line-height:1.5;"><strong>Willingness:</strong> '+escHtml(sig.willingness||'—')+' · <strong>Capability gap:</strong> '+escHtml(sig.capability_gap||'—')+' · <strong>Need:</strong> '+escHtml(sig.need||'—')+'</div>':'')
+      +(ma.paid_pitch_angle?'<div style="color:#d0d8e8;font-size:12.5px;margin-top:4px;"><strong style="color:#e2b96f;">Pitch angle:</strong> '+escHtml(ma.paid_pitch_angle)+'</div>':'')
+    +'</div>'
+    +'<strong style="color:#66bb6a;">Strengths</strong>'+list(ma.strengths)
+    +'<strong style="color:#ffb020;">Gaps</strong>'+list(ma.gaps)
+    +'<strong style="color:#e2b96f;">Recommended training</strong>'+list(ma.recommended_training)
+    +'<strong style="color:#e2b96f;">Recommended skills</strong>'+list(ma.recommended_skills)
+    +(ma.notes_for_mentor?'<div style="margin:6px 0;"><strong style="color:#fff;">Notes:</strong> <span style="color:#d0d8e8;">'+escHtml(ma.notes_for_mentor)+'</span></div>':'')
+    +(latest.github_summary?'<div style="margin:6px 0;color:#8a9ab5;"><strong>GitHub:</strong> '+escHtml(latest.github_summary)+'</div>':'')
+    +'<details style="margin-top:8px;"><summary style="cursor:pointer;color:#e2b96f;">Questions &amp; answers ('+(latest.questions||[]).length+')</summary>'+qa+'</details>';
+}
+
+function intentBar(score) {
+  score = parseInt(score) || 0;
+  let color = '#ff6b6b', label = '🔴 Low';
+  if (score >= 81)      { color = '#e2b96f'; label = '⭐ Very High'; }
+  else if (score >= 61) { color = '#4caf50'; label = '🟢 High'; }
+  else if (score >= 31) { color = '#ffb020'; label = '🟡 Medium'; }
+  return `<span class="intent-bar"><span class="intent-fill" style="width:${score}%;background:${color};"></span></span>`
+       + `<span style="font-size:11px;color:${color};font-weight:700;" title="${label} Intent">${score}</span>`;
+}
+
+function statusBadge(s) {
+  const map = {
+    'Apply Pending':       'badge-apply-pending',
+    'Under Review':        'badge-under-review',
+    'On Hold':             'badge-on-hold',
+    'Selected':            'badge-selected',
+    'Enrollment Pending':  'badge-enrollment-pending',
+    'Enrolled':            'badge-enrolled',
+    'Accepted':            'badge-accepted',
+    'Rejected':            'badge-rejected',
+  };
+  return `<span class="badge ${map[s] || 'badge-under-review'}">${escHtml(s || 'Unknown')}</span>`;
+}
+
+function togglePw() {
+  const input = document.getElementById('loginPassword');
+  const icon  = document.getElementById('togglePwIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+
+function focusPassword() {
+  document.getElementById('loginPassword').focus();
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────
+// BUG-06: fetch('/mentor/login') — leading slash present
+async function doLogin() {
+  const email    = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  showError('loginError', '');
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('loginError', 'Please enter a valid email address.');
+    return;
+  }
+  if (!password) {
+    showError('loginError', 'Please enter your password.');
+    return;
+  }
+
+  setBtnLoading(true);
+  try {
+    // BUG-06: /mentor/login — leading slash enforced
+    const res  = await fetch('/mentor/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      await bootDashboard();
+    } else {
+      showError('loginError', data.message || 'Invalid email or password. Please contact admin if you need help.');
+    }
+  } catch(e) {
+    showError('loginError', 'Network error. Please check your connection and try again.');
+  }
+  setBtnLoading(false);
+}
+
+// ── SESSION BOOT ───────────────────────────────────────────────
+// BUG-06: fetch('/mentor/me') — leading slash enforced
+async function bootDashboard() {
+  try {
+    // BUG-06: /mentor/me — leading slash enforced
+    const res  = await fetch('/mentor/me');
+    const data = await res.json();
+
+    if (data.status !== 'success' || !data.mentor) return;
+
+    const m = data.mentor;
+    _mentorData = m;
+
+    document.getElementById('mentor-name-display').textContent = (m.name || '').split(' ')[0];
+    document.getElementById('welcome-name').textContent        = m.name   || 'Mentor';
+    document.getElementById('domain-badge-text').textContent   = m.domain || 'All Domains';
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').classList.add('visible');
+
+    await loadApplications();
+  } catch(e) {
+    console.warn('[bootDashboard]', e);
+  }
+}
+
+// ── APPLICATIONS ───────────────────────────────────────────────
+// BUG-06: fetch('/mentor/applications') — leading slash enforced
+async function loadApplications() {
+  document.getElementById('appTableBody').innerHTML =
+    '<tr class="loading-row"><td colspan="8"><div class="spinner"></div>&nbsp; Loading applications...</td></tr>';
+  try {
+    // BUG-06: /mentor/applications — leading slash enforced
+    const res  = await fetch('/mentor/applications');
+    const data = await res.json();
+
+    if (data.status !== 'success') {
+      document.getElementById('appTableBody').innerHTML =
+        `<tr><td colspan="8" class="td-empty"><i class="fas fa-exclamation-triangle"></i>&nbsp; ${escHtml(data.message || 'Failed to load.')}</td></tr>`;
+      return;
+    }
+
+    _applications = data.applications || [];
+    updateStats();
+    filterTable();
+  } catch(e) {
+    document.getElementById('appTableBody').innerHTML =
+      '<tr><td colspan="8" class="td-empty"><i class="fas fa-wifi"></i>&nbsp; Network error. Try refreshing.</td></tr>';
+  }
+}
+
+function updateStats() {
+  const total    = _applications.length;
+  const pending  = _applications.filter(r =>
+    r.status === 'Apply Pending' || r.status === 'Under Review'
+  ).length;
+  const selected = _applications.filter(r =>
+    r.status === 'Selected'            ||
+    r.status === 'Enrollment Pending'  ||
+    r.status === 'Enrolled'            ||
+    r.status === 'Accepted'
+  ).length;
+  const rejected = _applications.filter(r => r.status === 'Rejected').length;
+
+  document.getElementById('stat-total').textContent    = total;
+  document.getElementById('stat-pending').textContent  = pending;
+  document.getElementById('stat-selected').textContent = selected;
+  document.getElementById('stat-rejected').textContent = rejected;
+}
+
+function filterTable() {
+  const q      = (document.getElementById('searchInput').value || '').toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  let rows = _applications;
+  if (q)      rows = rows.filter(r =>
+    (r.name    || '').toLowerCase().includes(q) ||
+    (r.email   || '').toLowerCase().includes(q) ||
+    (r.college || '').toLowerCase().includes(q)
+  );
+  if (status) rows = rows.filter(r => r.status === status);
+  renderTable(rows);
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('appTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="8">
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <h3>No applications found</h3>
+          <p>Try a different filter, or wait for new applications to be assigned.</p>
+        </div>
+      </td></tr>`;
+    return;
+  }
+
+  // Mentor can only action these statuses
+  const canAct = (status) => ['Apply Pending', 'Under Review', 'On Hold'].includes(status);
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>
+        <div class="td-name">${escHtml(r.name || '—')}</div>
+        <div class="td-email">${escHtml(r.email || '—')}</div>
+      </td>
+      <td class="hide-sm" style="color:#8a9ab5;font-size:12px;">${escHtml(r.college || '—')}</td>
+      <td class="hide-md" style="color:#8a9ab5;font-size:12px;">${escHtml((r.course||'') + (r.year_of_passing ? ' / '+r.year_of_passing : '') || '—')}</td>
+      <td class="hide-sm" style="color:#8a9ab5;font-size:12px;">${escHtml(r.city || '—')}</td>
+      <td class="hide-sm" style="color:#555;font-size:12px;">${fmtDate(r.created_at)}</td>
+      <td>${intentBar(r.intent_score || 0)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn-sm btn-view" ${actAttr('click','openReviewModal',[r.id])}>
+            <i class="fas fa-eye"></i>&nbsp;Review
+          </button>
+          ${canAct(r.status) ? `
+            <button class="btn-sm btn-select" ${actAttr('click','quickAction',[r.id,'Selected'])}>
+              <i class="fas fa-check"></i>
+            </button>
+            <button class="btn-sm btn-reject" ${actAttr('click','quickAction',[r.id,'Rejected'])}>
+              <i class="fas fa-times"></i>
+            </button>
+          ` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── REVIEW MODAL ───────────────────────────────────────────────
+function openReviewModal(id) {
+  const r = _applications.find(a => a.id === id);
+  if (!r) return;
+  _currentAppId = id;
+
+  document.getElementById('modal-applicant-email').textContent = r.email || '—';
+  document.getElementById('mentorNoteInput').value = '';
+  document.getElementById('modal-msg').textContent = '';
+  loadMentorInterview(r.email);
+
+  const details = [
+    ['Full Name',       escHtml(r.name              || '—')],
+    ['Email',           escHtml(r.email             || '—')],
+    ['Phone',           escHtml(r.phone             || '—')],
+    ['City',            escHtml(r.city              || '—')],
+    ['College',         escHtml(r.college           || '—')],
+    ['Course',          escHtml(r.course            || '—')],
+    ['Semester',        escHtml(r.semester          || '—')],
+    ['Year of Passing', escHtml(r.year_of_passing   || '—')],
+    ['Domain',          escHtml(r.domain            || '—')],
+    ['Applied On',      fmtDate(r.created_at)],
+  ];
+  document.getElementById('modal-details-wrap').innerHTML =
+    details.map(([k,v]) =>
+      `<div class="detail-row"><span class="dk">${k}</span><span class="dv">${v}</span></div>`
+    ).join('');
+
+  // Why Join
+  const whyWrap = document.getElementById('modal-why-wrap');
+  whyWrap.innerHTML = r.why_join
+    ? `<div class="why-join-box"><h4>WHY THEY WANT TO JOIN</h4><p>${escHtml(r.why_join)}</p></div>`
+    : '';
+
+  // Portfolio
+  const portWrap = document.getElementById('modal-portfolio-wrap');
+  portWrap.innerHTML = r.portfolio
+    ? `<a href="${escHtml(r.portfolio)}" target="_blank" rel="noopener"
+         style="color:#2196f3;font-size:13px;display:inline-flex;align-items:center;gap:6px;">
+         <i class="fas fa-link"></i>&nbsp;View Portfolio / GitHub
+       </a>`
+    : '';
+
+  // Intent Score
+  const score = parseInt(r.intent_score) || 0;
+  let intentLabel = '🔴 Low Intent', intentColor = '#ff6b6b';
+  if (score >= 81)      { intentLabel = '⭐ Very High Intent'; intentColor = '#e2b96f'; }
+  else if (score >= 61) { intentLabel = '🟢 High Intent';      intentColor = '#4caf50'; }
+  else if (score >= 31) { intentLabel = '🟡 Medium Intent';    intentColor = '#ffb020'; }
+  document.getElementById('modal-intent-wrap').innerHTML =
+    `<span style="color:#8a9ab5;font-size:12px;font-weight:600;">PURCHASE INTENT&nbsp;&nbsp;</span>`
+    + `<span style="color:${intentColor};font-weight:800;font-size:15px;">${score}/100 — ${intentLabel}</span>`;
+
+  // Current Status
+  document.getElementById('modal-current-status').innerHTML =
+    `Current Status: &nbsp;${statusBadge(r.status)}`
+    + (r.reviewed_at
+      ? `&nbsp;<span style="color:#555;font-size:11px;">· Reviewed ${fmtDate(r.reviewed_at)}</span>`
+      : '');
+
+  // Enrollment info
+  const enrollEl = document.getElementById('modal-enrollment-info');
+  if (r.payment_status) {
+    enrollEl.style.display = 'block';
+    enrollEl.innerHTML = `<div class="info-block info-block-green">
+      <i class="fas fa-credit-card" style="color:#4caf50;margin-right:8px;"></i>
+      <strong style="color:#4caf50;">Enrollment Payment:</strong>
+      <span style="color:#d0d8e8;margin-left:4px;">${escHtml(r.payment_status)}</span>
+      ${r.joining_date ? `&nbsp;·&nbsp; Batch: <strong style="color:#fff;">${escHtml(r.joining_date)}</strong>` : ''}
+    </div>`;
+  } else {
+    enrollEl.style.display = 'none';
+  }
+
+  // Existing note
+  const noteWrap = document.getElementById('modal-existing-note');
+  if (r.mentor_note) {
+    noteWrap.style.display = 'block';
+    document.getElementById('modal-existing-note-text').textContent = r.mentor_note;
+  } else {
+    noteWrap.style.display = 'none';
+  }
+
+  // Mentor can ONLY set: Under Review, On Hold, Selected, Rejected
+  // Cannot set: Accepted, Enrolled, Enrollment Pending (admin only)
+  const MENTOR_CAN_SET = ['Apply Pending','Under Review','On Hold','Selected','Enrollment Pending','Rejected'];
+  const canChange = MENTOR_CAN_SET.includes(r.status);
+
+  document.getElementById('btnUnderReview').disabled = !canChange || r.status === 'Under Review';
+  document.getElementById('btnHold').disabled        = !canChange || r.status === 'On Hold';
+  document.getElementById('btnReject').disabled      = !canChange || r.status === 'Rejected';
+  document.getElementById('btnSelect').disabled      = !canChange || r.status === 'Selected';
+
+  // Lock note input if admin-locked status
+  const locked = ['Accepted', 'Enrolled'].includes(r.status);
+  document.getElementById('mentorNoteInput').disabled = locked;
+  document.getElementById('mentorNoteInput').placeholder = locked
+    ? 'Status is locked by admin — no changes allowed.'
+    : 'Add your feedback, reasoning, or observation...';
+
+  document.getElementById('reviewModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReviewModal() {
+  document.getElementById('reviewModal').style.display = 'none';
+  document.body.style.overflow = '';
+  _currentAppId = null;
+}
+
+// BUG-06: fetch('/mentor/update-status') — leading slash enforced
+async function submitReview(newStatus) {
+  if (!_currentAppId) return;
+  const note  = document.getElementById('mentorNoteInput').value.trim();
+  const msgEl = document.getElementById('modal-msg');
+  msgEl.textContent = '';
+
+  ['btnUnderReview','btnHold','btnReject','btnSelect'].forEach(id => {
+    document.getElementById(id).disabled = true;
+  });
+  msgEl.style.color = '#8a9ab5';
+  msgEl.textContent = 'Saving...';
+
+  try {
+    // BUG-06: /mentor/update-status — leading slash enforced
+    const res  = await fetch('/mentor/update-status', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id: _currentAppId, status: newStatus, note })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      const msgs = {
+        'Under Review':       '📋 Moved to Under Review. Applicant notified.',
+        'Selected':           '✅ Applicant selected! Email sent.',
+        'Rejected':           '📧 Application rejected. Email sent.',
+        'On Hold':            '⏸️ Application placed on hold.',
+        'Enrollment Pending': '🪪 Moved to Enrollment Pending.',
+      };
+      msgEl.style.color = '#4caf50';
+      msgEl.textContent = msgs[newStatus] || 'Status updated successfully.';
+      showToast(msgs[newStatus] || 'Updated ✓', 'green');
+
+      const idx = _applications.findIndex(a => a.id === _currentAppId);
+      if (idx > -1) {
+        _applications[idx].status      = newStatus;
+        _applications[idx].mentor_note = note || _applications[idx].mentor_note;
+        _applications[idx].reviewed_at = new Date().toISOString().replace('T',' ').split('.')[0];
+      }
+      setTimeout(() => { closeReviewModal(); filterTable(); updateStats(); }, 1400);
+    } else {
+      msgEl.style.color = '#ff6b6b';
+      msgEl.textContent = data.message || 'Failed to update. Try again.';
+      openReviewModal(_currentAppId);
+    }
+  } catch(e) {
+    msgEl.style.color = '#ff6b6b';
+    msgEl.textContent = 'Network error. Please try again.';
+    openReviewModal(_currentAppId);
+  }
+}
+
+// Quick action from table row
+// BUG-06: fetch('/mentor/update-status') — leading slash enforced
+async function quickAction(id, status) {
+  const label = status === 'Selected' ? 'select' : 'reject';
+  if (!confirm(`Quick ${label} this application? (No note will be added, email will be sent)`)) return;
+  try {
+    // BUG-06: /mentor/update-status — leading slash enforced
+    const res  = await fetch('/mentor/update-status', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id, status, note: '' })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showToast(status === 'Selected' ? '✅ Selected!' : '❌ Rejected', status === 'Selected' ? 'green' : 'red');
+      const idx = _applications.findIndex(a => a.id === id);
+      if (idx > -1) _applications[idx].status = status;
+      filterTable();
+      updateStats();
+    } else { showToast(data.message || 'Failed', 'red'); }
+  } catch(e) { showToast('Network error', 'red'); }
+}
+
+// ── LOGOUT ─────────────────────────────────────────────────────
+// BUG-06: fetch('/logout') — leading slash enforced
+async function doLogout() {
+  try {
+    // BUG-06: /logout — leading slash enforced
+    await fetch('/logout', { method: 'POST' });
+  } catch(e) {}
+  _mentorData   = null;
+  _applications = [];
+  _currentAppId = null;
+  document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginEmail').value    = '';
+  document.getElementById('loginPassword').value = '';
+  showError('loginError', '');
+}
+
+// ── CLOSE MODAL ON OVERLAY CLICK ──────────────────────────────
+document.getElementById('reviewModal').addEventListener('click', function(e) {
+  if (e.target === this) closeReviewModal();
+});
+
+// ── ESC KEY ────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeReviewModal();
+});
+
+// ── BOOT ON LOAD ───────────────────────────────────────────────
+// BUG-06: fetch('/mentor/me') — leading slash enforced
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    // BUG-06: /mentor/me — leading slash enforced
+    const res  = await fetch('/mentor/me');
+    const data = await res.json();
+    if (data.status === 'success' && data.mentor) {
+      await bootDashboard();
+    }
+  } catch(e) { /* stay on login */ }
+});
+</script>
+</body>
+</html>

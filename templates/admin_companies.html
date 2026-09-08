@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full = "Companies (admin) · DBERT" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-admin-companies has-staff-sidebar">
+{% set active_page = 'admin_main' %}
+{% include '_staff_sidebar.html' %}
+
+  <div class="wrap">
+    <h1>Companies</h1>
+    <p class="sub">Approve before a company can publish; suspend to disable login + listings.</p>
+    <div class="table-wrap">
+    <table>
+      <tr><th>Company</th><th>Contact</th><th>Status</th><th>Actions</th></tr>
+      {% for c in companies %}
+      <tr id="c{{ c.id }}">
+        <td><strong>{{ c.name }}</strong><br><span style="color:var(--tx-muted);font-size:.82rem;">{{ c.website or "" }}</span></td>
+        <td>{{ c.email }}<br><span style="color:var(--tx-muted);font-size:.82rem;">{{ c.phone or "" }}</span></td>
+        <td>
+          {% if not c.is_active %}<span class="badge b-susp">suspended</span>
+          {% elif c.is_approved %}<span class="badge b-ok">approved</span>
+          {% else %}<span class="badge b-pend">pending</span>{% endif %}
+        </td>
+        <td>
+          {% if c.is_approved %}
+          <button class="unapprove" data-act-click="act" data-arg-click='[{{ c.id|tojson }}, "approve", false]'>Unapprove</button>
+          {% else %}
+          <button class="approve" data-act-click="act" data-arg-click='[{{ c.id|tojson }}, "approve", true]'>Approve</button>
+          {% endif %}
+          {% if c.is_active %}
+          <button class="suspend" data-act-click="act" data-arg-click='[{{ c.id|tojson }}, "suspend", true]'>Suspend</button>
+          {% else %}
+          <button class="restore" data-act-click="act" data-arg-click='[{{ c.id|tojson }}, "suspend", false]'>Restore</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty">No companies yet.</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p style="margin-top:18px;"><a href="/admin">← Back to admin</a></p>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    function act(id, kind, on){
+      var body = {company_id:id};
+      if(kind==='approve') body.approve = on; else body.suspend = on;
+      fetch('/admin/companies/'+kind, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
+        .then(function(r){ return r.json(); })
+        .then(function(d){ if(d.status==='success') location.reload(); else alert(d.message||'Error'); })
+        .catch(function(){ alert('Network error'); });
+    }
+  </script>
+</body>
+</html>

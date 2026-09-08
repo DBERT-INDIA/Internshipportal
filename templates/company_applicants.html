@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full %}Applicants · {{ post.title }}{% endset %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="pg-company-applicants has-company-sidebar">
+{% set active_page = 'company_posts' %}
+{% include '_company_sidebar.html' %}
+
+  <!-- UAT #34: company nav shell so sub-pages can reach Dashboard / New Post / Log out -->
+  <div class="topbar"><div class="topbar-in">
+    <a href="/company" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;"><span class="brand-icon"><i class="fas fa-briefcase"></i></span><b>DBERT Jobs</b></a>
+    <nav style="margin-left:auto;display:flex;gap:18px;align-items:center;font-size:13px;font-weight:600;">
+      <a href="/company"><i class="fas fa-gauge"></i> Dashboard</a>
+      <a href="/company/posts/new"><i class="fas fa-plus"></i> New Post</a>
+      <a href="#" data-act-click="companyLogout" data-prevent-click><i class="fas fa-arrow-right-from-bracket"></i> Log out</a>
+    </nav>
+  </div></div>
+  <div class="wrap">
+    <h1>Applicants — {{ post.title }}</h1>
+    <p class="sub"><a href="/company/posts/{{ post.id }}"><i class="fas fa-arrow-left"></i> Back to post</a> · {{ applicants|length }} applicant(s)
+    {% set certifying_count = applicants | selectattr('status', 'equalto', 'PENDING_CERTS') | list | length %}
+    {% if certifying_count > 0 %}
+      · <span class="chip" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid #F59E0B; padding: 2px 8px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">🎓 {{ certifying_count }} Candidate(s) Currently Certifying</span>
+    {% endif %}
+    </p>
+
+    {% if required_certs %}
+    <div class="req-strip"><i class="fas fa-certificate" style="color:var(--gold);"></i>
+      Required certifications for this post:
+      {% for c in required_certs %}<span class="chip missing">{{ c.title }}</span>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if applicants %}
+    <div class="req-strip" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+      <div style="flex:1;min-width:180px;">
+        <div style="font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Search</div>
+        <input id="t7Search" type="text" placeholder="Name or email…" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+      </div>
+      <div style="min-width:150px;">
+        <div style="font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Status</div>
+        <select id="t7Status" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+          <option value="">All Statuses</option>
+          {% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="min-width:130px;">
+        <div style="font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Applied from</div>
+        <input id="t7From" type="date" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+      </div>
+      <div style="min-width:130px;">
+        <div style="font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Applied to</div>
+        <input id="t7To" type="date" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+      </div>
+      <button id="t7Clear" type="button" class="btn ghost" style="white-space:nowrap;">Clear filters</button>
+    </div>
+    <div id="t7ResultCount" style="color:var(--tx-muted);font-size:13px;margin:4px 0 14px;"></div>
+    {% endif %}
+
+    {% for a in applicants %}
+    <div class="applicant" data-app="{{ a.id }}"
+         data-search="{{ (a.intern_name ~ ' ' ~ a.intern_email)|lower }}"
+         data-status="{{ a.status }}"
+         data-applied="{{ a.created_at }}">
+      <div class="a-head">
+        <div>
+          <div class="a-name">{{ a.intern_name }}</div>
+          <div class="a-email">{{ a.intern_email }}</div>
+        </div>
+        <div style="text-align:right;">
+          {% if a.cv_slug %}<a href="/cv/{{ a.cv_slug }}" target="_blank">CV</a> · <a href="/cv/{{ a.cv_slug }}.pdf" target="_blank">PDF</a>{% else %}<span style="color:var(--tx-muted);font-size:12px;">No CV</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="a-comment">{{ a.comment }}</div>
+
+      <div class="cert-label">Certifications</div>
+      <div class="chips">
+        {% for c in a.earned_certs %}<span class="chip earned"><i class="fas fa-check"></i> {{ c.title }}</span>{% endfor %}
+        {% for c in a.missing_certs %}<span class="chip missing"><i class="fas fa-circle-exclamation"></i> {{ c.title }}</span>{% endfor %}
+        {% if not a.earned_certs and not a.missing_certs %}<span class="chip none">No required certs / none earned</span>{% endif %}
+      </div>
+
+      <div class="cert-label">Interview</div>
+      {% if a.interview %}
+        <div class="chips">
+          <span class="chip {{ 'earned' if a.interview.status == 'completed' else 'none' }}">{{ a.interview.status|capitalize }} &middot; attempt {{ a.interview.attempt_no }}</span>
+          {% if a.interview.status == 'completed' %}
+            <span class="chip none">{{ (a.interview.time_taken_sec // 60) }}m {{ (a.interview.time_taken_sec % 60) }}s taken</span>
+            <span class="chip {{ 'missing' if a.interview.tab_switches > 2 else 'none' }}">{{ a.interview.tab_switches }} tab switch{{ '' if a.interview.tab_switches == 1 else 'es' }}</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="chips"><span class="chip none">Not started</span></div>
+      {% endif %}
+
+      <div class="row-actions">
+        <select data-act-change="onStatusChange" data-arg-change='[{{ a.id|tojson }}, "$value"]'>
+          {% for s in statuses %}<option value="{{ s }}" {% if a.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+        <button class="btn ghost" data-act-click="messageApplicant" data-arg-click='[{{ a.intern_id|tojson }}]'><i class="fas fa-comment"></i> Message</button>
+        <span class="msg" id="msg-{{ a.id }}"></span>
+      </div>
+
+      <!-- Cert-gate editor (revealed when the cert-pending status is chosen) -->
+      <div class="gate" id="gate-{{ a.id }}">
+        <h4>Select — pending certifications</h4>
+        <div>
+          {% for c in required_certs %}
+          <label class="ck">
+            <input type="checkbox" value="{{ c.course_id }}" data-title="{{ c.title }}"
+              {% if c.course_id in a.missing_certs|map(attribute='course_id')|list %}checked{% endif %}>
+            {{ c.title }}
+          </label>
+          {% else %}
+          <div style="color:var(--tx-muted);font-size:12.5px;">This post lists no certifications — add some on the post to require them.</div>
+          {% endfor %}
+        </div>
+        <textarea placeholder="Optional note to the applicant…">{{ a.decision_note or '' }}</textarea>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="btn" data-act-click="sendCertGate" data-arg-click='[{{ a.id|tojson }}]'><i class="fas fa-paper-plane"></i> Select &amp; notify</button>
+          <button class="btn ghost" data-act-click="closeGate" data-arg-click='[{{ a.id|tojson }}]'>Cancel</button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty" id="t7ServerEmpty">No applicants yet.</div>
+    {% endfor %}
+    {% if applicants %}
+    <div class="empty" id="t7FilterEmpty" style="display:none;">No applicants match your filters. <a href="#" data-act-click="$click" data-arg-click='["t7Clear"]' data-prevent-click>Clear filters</a> to see everyone.</div>
+    {% endif %}
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    /* Was inline on the logout link. /company/logout answers with JSON, not a
+       redirect, so this stays a fetch rather than becoming a POST form. */
+    function companyLogout(){
+      fetch('/company/logout',{method:'POST'})
+        .then(function(){ location.href='/company/login'; })
+        .catch(function(){ location.href='/company/login'; });
+    }
+
+    var PENDING_CERTS = {{ pending_certs_status|tojson }};
+    var POST_ID = {{ post.id }};
+
+    function flash(appId, text, ok){
+      var m=document.getElementById('msg-'+appId); m.className='msg '+(ok?'ok':'err'); m.textContent=text;
+      if(ok) setTimeout(function(){ m.textContent=''; }, 2500);
+    }
+    function onStatusChange(appId, value){
+      if(value === PENDING_CERTS){ document.getElementById('gate-'+appId).classList.add('open'); return; }
+      closeGate(appId); setStatus(appId, value);
+    }
+    function closeGate(appId){ document.getElementById('gate-'+appId).classList.remove('open'); }
+
+    function setStatus(appId, status){
+      fetch('/company/applications/'+appId+'/status', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:status})})
+        .then(function(r){ return r.json(); })
+        .then(function(d){ flash(appId, d.status==='success'?'Updated':(d.message||'Error'), d.status==='success'); })
+        .catch(function(){ flash(appId, 'Network error', false); });
+    }
+    function sendCertGate(appId){
+      var gate=document.getElementById('gate-'+appId);
+      var certs=[];
+      gate.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){
+        certs.push({course_id: parseInt(cb.value,10), title: cb.getAttribute('data-title')});
+      });
+      var note=gate.querySelector('textarea').value;
+      fetch('/company/applications/'+appId+'/status', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({status:PENDING_CERTS, needed_certs:certs, note:note})})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ flash(appId, 'Selected — applicant notified', true); closeGate(appId); }
+          else flash(appId, d.message||'Error', false);
+        }).catch(function(){ flash(appId, 'Network error', false); });
+    }
+    function messageApplicant(internId){
+      fetch('/messages/start', {method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({intern_id: internId, post_id: POST_ID})})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ window.location = '/messages/'+d.conversation_id; }
+          else { alert(d.message||'Could not open the conversation.'); }
+        }).catch(function(){ alert('Network error'); });
+    }
+
+    (function(){
+      var cards = Array.from(document.querySelectorAll('.applicant'));
+      if (!cards.length) return; // no applicants at all -- nothing to filter
+      var els = {
+        search: document.getElementById('t7Search'),
+        status: document.getElementById('t7Status'),
+        from: document.getElementById('t7From'),
+        to: document.getElementById('t7To'),
+      };
+      var countEl = document.getElementById('t7ResultCount');
+      var filterEmptyEl = document.getElementById('t7FilterEmpty');
+
+      function applyFilters(){
+        var q = els.search.value.trim().toLowerCase();
+        var status = els.status.value;
+        var from = els.from.value; // YYYY-MM-DD or ''
+        var to = els.to.value;
+        var visible = 0;
+        cards.forEach(function(c){
+          var ok = true;
+          if (q && c.dataset.search.indexOf(q) === -1) ok = false;
+          if (ok && status && c.dataset.status !== status) ok = false;
+          var appliedDate = (c.dataset.applied || '').slice(0, 10); // handles 'YYYY-MM-DD HH:MM:SS'
+          if (ok && from && appliedDate < from) ok = false;
+          if (ok && to && appliedDate > to) ok = false;
+          c.style.display = ok ? '' : 'none';
+          if (ok) visible++;
+        });
+        countEl.textContent = visible + ' of ' + cards.length + ' shown';
+        filterEmptyEl.style.display = (visible === 0) ? '' : 'none';
+      }
+
+      [els.search, els.status, els.from, els.to].forEach(function(el){
+        el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', applyFilters);
+      });
+      document.getElementById('t7Clear').addEventListener('click', function(){
+        els.search.value=''; els.status.value=''; els.from.value=''; els.to.value='';
+        applyFilters();
+      });
+      applyFilters();
+    })();
+  </script>
+</body>
+</html>

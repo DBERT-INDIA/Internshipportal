@@ -1,0 +1,119 @@
+{# ==========================================================================
+   _app_shell.html — the ONE sidebar shell for every role.
+   Build phase: 1  (DBERT_BUILD_SPEC.md §3, Phase 1)
+
+   Replaces the four near-duplicate _*_sidebar.html partials. Those four files
+   still exist, but each is now just a nav config that ends by including this
+   shell — so all 26 existing `{% include '_intern_sidebar.html' %}` call sites
+   keep working untouched.
+
+   Zero styling lives here. Every class comes from dbert-theme.css.
+
+   ---- Contract -------------------------------------------------------------
+   Set these before including, then `{% include '_app_shell.html' %}`:
+
+     brand       {'mark','title','sub'}          required
+     nav_groups  [{'label' or none, 'items':[…]}] required
+                   item = {'href', 'icon', 'label',
+                           'match':  [active_page values that light it up],
+                           'badge':  optional text pill,
+                           'dot':    optional truthy → amber dot}
+
+                 NOTE: `items` and `keys` are dict *methods* in Jinja, so
+                 `group.items` would hand back a bound method, not the list.
+                 Hence `group['items']` below, and `match` rather than `keys`.
+     logout      {'href','label','method'}       required
+                 method 'post' renders a real POST form; 'get' renders a link.
+                 This matters: /logout and /company/logout are POST-only, so
+                 the old <a href> sidebars returned 405 — logout was dead for
+                 interns, mentors and companies. /staff/logout is GET-only.
+                 Phase 5 adds the CSRF token to the POST form below.
+     sidebar_user {'name','sub'}                 optional — renders the avatar
+                                                 block. Omitted today; pages
+                                                 opt in during their phase.
+
+   `active_page` comes from the route's render_template call, unchanged.
+   ========================================================================== #}
+
+<button class="app-burger" id="appBurger" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="appSidebar">
+  <i class="fa-solid fa-bars"></i>
+</button>
+
+<aside class="sidebar" id="appSidebar">
+  <div class="brand">
+    <div class="brand-mark">{{ brand.mark }}</div>
+    <div class="brand-txt">
+      <h2>{{ brand.title }}</h2>
+      <p>{{ brand.sub }}</p>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="{{ brand.sub }}">
+    {% for group in nav_groups %}
+      {% if group.label %}<div class="nav-group-label">{{ group.label }}</div>{% endif %}
+      {% for item in group['items'] %}
+        <a href="{{ item.href }}"
+           class="nav-item{% if active_page in item['match'] %} active{% endif %}"
+           {% if active_page in item['match'] %}aria-current="page"{% endif %}>
+          <i class="{{ item.icon }}"></i><span>{{ item.label }}</span>
+          {% if item.badge %}<span class="nav-badge">{{ item.badge }}</span>
+          {% elif item.dot %}<span class="nav-dot" aria-label="unread"></span>{% endif %}
+        </a>
+      {% endfor %}
+    {% endfor %}
+  </nav>
+
+  <div class="side-foot">
+    {% if sidebar_user %}
+    <div class="side-user">
+      <div class="avatar">{{ sidebar_user.name[:1]|upper }}</div>
+      <div class="side-user-info">
+        <b>{{ sidebar_user.name }}</b>
+        <span>{{ sidebar_user.sub }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% if logout.method == 'post' %}
+    <form method="post" action="{{ logout.href }}">
+      {{ csrf_field() }}
+      <button type="submit" class="btn-logout">
+        <i class="fa-solid fa-right-from-bracket"></i>{{ logout.label }}
+      </button>
+    </form>
+    {% else %}
+    <a href="{{ logout.href }}" class="btn-logout">
+      <i class="fa-solid fa-right-from-bracket"></i>{{ logout.label }}
+    </a>
+    {% endif %}
+  </div>
+</aside>
+
+<div class="scrim" id="appScrim"></div>
+
+<script nonce="{{ csp_nonce() }}">
+/* Mobile drawer. Self-contained and id-scoped so it cannot collide with
+   portal.html's own toggleSidebar(). Before Phase 1 these pages had no way
+   to open the sidebar below 768px at all. */
+(function () {
+  var sb = document.getElementById('appSidebar'),
+      sc = document.getElementById('appScrim'),
+      bt = document.getElementById('appBurger');
+  if (!sb || !sc || !bt) return;
+
+  function open()  { sb.classList.add('open');    sc.classList.add('active');
+                     bt.setAttribute('aria-expanded', 'true'); }
+  function close() { sb.classList.remove('open'); sc.classList.remove('active');
+                     bt.setAttribute('aria-expanded', 'false'); }
+
+  bt.addEventListener('click', function () {
+    sb.classList.contains('open') ? close() : open();
+  });
+  sc.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+  sb.addEventListener('click', function (e) {
+    if (e.target.closest('.nav-item')) close();
+  });
+})();
+</script>

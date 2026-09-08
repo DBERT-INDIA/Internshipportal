@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = course.title %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'courses' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content">
+
+    {# banner_gradient used to be interpolated inside the page stylesheet; it lives
+       on the element now so the stylesheet stays static and cacheable. #}
+    <div class="course-hero"{% if course.banner_gradient %} style="background: {{ course.banner_gradient }}"{% endif %}>
+      <h1>{{ course.title }}</h1>
+      <div class="hero-meta">
+        <span><i class="fa-solid fa-star"></i> Level: {{ course.level or 'Beginner' }}</span>
+        <span><i class="fa-regular fa-clock"></i> {{ course.estimated_hours or 10 }} total hours</span>
+        <span><i class="fa-solid fa-building-columns"></i> {{ course.author_name }}</span>
+      </div>
+    </div>
+
+    <div class="hero-row">
+      <div>
+        <div class="card-head"><i class="fa-solid fa-list-ol"></i><h3>Course curriculum</h3></div>
+        <div class="day-accordion">
+          {% if chapters %}
+            {% for chapter in chapters %}
+            <div class="day-card">
+              <div class="day-header">
+                <span>Day {{ chapter.day_number }}: {{ chapter.title }}</span>
+                <span class="t-muted" style="font-size:11.5px;white-space:nowrap">
+                  {{ chapter.subtopics | length }} subtopics</span>
+              </div>
+              <div class="subtopic-list">
+                {% for subtopic in chapter.subtopics %}
+                <div class="subtopic-item">
+                  <span class="subtopic-bullet">▸</span>
+                  <div>
+                    <b class="t-head">{{ subtopic.title }}</b>
+                    <p class="t-muted" style="font-size:12px;margin-top:3px">{{ subtopic.brief }}</p>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="card empty">
+              <i class="fa-solid fa-book"></i>
+              <h4>Curriculum loading</h4>
+              <p>The syllabus for this course is currently being prepared.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-head"><i class="fa-solid fa-unlock"></i><h3>Enrollment</h3></div>
+
+          <div class="stack-16">
+            <div class="info-row">
+              <span class="info-label">Access type</span>
+              <span class="info-val">
+                {% if course.is_paid %}Paid (₹{{ course.price_inr }}){% else %}Free quota{% endif %}
+              </span>
+            </div>
+
+            <div class="info-row">
+              <span class="info-label">Capstone project</span>
+              <span class="info-val">
+                {% if course.requires_project %}Required (DBERT verified){% else %}Self-paced quiz{% endif %}
+              </span>
+            </div>
+
+            {% if is_enrolled %}
+              <a href="/courses/{{ course.id }}/learn" class="btn btn-primary btn-block">
+                Resume learning <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            {% else %}
+              <button data-act-click="enrollCourse" class="btn btn-primary btn-block">
+                Start free learning <i class="fa-solid fa-arrow-right"></i>
+              </button>
+
+              {% if flag_paid_1999_live %}
+              <div class="promo-box">
+                <div class="row-between mb-16">
+                  <b class="t-head" style="font-family:var(--f-display)">₹1,999 Premium Track</b>
+                  <span class="badge b-gold">RECOMMENDED</span>
+                </div>
+                <ul class="feature-list">
+                  <li>1-on-1 dedicated mentor sessions</li>
+                  <li>DBERT code review &amp; verification</li>
+                  <li>Direct resume sync to employers</li>
+                </ul>
+
+                <div id="premiumUploadUI" style="display:none;border-top:1px solid var(--border);padding-top:16px">
+                  <form id="pay1999Form" data-act-submit="enrollPaid1999" data-arg-submit='["$event"]' data-ret-submit>
+                    <div class="field">
+                      <label for="payFile1999">Upload payment screenshot</label>
+                      <input type="file" name="payment_screenshot" id="payFile1999"
+                             accept=".png,.jpg,.jpeg,.pdf" required>
+                      <div class="hint">PNG, JPG or PDF.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm btn-block">Submit verification</button>
+                  </form>
+                  <div id="msg1999" class="t-sm t-center mt-16"></div>
+                </div>
+
+                <button id="showPremiumUploadBtn"
+                        data-act-click="$reveal" data-arg-click='["premiumUploadUI"]'
+                        class="btn btn-primary btn-sm btn-block">
+                  Upgrade to Premium Track (₹1,999)
+                </button>
+              </div>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+async function enrollCourse() {
+    try {
+        const res = await fetch('/courses/{{ course.id }}/enroll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.status === 401) {
+            window.location.href = '/#signin';
+            return;
+        }
+        if (data.status === 'success' || res.ok) {
+            window.location.href = '/courses/{{ course.id }}/learn';
+        } else {
+            alert(data.message || 'Could not enroll in course.');
+        }
+    } catch(e) {
+        window.location.href = '/courses/{{ course.id }}/learn';
+    }
+}
+
+async function enrollPaid1999(e) {
+    e.preventDefault();
+    const f = document.getElementById('payFile1999');
+    if(!f.files.length) return false;
+
+    const fd = new FormData();
+    fd.append('payment_screenshot', f.files[0]);
+    fd.append('course_id', '{{ course.id }}');
+
+    const msg = document.getElementById('msg1999');
+    msg.textContent = 'Uploading…';
+    msg.style.color = 'var(--tx-muted)';
+
+    try {
+        const res = await fetch('/enrollment/paid-1999', {
+            method: 'POST',
+            credentials: 'include',
+            body: fd
+        });
+        const data = await res.json();
+
+        if (res.status === 401) {
+            window.location.href = '/#signin';
+            return false;
+        }
+
+        if (data.status === 'success' || res.ok) {
+            msg.style.color = 'var(--green)';
+            msg.textContent = 'Verification in progress. You will be notified.';
+            setTimeout(() => { location.reload(); }, 2000);
+        } else {
+            msg.style.color = 'var(--red)';
+            msg.textContent = data.message || 'Could not upgrade.';
+        }
+    } catch(err) {
+        msg.style.color = 'var(--red)';
+        msg.textContent = 'Network error.';
+    }
+    return false;
+}
+</script>
+</body>
+</html>

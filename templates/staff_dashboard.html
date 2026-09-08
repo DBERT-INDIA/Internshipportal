@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Staff Review Operations — DBERT Platform" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-staff-dashboard has-staff-sidebar">
+{% set active_page = 'staff_dashboard' %}
+{% include '_staff_sidebar.html' %}
+
+
+    <div class="dashboard-container">
+        <header class="header-bar">
+            <div>
+                <h1>Staff Operational Dashboard</h1>
+                <div class="user-info">Logged in as: <strong>{{ staff.name }}</strong> ({{ staff.email }})</div>
+            </div>
+            <div>
+                <a href="/staff/logout" style="color: var(--tx-muted); text-decoration: none; font-size: 0.875rem;">Sign Out →</a>
+            </div>
+        </header>
+
+        <h2 style="font-size: 1.2rem; font-family: var(--f-display); color: var(--tx-head); margin-bottom: 1.25rem;">Assigned Review Queues</h2>
+
+        <div class="queue-grid">
+            {% if assigned_queues %}
+                {% for queue in assigned_queues %}
+                <div class="card queue-card">
+                    <div>
+                        <div class="queue-header">
+                            <h3 class="queue-title">{{ queue.title }}</h3>
+                            <span class="count-badge {% if queue.count == 0 %}zero{% endif %}">{{ queue.count }}</span>
+                        </div>
+                        <div class="age-indicator">
+                            {% if queue.count > 0 %}
+                                🕒 Oldest pending: <strong>{{ queue.oldest or 'Just now' }}</strong>
+                            {% else %}
+                                ✓ Queue clear (0 pending)
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{{ queue.url or '/staff/' ~ queue.name }}" class="action-link">Open {{ queue.title }} Queue →</a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card" style="grid-column: 1 / -1; padding: 2rem; text-align: center;">
+                    <p style="color: var(--tx-muted); margin: 0;">No review queues currently assigned to your staff account.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

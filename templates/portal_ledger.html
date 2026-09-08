@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title = "Coin Ledger" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'coins' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content">
+
+    <div class="page-head">
+      <div class="eyebrow">Earn</div>
+      <h1>Your coin ledger</h1>
+      <p>{{ name or "Intern" }} — two separate balances. They are never combined.</p>
+    </div>
+
+    {# Spec §4: two independent ledgers. The previous version of this page showed
+       an "ad coins" card and described task coins as withdrawable — both wrong.
+       Task coins are spendable in-portal; referral coins are the withdrawable
+       ones. #}
+    <div class="coin-cards">
+      <div class="coin-card">
+        <div class="cc-label"><i class="fa-solid fa-coins" style="color:var(--gold)"></i> Task coins · spendable</div>
+        <b>{{ balances.get('task', 0) }}</b>
+        <small>Earned from approved tasks and quizzes. Redeemable for up to 50% off a paid course.</small>
+      </div>
+      <div class="coin-card">
+        <div class="cc-label"><i class="fa-solid fa-gift" style="color:var(--violet)"></i> Referral coins · withdrawable</div>
+        <b>{{ balances.get('referral', 0) }}</b>
+        <small>10% commission on referred enrolments. Paid to your bank via an admin-approved payout.</small>
+      </div>
+    </div>
+
+    <div class="card mb-24">
+      <div class="card-head"><i class="fa-solid fa-clock-rotate-left"></i><h3>History</h3></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>When</th><th>Ledger</th><th class="num">Change</th><th>Reason</th></tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td>{{ r.event_ts or "—" }}</td>
+              <td>
+                {% if r.ledger_kind == 'task' %}<span class="badge b-gold">task</span>
+                {% elif r.ledger_kind == 'spent' %}<span class="badge b-muted">redeemed</span>
+                {% elif r.ledger_kind == 'referral' %}<span class="badge b-violet">referral</span>
+                {% elif r.ledger_kind == 'withdrawal' %}<span class="badge b-muted">withdrawal</span>
+                {% else %}<span class="badge b-muted">{{ r.ledger_kind }}</span>{% endif %}
+              </td>
+              <td class="num {{ 'lr-plus' if r.delta >= 0 else 'lr-minus' }}">
+                {{ '+' if r.delta >= 0 else '' }}{{ r.delta }}
+              </td>
+              <td>{{ r.reason or "—" }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="t-muted t-center" style="padding:24px">No coin activity yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {# The stored balance_after column is a running total across ALL ledger
+         kinds on historical rows, so it is not shown — it would contradict the
+         per-ledger balances above. #}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><i class="fa-solid fa-certificate"></i><h3>Certificates</h3></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Course</th><th>Certificate ID</th><th>Issued</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for c in certs %}
+            <tr>
+              <td>{{ c.course_title or "—" }}</td>
+              <td class="t-mono">{{ c.cert_id }}</td>
+              <td>{{ (c.issued_at or "")[:10] or "—" }}</td>
+              <td>{% if c.url %}<a href="{{ c.url }}" class="t-gold">view</a>{% endif %}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="t-muted t-center" style="padding:24px">No certificates yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="t-sm t-muted mt-24">
+      Task coins are spent inside the portal and cannot be withdrawn.
+      Referral coins are cash and can only leave via an admin-approved payout.
+    </p>
+    <p class="mt-16"><a href="/portal" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to portal</a></p>
+
+  </div>
+</div>
+
+</body>
+</html>

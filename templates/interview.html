@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "DBERT &mdash; Virtual Interview" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex,nofollow"/>
+</head>
+<body class="pg-interview copy-guard">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="topbar-brand" href="/portal"><span class="brand-icon"><i class="fas fa-cube"></i></span><span class="brand-text"><h2>DBERT</h2><p>Virtual Interview</p></span></a>
+      <span class="intern-pill" id="internName">Loading...</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LOADING -->
+    <div class="loading-screen" id="loadingView">
+      <div class="spinner-lg"></div>
+      <p class="sub">Preparing your interview&hellip;</p>
+    </div>
+
+    <!-- BLOCKED (locked / cooling / completed / disabled) -->
+    <div class="view" id="blockedView">
+      <div class="glass-card" style="text-align:center;">
+        <div style="font-size:40px;margin-bottom:10px;" id="blockedIcon">&#9203;</div>
+        <h1 class="page-h" id="blockedTitle">Interview unavailable</h1>
+        <p class="sub" id="blockedMsg"></p>
+        <div style="margin-top:22px;"><a class="btn-primary" href="/portal"><i class="fas fa-arrow-left"></i> Back to Dashboard</a></div>
+      </div>
+    </div>
+
+    <!-- STEP 1: RULES -->
+    <div class="view" id="rulesView">
+      <div class="glass-card">
+        <h1 class="page-h"><i class="fas fa-robot" style="color:var(--gold);margin-right:8px;"></i>Virtual Interview</h1>
+        <p class="sub">A short, AI-guided screening to understand your strengths and where we can help you grow. Please read the guidelines before you begin.</p>
+        <ul class="rules-list">
+          <li><i class="fas fa-list-ol"></i><span>You'll answer <strong>about 4 short questions</strong>, one at a time, tailored to this post's domain.</span></li>
+          <li><i class="fas fa-keyboard"></i><span>Type your answers in your own words. There are no trick questions &mdash; we're looking at how you think.</span></li>
+          <li><i class="fas fa-ban"></i><span>Copy, paste and right-click are <strong>disabled</strong> on this page to keep things fair.</span></li>
+          <li><i class="fas fa-hourglass-half"></i><span>The interview <strong>cannot be paused</strong> once started. Set aside a few quiet minutes.</span></li>
+          <li><i class="fas fa-rotate"></i><span>You get up to <strong id="rulesAttempts">2</strong> attempts for this post, with a cooling period between them.</span></li>
+          <li><i class="fas fa-stopwatch"></i><span>Time taken and tab focus are recorded.</span></li>
+        </ul>
+        <button class="btn-primary" id="beginBtn" data-act-click="onBegin" style="width:100%;"><i class="fas fa-check-circle"></i> I understand &mdash; Begin</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: OPTIONAL URL CAPTURE -->
+    <div class="view" id="urlView">
+      <div class="glass-card">
+        <h1 class="page-h"><i class="fas fa-link" style="color:var(--gold);margin-right:8px;"></i>A little about you <span style="font-size:13px;color:var(--tx-muted);font-weight:600;">(optional)</span></h1>
+        <p class="sub">Adding these helps us get to know you and review your interview. You can skip this step.</p>
+        <div style="margin-top:18px;">
+          <label class="field-label" for="iv_linkedin">LinkedIn URL</label>
+          <input type="url" id="iv_linkedin" class="field-input" placeholder="https://linkedin.com/in/yourprofile"/>
+        </div>
+        <div style="margin-top:14px;">
+          <label class="field-label" for="iv_github">GitHub URL</label>
+          <input type="url" id="iv_github" class="field-input" placeholder="https://github.com/yourprofile"/>
+        </div>
+        <div class="err" id="urlErr"><i class="fas fa-circle-exclamation"></i><span></span></div>
+        <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+          <button class="btn-primary" id="urlSaveBtn" data-act-click="onUrlContinue" data-arg-click='[true]' style="flex:1;"><i class="fas fa-arrow-right"></i> Save &amp; Continue</button>
+          <button class="btn-ghost" data-act-click="onUrlContinue" data-arg-click='[false]'>Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: QUESTIONS (one at a time) -->
+    <div class="view" id="qView">
+      <div class="glass-card">
+        <h1 class="page-h"><i class="fas fa-pen-to-square" style="color:var(--gold);margin-right:8px;"></i>Your Interview</h1>
+        <p class="sub">Take your time and answer in your own words. You can go back to review earlier answers.</p>
+        <div class="q-progress-wrap" style="margin-top:18px;">
+          <div class="q-progress-meta"><span id="qProgressLabel">Question 1</span><span id="qProgressCount"></span></div>
+          <div class="q-progress-track"><div class="q-progress-fill" id="qProgressFill"></div></div>
+        </div>
+        <div id="qList" style="margin-top:18px;"></div>
+        <div class="err" id="qErr"><i class="fas fa-circle-exclamation"></i><span></span></div>
+        <div style="display:flex;gap:12px;margin-top:6px;">
+          <button class="btn-ghost" id="prevBtn" data-act-click="goPrev" style="display:none;"><i class="fas fa-arrow-left"></i> Previous</button>
+          <button class="btn-primary" id="nextBtn" data-act-click="goNext" style="flex:1;">Next <i class="fas fa-arrow-right"></i></button>
+          <button class="btn-primary" id="submitBtn" data-act-click="onSubmit" style="flex:1;display:none;"><i class="fas fa-paper-plane"></i> Submit Interview</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: DONE -->
+    <div class="view" id="doneView">
+      <div class="glass-card" style="text-align:center;">
+        <div style="font-size:46px;margin-bottom:8px;">&#127881;</div>
+        <h1 class="page-h">Thank you!</h1>
+        <span class="badge-amber"><i class="fas fa-clock"></i> Application Under Review</span>
+        <p class="sub" id="doneMsg" style="margin-top:16px;text-align:left;"></p>
+        <div id="focusWrap" style="text-align:left;margin-top:18px;">
+          <h3 style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;"><i class="fas fa-seedling" style="color:var(--green);margin-right:6px;"></i>A few things to focus on</h3>
+          <ul class="focus-areas" id="focusList"></ul>
+        </div>
+        <!-- Phase 12.4 Moment B — paid fast-track tied to focus areas -->
+        <div id="ftWrap" class="hidden" style="text-align:left;margin-top:18px;padding:16px 18px;background:rgba(76,175,80,.06);border:1px solid rgba(76,175,80,.22);border-radius:12px;">
+          <p style="font-size:14px;font-weight:800;color:#7ed492;margin-bottom:6px;"><i class="fas fa-bolt" style="margin-right:6px;"></i>Want to fast-track these?</p>
+          <p style="font-size:13px;color:#cfd8e6;line-height:1.65;margin-bottom:12px;">Our Paid Program trains exactly these areas with hands-on projects and mentor sessions — and includes a <strong style="color:#fff;">guaranteed placement opportunity</strong> with our hiring partners on completion + certification, no waiting to be shortlisted.</p>
+          <a class="btn-primary" href="/program" data-act-click="ga" data-arg-click='["paid_program_cta_click", {"source":"interview_done"}]' style="font-size:13px;padding:11px 20px;"><i class="fas fa-rocket"></i> Explore the Paid Program</a>
+        </div>
+        <div style="margin-top:22px;"><a class="btn-primary" href="/portal" style="background:none;border:1px solid var(--border);color:var(--tx-muted);"><i class="fas fa-gauge"></i> Go to my portal</a></div>
+      </div>
+    </div>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+  // ──────────────────────────────────────────────────────────────────────────
+  // Phase 11.7 — copy/paste/right-click deterrents (THIS PAGE ONLY).
+  // Blocks contextmenu, copy, cut, paste, drag/drop, and Ctrl/Cmd+V|C|X.
+  // Typing and accessibility (focus/tab/arrows) are left fully intact.
+  // ──────────────────────────────────────────────────────────────────────────
+  (function(){
+    const stop=e=>{e.preventDefault();return false;};
+    ['contextmenu','copy','cut','paste','dragstart','drop'].forEach(ev=>document.addEventListener(ev,stop));
+    document.addEventListener('keydown',e=>{
+      const k=(e.key||'').toLowerCase();
+      if((e.ctrlKey||e.metaKey)&&['v','c','x'].includes(k)){e.preventDefault();return false;}
+    });
+  })();
+
+  function show(view){['loadingView','blockedView','rulesView','urlView','qView','doneView'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',id===view);});}
+  function escHtml(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function ga(ev,params){try{if(window.gtag)gtag('event',ev,params||{});}catch(e){}}
+
+  let _status=null, _questions=[], _postId=null;
+
+  async function init(){
+    // T5: the interview is post-gated -- require ?post_id= in the URL up front,
+    // before even hitting the API, so a stray /interview visit never dead-ends on a spinner.
+    _postId=parseInt(new URLSearchParams(location.search).get('post_id'),10);
+    if(!_postId){
+      blocked('&#129488;','Select a post first',
+        'Pick an internship or job you\'ve applied to, then start its interview from there. '
+        +'<a href="/portal#myapplications" style="color:var(--gold);font-weight:700;">My Applications</a> &middot; '
+        +'<a href="/internships" style="color:var(--gold);font-weight:700;">Browse listings</a>');
+      return;
+    }
+    // identity pill
+    try{const me=await fetch('/intern/me',{credentials:'include'});
+      if(me.status===401){window.location.href='/#signin';return;}
+      const md=await me.json();if(md.status==='success'&&md.intern)document.getElementById('internName').textContent=md.intern.name||'Intern';
+    }catch(e){}
+    await loadStatus();
+  }
+
+  async function loadStatus(){
+    try{
+      const res=await fetch('/intern/interview/status?post_id='+_postId,{credentials:'include'});
+      if(res.status===401){window.location.href='/#signin';return;}
+      _status=await res.json();
+    }catch(e){blocked('&#9888;','Something went wrong','We could not load your interview. Please try again shortly.');return;}
+    if(_status.status!=='success'){blocked('&#9888;','Unavailable',_status.message||'Please try again shortly.');return;}
+    document.getElementById('rulesAttempts').textContent=_status.max_attempts||2;
+
+    if(!_status.enabled){blocked('&#128679;','Temporarily unavailable','The virtual interview is currently paused. Please check back soon.');return;}
+    if(!_status.applied){
+      blocked('&#129488;','Apply first','Apply to this post before starting its interview. '
+        +'<a href="/portal#myapplications" style="color:var(--gold);font-weight:700;">My Applications</a>');return;
+    }
+    // F2/F3/F6 — actionable states take precedence over the "completed" terminal screen,
+    // so a permitted 2nd attempt (and a post-admin-reset retake) is reachable.
+    if(_status.in_progress){ // resume without burning an attempt
+      await startInterview();return;
+    }
+    if(_status.can_start){show('rulesView');return;}
+    if(_status.locked){
+      blocked('&#9989;','Interview complete','You\'ve used all your interview attempts for this post — we\'ll be in touch.');return;
+    }
+    if(_status.cooling_until){
+      blockedCooling(_status.cooling_until);return;
+    }
+    if(_status.interview_status==='completed'){
+      blocked('&#9989;','Interview completed','You\'ve completed your interview for this post — we\'ll be in touch.');return;
+    }
+    blocked('&#9203;','Not available yet','Your interview is not available right now. Please check your portal.');
+  }
+
+  function blocked(icon,title,msg){document.getElementById('blockedIcon').innerHTML=icon;document.getElementById('blockedTitle').textContent=title;document.getElementById('blockedMsg').innerHTML=msg;show('blockedView');}
+  function blockedCooling(untilStr){
+    document.getElementById('blockedIcon').innerHTML='&#9203;';
+    document.getElementById('blockedTitle').textContent='Almost there';
+    const tick=()=>{
+      const until=new Date(untilStr.replace(' ','T'));const now=new Date();let diff=Math.max(0,Math.floor((until-now)/1000));
+      if(diff<=0){document.getElementById('blockedMsg').innerHTML='Your next attempt is ready. <a href="/interview?post_id='+_postId+'" style="color:var(--gold);font-weight:700;">Reload to begin.</a>';return;}
+      const h=Math.floor(diff/3600),m=Math.floor((diff%3600)/60),s=diff%60;
+      document.getElementById('blockedMsg').innerHTML='You can take an optional second attempt in <span class="countdown">'+h+'h '+m+'m '+s+'s</span> for this post. Prefer certainty? <a href="/program" style="color:var(--gold);font-weight:700;">Explore the Paid Program</a>.';
+      setTimeout(tick,1000);
+    };
+    tick();show('blockedView');
+  }
+
+  function onBegin(){
+    if(!_status.has_linkedin||!_status.has_github){
+      const li=document.getElementById('iv_linkedin'),gh=document.getElementById('iv_github');
+      if(_status.has_linkedin)li.parentElement.classList.add('hidden');
+      if(_status.has_github)gh.parentElement.classList.add('hidden');
+      show('urlView');
+    }else{startInterview();}
+  }
+
+  async function onUrlContinue(save){
+    const errEl=document.getElementById('urlErr');errEl.classList.remove('show');
+    if(save){
+      const linkedin_url=document.getElementById('iv_linkedin').value.trim();
+      const github_url=document.getElementById('iv_github').value.trim();
+      const btn=document.getElementById('urlSaveBtn');btn.disabled=true;
+      try{
+        const res=await fetch('/intern/interview/profile-urls',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({linkedin_url,github_url})});
+        const d=await res.json();
+        if(d.status!=='success'){errEl.querySelector('span').textContent=d.message||'Please check the URLs.';errEl.classList.add('show');btn.disabled=false;return;}
+      }catch(e){errEl.querySelector('span').textContent='Network error. Please try again.';errEl.classList.add('show');btn.disabled=false;return;}
+      btn.disabled=false;
+    }
+    startInterview();
+  }
+
+  async function startInterview(){
+    show('loadingView');
+    // Safety net: even a pathological backend can never leave a dead spinner. Questions are
+    // assembled server-side from the static bank (near-instant); 40s is generous headroom.
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),40000);
+    try{
+      const res=await fetch('/intern/interview/start',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({post_id:_postId}),signal:ctrl.signal});
+      const d=await res.json();
+      if(res.status===403&&d.locked){blocked('&#128274;','No attempts remaining',d.message||'You\'ve used all your attempts for this post.');return;}
+      if(res.status===403&&d.code==='concurrent_limit'){blocked('&#9203;','Too many in progress',d.message);return;}
+      if(res.status===429&&d.cooling_until){blockedCooling(d.cooling_until);return;}
+      if(res.status===400&&d.code==='select_post'){
+        blocked('&#129488;','Apply first',d.message+' <a href="/portal#myapplications" style="color:var(--gold);font-weight:700;">My Applications</a>');return;
+      }
+      if(d.status!=='success'||!Array.isArray(d.questions)||!d.questions.length){blocked('&#9888;','Could not start',d.message||'Please try again shortly.');return;}
+      _questions=d.questions;
+      renderQuestions();
+      startTelemetry();
+      ga('interview_started',{attempt_no:d.attempt_no||1,post_id:_postId});
+      show('qView');
+    }catch(e){
+      if(e&&e.name==='AbortError'){blocked('&#9888;','Taking too long','Please try again shortly.');}
+      else{blocked('&#9888;','Network error','Please try again shortly.');}
+    }finally{clearTimeout(timer);}
+  }
+
+  // T5: anti-copy telemetry -- informational only, never enforced, disclosed on the
+  // rules screen. Timer starts the moment the first question renders; tab switches count
+  // hidden->visible transitions and window blur events.
+  let _ivStartTime=null, _tabSwitches=0, _telemetryArmed=false;
+  function startTelemetry(){
+    if(_telemetryArmed)return;  // resume must not reset the clock or double-count listeners
+    _telemetryArmed=true;
+    _ivStartTime=Date.now();
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') _tabSwitches++; });
+    window.addEventListener('blur',()=>{ _tabSwitches++; });
+  }
+  function elapsedSeconds(){ return _ivStartTime?Math.round((Date.now()-_ivStartTime)/1000):0; }
+
+  let _current=0;
+  function renderQuestions(){
+    const wrap=document.getElementById('qList');
+    // Render every question once (textareas persist in the DOM across navigation) but show
+    // only the current step. No category tag is shown — questions arrive without a type.
+    wrap.innerHTML=_questions.map((q,i)=>`
+      <div class="q-step" data-step="${i}" style="${i===0?'':'display:none;'}">
+        <div class="q-card">
+          <div class="q-meta"><span class="q-num">${escHtml(q.id)}</span></div>
+          <div class="q-text">${escHtml(q.text)}</div>
+          <textarea class="field-textarea" id="ans_${escHtml(q.id)}" data-qid="${escHtml(q.id)}" placeholder="Type your answer here..." data-act-input="hideErr" data-prevent-paste data-prevent-copy data-prevent-cut></textarea>
+        </div>
+      </div>`).join('');
+    _current=0;
+    updateStepUI();
+  }
+  function updateStepUI(){
+    const total=_questions.length;
+    document.getElementById('qProgressLabel').textContent='Question '+(_current+1);
+    document.getElementById('qProgressCount').textContent=(_current+1)+' of '+total;
+    document.getElementById('qProgressFill').style.width=Math.round(((_current+1)/total)*100)+'%';
+    const last=_current===total-1;
+    document.getElementById('prevBtn').style.display=_current>0?'':'none';
+    document.getElementById('nextBtn').style.display=last?'none':'';
+    document.getElementById('submitBtn').style.display=last?'':'none';
+  }
+  function showStep(i){
+    document.querySelectorAll('.q-step').forEach(s=>{s.style.display=(parseInt(s.dataset.step,10)===i)?'':'none';});
+    _current=i;
+    updateStepUI();
+    const ta=document.querySelector('.q-step[data-step="'+i+'"] textarea');
+    if(ta)ta.focus();
+  }
+  function _currentAnswered(){
+    const q=_questions[_current];const ta=document.getElementById('ans_'+q.id);
+    return !!ta&&ta.value.trim().length>=2;
+  }
+  function goNext(){
+    if(!_currentAnswered()){
+      const errEl=document.getElementById('qErr');errEl.querySelector('span').textContent='Please answer this question before continuing.';errEl.classList.add('show');
+      const ta=document.getElementById('ans_'+_questions[_current].id);if(ta)ta.focus();
+      return;
+    }
+    hideErr();
+    if(_current<_questions.length-1)showStep(_current+1);
+  }
+  function goPrev(){hideErr();if(_current>0)showStep(_current-1);}
+  function hideErr(){document.getElementById('qErr').classList.remove('show');}
+
+  async function onSubmit(){
+    const errEl=document.getElementById('qErr');errEl.classList.remove('show');
+    const answers={};
+    for(let i=0;i<_questions.length;i++){
+      const q=_questions[i];
+      const ta=document.getElementById('ans_'+q.id);const v=(ta?ta.value:'').trim();
+      if(v.length<2){showStep(i);errEl.querySelector('span').textContent='Please answer all questions before submitting.';errEl.classList.add('show');if(ta)ta.focus();return;}
+      answers[q.id]=v;
+    }
+    const btn=document.getElementById('submitBtn');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Submitting your answers…';
+    try{
+      const res=await fetch('/intern/interview/submit',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
+        answers, post_id:_postId, time_taken_sec:elapsedSeconds(), tab_switches:_tabSwitches
+      })});
+      const d=await res.json();
+      if(d.status!=='success'){errEl.querySelector('span').textContent=d.message||'Could not submit. Please try again.';errEl.classList.add('show');btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Interview';return;}
+      ga('interview_completed',{post_id:_postId});
+      renderDone(d.candidate_focus||{});
+      show('doneView');
+    }catch(e){errEl.querySelector('span').textContent='Network error. Please try again.';errEl.classList.add('show');btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Interview';}
+  }
+
+  function renderDone(cf){
+    document.getElementById('doneMsg').textContent=cf.message||'Thank you for completing your interview. Your application is now under review.';
+    const fa=Array.isArray(cf.focus_areas)?cf.focus_areas:[];
+    const list=document.getElementById('focusList');
+    if(fa.length){list.innerHTML=fa.map(x=>`<li><i class="fas fa-check"></i><span>${escHtml(x)}</span></li>`).join('');document.getElementById('focusWrap').classList.remove('hidden');}
+    else{document.getElementById('focusWrap').classList.add('hidden');}
+    document.getElementById('ftWrap').classList.remove('hidden');  // Moment B fast-track
+  }
+
+  document.addEventListener('DOMContentLoaded',init);
+  </script>
+</body>
+</html>

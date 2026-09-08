@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Mentor Earnings & Settlements — Staff Portal" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-mentor-earnings has-mentor-sidebar">
+{% set active_page = 'mentor_earnings' %}
+{% include '_mentor_sidebar.html' %}
+
+
+    <div class="earnings-container">
+        <header class="header-bar">
+            <div>
+                <h1>Mentor Course Earnings & Settlements</h1>
+                <div style="font-size: 0.875rem; color: var(--tx-muted);">Mentor: {{ staff.name }}</div>
+            </div>
+            <a href="/staff/dashboard" style="color: var(--tx-muted); text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+        </header>
+
+        <div class="stats-grid">
+            <div class="card stat-card">
+                <div class="stat-label">Gross Course Sales</div>
+                <div class="stat-val gross">₹{{ gross_earnings }}</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Platform Fee (15%)</div>
+                <div class="stat-val fee">-₹{{ platform_cut }}</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Net Payout Balance</div>
+                <div class="stat-val net">₹{{ net_payout }}</div>
+            </div>
+        </div>
+
+        <div class="card sales-card">
+            <h3 style="margin: 0 0 1.25rem 0; font-family: var(--f-display); color: var(--tx-head);">Verified Course Sales Ledger</h3>
+
+            {% if payments %}
+            <table class="sales-table">
+                <thead>
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Course</th>
+                        <th>Student</th>
+                        <th>Gross Price</th>
+                        <th>Platform Fee (15%)</th>
+                        <th>Net Earnings (85%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td style="font-family: var(--f-mono); color: var(--tx-muted);">#{{ p.id }}</td>
+                        <td style="color: var(--tx-head); font-weight: 500;">{{ p.course_title }}</td>
+                        <td>{{ p.intern_name }}</td>
+                        <td style="font-family: var(--f-mono);">₹{{ p.amount }}</td>
+                        <td style="font-family: var(--f-mono); color: #F43F5E;">-₹{{ ((p.amount or 0) * 0.15) | int }}</td>
+                        <td style="font-family: var(--f-mono); color: #10B981; font-weight: 700;">₹{{ ((p.amount or 0) * 0.85) | int }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; color: var(--tx-muted);">
+                No verified course sales recorded yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+{# ==========================================================================
+   _head.html — the shared <head> contents for every DBERT page.
+   Build phase: 0  (DBERT_BUILD_SPEC.md §3, Phase 0 step 2)
+
+   Guarantees one consistent font + stylesheet load order everywhere, so no
+   page has to define its own type or colour system again.
+
+   USAGE — put this immediately inside <head>:
+
+       <head>
+       {% set page_title = "Micro-Tasks" %}
+       {% include "_head.html" %}
+       </head>
+
+   Optional variables (all have safe defaults, set them before the include):
+       page_title   — text before the " — DBERT" suffix
+       page_title_full — the complete <title>, suffix and all. Use this on
+                      SEO-sensitive pages whose existing title format must be
+                      preserved exactly (job listings, post detail).
+       page_desc    — meta description
+       page_robots  — e.g. "noindex, nofollow" for portal/admin pages
+       page_canonical — absolute canonical URL
+
+   A page that includes this must NOT also load its own font links,
+   Font Awesome, or .css — remove those when migrating it.
+   ========================================================================== #}
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A0A0F">
+
+<title>{% if page_title_full %}{{ page_title_full }}{% elif page_title %}{{ page_title }} — DBERT{% else %}DBERT{% endif %}</title>
+{% if page_desc %}<meta name="description" content="{{ page_desc }}">{% endif %}
+{% if page_robots %}<meta name="robots" content="{{ page_robots }}">{% endif %}
+{% if page_canonical %}<link rel="canonical" href="{{ page_canonical }}">{% endif %}
+
+{# ---- Type: exactly three families, loaded once (spec §2) ---- #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
+
+{# ---- Icons. Pinned to 6.5.0 to match the 27 existing per-page loads, so the
+       browser cache is shared while the migration is in flight. ---- #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+{# ---- The single stylesheet ---- #}
+<link rel="stylesheet" href="/static/css/dbert-theme.css">
+
+{# ---- Delegated event dispatch (spec §5.3, Phase 9) -------------------------
+       Replaces inline on*= handlers, which a nonce-based CSP cannot cover.
+       Loaded here, in the head, so window.actAttr exists before any page
+       script builds markup with it. ---- #}
+<script src="/static/js/csp-actions.js"></script>
+
+{# ---- CSRF token + auto-attach (spec §5.2) ---- #}
+{% include "_csrf.html" %}
+
+{# ---- Analytics + dbertGA() helper + Organization JSON-LD ---- #}
+{% include "_ga4.html" %}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full = "Course Payments · DBERT Admin" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-admin-course-payments has-staff-sidebar">
+{% set active_page = 'admin_payments' %}
+{% include '_staff_sidebar.html' %}
+
+  <div class="wrap">
+    <h1>Course Payments</h1>
+    <p class="muted" style="font-size:13px;">Verify a payment to unlock the course for the intern on the AI Tutor.</p>
+    <div class="tabs">
+      {% for s in ['pending','verified','rejected','all'] %}
+      <a href="/admin/course-payments?status={{ s }}" class="{{ 'active' if active==s else '' }}">{{ s|capitalize }}</a>
+      {% endfor %}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>#</th><th>Intern</th><th>Course</th><th>Gross Amount</th><th>Commission Breakdown</th><th>Proof</th><th>Status</th><th></th></tr>
+        {% for p in payments %}
+        <tr id="row-{{ p.id }}">
+          <td>{{ p.id }}</td>
+          <td>{{ p.intern_name }}<div class="muted" style="font-size:11.5px;">{{ p.intern_email }}</div></td>
+          <td>{{ p.course_title }} <span class="muted">#{{ p.course_id }}</span></td>
+          <td><strong>₹{{ p.amount }}</strong></td>
+          <td>
+            <div style="font-size:11.5px;color:var(--tx-muted);">Platform (15%): <strong style="color:#e8edf4;">₹{{ ((p.amount or 0) * 0.15) | int }}</strong></div>
+            <div style="font-size:11.5px;color:var(--gold);">Net Author (85%): <strong style="color:var(--gold);">₹{{ ((p.amount or 0) * 0.85) | int }}</strong></div>
+          </td>
+          <td>{% if p.payment_screenshot %}<a class="shot" href="/admin/screenshot/{{ p.payment_screenshot }}" target="_blank"><i class="fas fa-image"></i> view</a>{% else %}—{% endif %}</td>
+          <td><span class="badge b-{{ p.status }}">{{ p.status }}</span></td>
+          <td>{% if p.status=='pending' %}
+            <button class="btn v" data-act-click="review" data-arg-click='[{{ p.id|tojson }}, "verify"]'>Verify</button>
+            <button class="btn r" data-act-click="review" data-arg-click='[{{ p.id|tojson }}, "reject"]'>Reject</button>
+          {% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted" style="text-align:center;padding:22px;">No payments here.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    async function review(id, decision){
+      if(decision==='reject' && !confirm('Reject this payment?'))return;
+      try{
+        const r=await fetch('/admin/course-payments/'+id+'/review',{
+          method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({decision:decision})});
+        const d=await r.json();
+        if(d.status==='success'){ location.reload(); }
+        else { alert(d.message||'Could not update.'); }
+      }catch(e){ alert('Network error.'); }
+    }
+  </script>
+</body>
+</html>

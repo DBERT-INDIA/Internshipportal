@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Admin Portal" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone">
+  <div class="standalone-inner standalone-narrow">
+
+    <div class="t-center mb-24">
+      <div class="auth-logo"><i class="fa-solid fa-gear"></i></div>
+      <h1 style="font-size:20px;margin-bottom:4px">DBERT</h1>
+      <p class="eyebrow" style="margin:0">Admin Portal</p>
+    </div>
+
+    <div class="card">
+
+      <div class="error-msg" id="errorMsg" role="alert">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="errorText">Invalid credentials.</span>
+      </div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" id="username" autocomplete="username"
+                 placeholder="Admin username" spellcheck="false"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="password" autocomplete="current-password"
+                 placeholder="Admin password"/>
+          <button class="pw-toggle" type="button" id="pwToggle" aria-label="Show or hide password">
+            <i class="fa-solid fa-eye" id="pwIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="loginBtn" type="button">
+        <span class="btn-label"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign in</span>
+        <span class="btn-spinner"></span>
+      </button>
+
+    </div>
+
+    <p class="t-center mt-24">
+      <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to portal</a>
+    </p>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    const usernameEl = document.getElementById('username');
+    const passwordEl = document.getElementById('password');
+    const loginBtn   = document.getElementById('loginBtn');
+    const errorMsg   = document.getElementById('errorMsg');
+    const errorText  = document.getElementById('errorText');
+    const pwToggle   = document.getElementById('pwToggle');
+    const pwIcon     = document.getElementById('pwIcon');
+
+    // Password show/hide
+    pwToggle.addEventListener('click', () => {
+      const show = passwordEl.type === 'password';
+      passwordEl.type = show ? 'text' : 'password';
+      pwIcon.className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+
+    // Submit on Enter
+    [usernameEl, passwordEl].forEach(el => {
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+      });
+    });
+
+    loginBtn.addEventListener('click', doLogin);
+
+    function showError(msg) {
+      errorText.textContent = msg;
+      errorMsg.classList.add('visible');
+    }
+    function hideError() {
+      errorMsg.classList.remove('visible');
+    }
+    function setLoading(v) {
+      loginBtn.disabled = v;
+      loginBtn.classList.toggle('loading', v);
+    }
+
+    async function doLogin() {
+      hideError();
+      const username = usernameEl.value.trim();
+      const password = passwordEl.value;
+      if (!username || !password) {
+        showError('Please enter username and password.');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          loginBtn.innerHTML = '<i class="fa-solid fa-check"></i> Redirecting…';
+          setTimeout(() => { window.location.href = '/admin'; }, 600);
+        } else {
+          showError(data.message || 'Invalid credentials.');
+          setLoading(false);
+          passwordEl.value = '';
+          passwordEl.focus();
+        }
+      } catch (err) {
+        showError('Network error. Please try again.');
+        setLoading(false);
+      }
+    }
+
+    // Auto-focus
+    usernameEl.focus();
+</script>
+</body>
+</html>

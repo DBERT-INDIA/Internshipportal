@@ -1,0 +1,89 @@
+{# ---- Referral attribution (spec §6.1) -------------------------------------
+   A landing on /?ref=<code> stores the code for 30 days. Signup reads it back
+   and posts it, so the whole multi-stage flow is covered without a new path. #}
+<script nonce="{{ csp_nonce() }}">
+(function () {
+  try {
+    var REF_COOKIE = 'dbert_ref', DAYS = 30;
+    var m = window.location.search.match(/[?&]ref=([A-Za-z0-9_-]{3,40})/);
+    if (m) {
+      var d = new Date(); d.setTime(d.getTime() + DAYS * 864e5);
+      document.cookie = REF_COOKIE + '=' + encodeURIComponent(m[1])
+        + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+      /* record the click server-side; failure must never affect the page */
+      if (window.fetch) {
+        fetch('/r/click?ref=' + encodeURIComponent(m[1]), {credentials: 'same-origin'})
+          .catch(function () {});
+      }
+    }
+    window.dbertRefCode = function () {
+      var c = document.cookie.match(/(?:^|;\s*)dbert_ref=([^;]*)/);
+      return c ? decodeURIComponent(c[1]) : '';
+    };
+  } catch (e) {}
+})();
+</script>
+
+{# ==========================================================================
+   _csrf.html — publishes the session CSRF token and auto-attaches it.
+   Build phase: 5  (DBERT_BUILD_SPEC.md §5.2)
+
+   Included by _head.html, and separately by pages not yet on _head.html, so
+   that EVERY page can make state-changing requests. Without it a page's POSTs
+   are rejected with 403 by the before_request guard in app.py.
+
+   Classic <form method="post"> needs {{ csrf_field() }} as well — the wrapper
+   below only covers fetch()/XHR.
+   ========================================================================== #}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script nonce="{{ csp_nonce() }}">
+(function () {
+  if (window.__dbertCsrfInstalled) return;   // safe if included twice
+  window.__dbertCsrfInstalled = true;
+
+  var meta  = document.querySelector('meta[name="csrf-token"]');
+  var token = meta && meta.getAttribute('content');
+  if (!token) return;
+
+  var SAFE = {GET: 1, HEAD: 1, OPTIONS: 1, TRACE: 1};
+
+  function sameOrigin(url) {
+    if (!url) return true;
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) return true;   // relative
+    return url.indexOf(window.location.origin) === 0;
+  }
+
+  /* fetch() — covers the bulk of the app's state-changing calls. */
+  if (window.fetch) {
+    var nativeFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      init = init || {};
+      var method = (init.method || (input && input.method) || 'GET').toUpperCase();
+      var url    = (typeof input === 'string') ? input : (input && input.url) || '';
+      if (!SAFE[method] && sameOrigin(url)) {
+        var h = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+        if (!h.has('X-CSRF-Token')) h.set('X-CSRF-Token', token);
+        init = Object.assign({}, init, {headers: h});
+        if (!init.credentials) init.credentials = 'same-origin';
+      }
+      return nativeFetch(input, init);
+    };
+  }
+
+  /* XMLHttpRequest — a few older call sites still use it. */
+  if (window.XMLHttpRequest) {
+    var open = XMLHttpRequest.prototype.open;
+    var send = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      this.__dbertUnsafe = !SAFE[String(method || 'GET').toUpperCase()] && sameOrigin(url);
+      return open.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.send = function () {
+      if (this.__dbertUnsafe) {
+        try { this.setRequestHeader('X-CSRF-Token', token); } catch (e) {}
+      }
+      return send.apply(this, arguments);
+    };
+  }
+})();
+</script>

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+{# Title/description/canonical formats preserved byte-for-byte — this page is
+   indexed and carries JobPosting structured data. #}
+{% set page_title_full %}{{ post.title }} — {{ company.name }} | DBERT{% endset %}
+{% set page_desc = meta_desc %}
+{% set page_canonical = canonical %}
+{% include "_head.html" %}
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ post.title }} — {{ company.name }}">
+  <meta property="og:description" content="{{ meta_desc }}">
+  <meta property="og:url" content="{{ canonical }}">
+  {% if og_image %}<meta property="og:image" content="{{ og_image }}">{% endif %}
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ post.title }} — {{ company.name }}">
+  <meta name="twitter:description" content="{{ meta_desc }}">
+  <script nonce="{{ csp_nonce() }}" type="application/ld+json">{{ jsonld|safe }}</script>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script nonce="{{ csp_nonce() }}">
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "1b181bc1-46b8-4359-ac7a-e87ecab91be4",
+        safari_web_id: "web.onesignal.auto.35c3b21f-3634-4ed2-bd52-fd09e2637415",
+        notifyButton: { enable: true },
+        promptOptions: { slidedown: { prompts: [ { type: "push", autoPrompt: true,
+          text: { actionMessage: "Get notified about replies, application status and selection updates.", acceptButton: "Allow", cancelButton: "No Thanks" },
+          delay: { pageViews: 1, timeDelay: 3 } } ] } },
+      });
+      {% if intern_email %}try{ await OneSignal.login("{{ intern_email }}"); }catch(e){}{% endif %}
+    });
+  </script>
+</head>
+<body class="public">
+  <header class="public-topbar"><div class="public-topbar-inner">
+    <a class="brand-link" href="/">
+      <span class="brand-icon"><i class="fas fa-graduation-cap"></i></span>
+      <span><b>DBERT</b><span>Careers</span></span>
+    </a>
+    <nav class="public-nav">
+      <a href="/jobs">Jobs</a>
+      <a href="/internships">Internships</a>
+      <a href="/#signin" class="signin">Sign in</a>
+    </nav></div>
+  </header>
+
+  <main class="public-wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      {% for label, url in breadcrumbs %}<a href="{{ url }}">{{ label }}</a>{% if not loop.last %}<span class="sep">/</span>{% endif %}{% endfor %}
+      <span class="sep">/</span><span class="crumb-current">{{ post.title }}</span>
+    </nav>
+    <div class="sheet">
+      <h1>{{ post.title }}</h1>
+      <div class="co"><i class="fas fa-building"></i> {{ company.name }}{% if company.website %} · <a href="{{ company.website }}" rel="nofollow noopener" target="_blank">website</a>{% endif %}</div>
+
+      <div class="meta">
+        <span class="pill">{{ post.domain }}</span>
+        <span class="pill">{{ 'Internship' if post.post_type == 'internship' else 'Job' }}</span>
+        {% if post.work_mode %}<span class="pill">{{ post.work_mode|capitalize }}</span>{% endif %}
+        {% if post.location %}<span class="pill">{{ post.location }}</span>{% endif %}
+        {% if post.duration %}<span class="pill">{{ post.duration }}</span>{% endif %}
+        {% if post.is_unpaid %}<span class="pill">Unpaid</span>
+        {% elif post.stipend_min or post.stipend_max %}<span class="pill pay">₹{{ post.stipend_min or post.stipend_max }}{% if post.stipend_min and post.stipend_max %}–{{ post.stipend_max }}{% endif %}{% if post.pay_period %}/{{ post.pay_period }}{% endif %}</span>{% endif %}
+        {% if post.openings %}<span class="pill">{{ post.openings }} opening{{ 's' if post.openings != 1 else '' }}</span>{% endif %}
+      </div>
+
+      <div class="stats-row"><i class="fas fa-eye"></i> {{ post.views or 0 }} view{{ 's' if post.views != 1 else '' }} &middot; <i class="fas fa-user-group"></i> {{ applied_count }} applied</div>
+
+      <!-- Apply zone (#13): persistent already-applied / success state -->
+      <div id="applyZone">
+        {% if already_applied %}
+          <div class="applied-box" id="appliedBox">
+            <div class="hd"><i class="fas fa-circle-check"></i> Applied — your application is in.</div>
+            <p>The company can see your interest. Track the status and any next steps from My Applications.</p>
+            <div class="next-cta">
+              <a class="primary" href="{{ my_apps_url }}"><i class="fas fa-briefcase"></i> View in My Applications</a>
+              <a href="{{ '/internships' if post.post_type == 'internship' else '/jobs' }}"><i class="fas fa-layer-group"></i> Browse more</a>
+            </div>
+          </div>
+        {% elif is_intern %}
+          <button class="cta" id="applyBtn" data-act-click="$addClass" data-arg-click='["applyModal", "open"]'><i class="fas fa-paper-plane"></i> Apply Now</button>
+        {% else %}
+          <a class="cta" href="/apply/{{ post.id }}"><i class="fas fa-paper-plane"></i> Apply Now</a>
+        {% endif %}
+      </div>
+
+      {% if post.description %}<h2>About the role</h2><div class="body"><p>{{ post.description }}</p></div>{% endif %}
+      {% if post.responsibilities %}<h2>Responsibilities</h2><div class="body"><p>{{ post.responsibilities }}</p></div>{% endif %}
+      {% if post.skills %}<h2>Skills</h2><div class="body"><p>{{ post.skills }}</p></div>{% endif %}
+      {% if post.eligibility %}<h2>Eligibility</h2><div class="body"><p>{{ post.eligibility }}</p></div>{% endif %}
+      {% if post.apply_by %}<p class="note">Apply by {{ post.apply_by }}</p>{% endif %}
+
+      {% if certs %}
+        <h2>Recommended certifications</h2>
+        <div class="chips">
+          {% for c in certs %}<a href="{{ tutor_base }}/courses/{{ c.course_id }}" rel="nofollow" target="_blank"><i class="fas fa-certificate"></i> {{ c.title }}</a>{% endfor %}
+        </div>
+      {% endif %}
+
+      <h2>Discussion (<span id="commentCount">{{ comments|length }}</span>)</h2>
+      {% if is_intern %}
+        <div class="comment-box">
+          <textarea id="commentInput" maxlength="1000" placeholder="Ask a question or share a thought about this post..."></textarea>
+          <div class="comment-box-row">
+            <span class="note" id="commentMsg"></span>
+            <button class="btn-sm" id="commentSubmit" data-act-click="submitComment">Post comment</button>
+          </div>
+        </div>
+      {% else %}
+        <p class="note"><a href="/#signin">Sign in</a> to comment.</p>
+      {% endif %}
+      <div id="commentList">
+        {% for c in comments %}
+        <div class="comment"><div class="who">{{ c.intern_name }}</div><div class="txt">{{ c.body }}</div></div>
+        {% endfor %}
+      </div>
+      {% if not comments %}<p class="note" id="commentEmpty">No comments yet. Be the first to say something.</p>{% endif %}
+
+      {% if related_posts %}
+        <h2>More in {{ post.domain }}</h2>
+        <div class="related-list">
+          {% for r in related_posts %}
+          <a href="{{ post_path(r) }}">{{ r.title }} <span class="tag">{{ r.location or 'Remote' }}</span></a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if city_posts %}
+        <h2>More in {{ post.location }}</h2>
+        <div class="related-list">
+          {% for r in city_posts %}
+          <a href="{{ post_path(r) }}">{{ r.title }} <span class="tag">{{ r.domain }}</span></a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <p style="font-size:11px;color:var(--tx-muted);margin-top:28px;line-height:1.5;">
+        Stipend, if applicable, is contingent on assignment to a paid project and completion of required
+        certifications. <a href="/terms#stipend" style="color:var(--tx-muted);text-decoration:underline;">Full terms apply.</a>
+      </p>
+    </div>
+  </main>
+
+  {% if is_intern %}
+  <script nonce="{{ csp_nonce() }}">
+    function escHtml(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    async function submitComment(){
+      var input = document.getElementById('commentInput');
+      var msg = document.getElementById('commentMsg');
+      var body = input.value.trim();
+      msg.className = 'note';
+      msg.textContent = '';
+      if(body.length < 2 || body.length > 1000){
+        msg.className = 'note err'; msg.textContent = 'Comment must be 2–1000 characters.'; return;
+      }
+      document.getElementById('commentSubmit').disabled = true;
+      try{
+        var r = await fetch('/posts/{{ post.id }}/comment', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({body: body})
+        });
+        var d = await r.json();
+        if(r.ok && d.status === 'success'){
+          var c = d.comment;
+          var emptyEl = document.getElementById('commentEmpty');
+          if(emptyEl) emptyEl.remove();
+          var list = document.getElementById('commentList');
+          var div = document.createElement('div');
+          div.className = 'comment';
+          div.innerHTML = '<div class="who">' + escHtml(c.intern_name) + '</div><div class="txt">' + escHtml(c.body) + '</div>';
+          list.insertBefore(div, list.firstChild);  // newest-first
+          var countEl = document.getElementById('commentCount');
+          countEl.textContent = (parseInt(countEl.textContent, 10) || 0) + 1;
+          input.value = '';
+        } else {
+          msg.className = 'note err'; msg.textContent = d.message || 'Could not post comment.';
+        }
+      }catch(e){ msg.className = 'note err'; msg.textContent = 'Network error. Try again.'; }
+      document.getElementById('commentSubmit').disabled = false;
+    }
+  </script>
+  {% endif %}
+
+  <footer class="public-foot">
+    <div class="fl">
+      <a href="/jobs">Jobs</a>
+      <a href="/internships">Internships</a>
+      <a href="/">Home</a>
+      <a href="/#signin">Sign in</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="wa" href="https://wa.me/917060372107" rel="noopener" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+      <span>© DBERT</span>
+    </div>
+  </footer>
+
+  {% if is_intern and not already_applied %}
+  <div class="modal" id="applyModal">
+    <div class="box">
+      <h2 style="margin-top:0">Apply — {{ post.title }}</h2>
+      <p class="note">A short comment is required. It’s shown publicly as your interest signal; your CV &amp; status stay private to the company.</p>
+      <textarea id="applyComment" placeholder="Why are you a great fit?"></textarea>
+      <div id="applyMsg" class="note"></div>
+      <div class="row">
+        <button class="ghost" data-act-click="$removeClass" data-arg-click='["applyModal", "open"]'>Cancel</button>
+        <button class="cta" id="applySubmit" data-act-click="submitApply">Submit application</button>
+      </div>
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    var POST_TYPE = {{ 'true' if post.post_type == 'internship' else 'false' }};
+    var BOARD_URL = POST_TYPE ? '/internships' : '/jobs';
+    var MY_APPS_URL = {{ my_apps_url|tojson }};
+    function showApplied(){
+      // #13: persistent confirmation — replace the CTA with a success state + next-step CTAs
+      // instead of reloading into an identical-looking page.
+      document.getElementById('applyModal').classList.remove('open');
+      document.getElementById('applyZone').innerHTML =
+        '<div class="applied-box"><div class="hd"><i class="fas fa-circle-check"></i> Applied — your application is in.</div>'
+      + '<p>The company can see your interest. Track the status and any next steps from My Applications.</p>'
+      + '<div class="next-cta"><a class="primary" href="'+MY_APPS_URL+'"><i class="fas fa-briefcase"></i> View in My Applications</a>'
+      + '<a href="'+BOARD_URL+'"><i class="fas fa-layer-group"></i> Browse more</a></div></div>';
+    }
+    async function submitApply(){
+      var msg = document.getElementById('applyMsg');
+      var comment = document.getElementById('applyComment').value.trim();
+      if(!comment){ msg.className='note err'; msg.textContent='Please add a comment to apply.'; return; }
+      document.getElementById('applySubmit').disabled = true;
+      try{
+        var r = await fetch('/posts/{{ post.id }}/apply', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({comment: comment})
+        });
+        var d = await r.json();
+        if(r.status === 401 && d.next){ window.location = '/apply/{{ post.id }}'; return; }
+        if(r.ok && d.status === 'success'){
+          showApplied();
+          return;
+        } else {
+          msg.className='note err'; msg.textContent = d.message || 'Could not apply.';
+        }
+      }catch(e){ msg.className='note err'; msg.textContent='Network error. Try again.'; }
+      document.getElementById('applySubmit').disabled = false;
+    }
+    // Auto-open the apply modal when arriving via the funnel (?apply=1).
+    if(new URLSearchParams(location.search).get('apply') === '1'){
+      document.getElementById('applyModal').classList.add('open');
+    }
+  </script>
+  {% endif %}
+</body>
+</html>

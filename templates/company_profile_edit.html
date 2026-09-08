@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Company Profile — Partner Portal" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-company-profile-edit has-company-sidebar">
+{% set active_page = 'company_profile' %}
+{% include '_company_sidebar.html' %}
+
+    <div class="profile-container">
+        <header class="header-bar">
+            <div>
+                <h1>Company Profile</h1>
+                <div style="font-size: 0.875rem; color: var(--tx-muted);">Manage your public company details</div>
+            </div>
+            <a href="/company" style="color: var(--tx-muted); text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-card">
+            <form method="POST" action="/company/profile">
+            {{ csrf_field() }}
+                <div class="form-group">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" name="name" class="form-input" value="{{ company.name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Contact Phone</label>
+                    <input type="text" name="phone" class="form-input" value="{{ company.phone or '' }}" placeholder="+91 9876543210">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Website URL</label>
+                    <input type="url" name="website" class="form-input" value="{{ company.website or '' }}" placeholder="https://www.example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">About the Company</label>
+                    <textarea name="about" class="form-textarea" placeholder="Describe your company, culture, and what you do...">{{ company.about or '' }}</textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit">Save Profile</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

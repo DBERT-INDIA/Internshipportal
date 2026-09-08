@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Capstone Project — " ~ course.title %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'courses' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content">
+
+    <div class="page-head">
+      <div class="eyebrow">Capstone</div>
+      <h1>{{ course.title }}</h1>
+      <p>Submit your completed repository to earn your DBERT-Verified Certificate.</p>
+    </div>
+
+    {% if submission %}
+    <div class="status-banner {{ submission.status }}">
+      <div>
+        <strong>Submission status: {{ submission.status | upper }}</strong>
+        <p class="t-sm">
+          Submitted on {{ submission.created_at }}.
+          {% if submission.status == 'approved' %}
+            🎉 Congratulations — your project was approved and your DBERT-Verified Certificate has been issued.
+          {% elif submission.status == 'pending' %}
+            DBERT staff reviewers are evaluating your GitHub repository.
+          {% else %}
+            Please review the feedback and resubmit your updated repository below.
+          {% endif %}
+        </p>
+      </div>
+      <a href="{{ submission.github_repo_url }}" target="_blank" rel="noopener"
+         style="color:inherit;font-size:12.5px;font-weight:600;white-space:nowrap">
+        View repository <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="card mb-24">
+      <div class="card-head"><i class="fa-solid fa-clipboard-list"></i><h3>Project assignment brief</h3></div>
+      <div class="t-sm" style="line-height:1.65">
+        {{ (project.brief if project else 'Build a comprehensive, production-ready application demonstrating the key skills taught throughout this course. Push your code to a public GitHub repository containing a detailed README.md file.') | safe }}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><i class="fa-brands fa-github"></i><h3>Submit your repository</h3></div>
+
+      <form id="projectForm" data-act-submit="submitProject" data-arg-submit='["$event"]'>
+        <div class="field">
+          <label for="projectTitle">Project title</label>
+          <input type="text" id="projectTitle" name="project_title"
+                 placeholder="e.g. Automated E-commerce Data Pipeline"
+                 value="{{ submission.project_title if submission else '' }}" required>
+        </div>
+
+        <div class="field">
+          <label for="githubUrl">Public GitHub repository URL</label>
+          <input type="url" id="githubUrl" name="github_repo_url"
+                 placeholder="https://github.com/your-username/your-repo"
+                 value="{{ submission.github_repo_url if submission else '' }}" required>
+        </div>
+
+        <div class="field">
+          <label for="projectDesc">Project summary &amp; features</label>
+          <textarea id="projectDesc" name="project_description" rows="5"
+                    placeholder="Briefly describe what your application does, technologies used, and instructions to run it…"
+                    required>{{ submission.project_description if submission else '' }}</textarea>
+        </div>
+
+        <div class="row-between mt-24">
+          <a href="/courses/{{ course.id }}/learn" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to classroom
+          </a>
+          <button type="submit" class="btn btn-primary">
+            {% if submission %}Resubmit project{% else %}Submit capstone project{% endif %}
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </form>
+
+      <div id="msgBox" class="t-sm mt-16" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    function submitProject(e) {
+        e.preventDefault();
+        const msgBox = document.getElementById('msgBox');
+        msgBox.style.display = 'block';
+        msgBox.style.color = 'var(--tx-muted)';
+        msgBox.textContent = 'Submitting project to DBERT review queue...';
+
+        const payload = {
+            project_title: document.getElementById('projectTitle').value,
+            github_repo_url: document.getElementById('githubUrl').value,
+            project_description: document.getElementById('projectDesc').value
+        };
+
+        fetch('/courses/{{ course.id }}/submit-project', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                msgBox.style.color = 'var(--green)';
+                msgBox.textContent = data.message;
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                msgBox.style.color = 'var(--red)';
+                msgBox.textContent = data.message || 'Submission failed.';
+            }
+        })
+        .catch(() => {
+            msgBox.style.color = 'var(--red)';
+            msgBox.textContent = 'Server error during submission.';
+        });
+    }
+</script>
+</body>
+</html>

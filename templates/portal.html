@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "My Portal" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
+  <script nonce="{{ csp_nonce() }}">
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "1b181bc1-46b8-4359-ac7a-e87ecab91be4",
+        safari_web_id: "web.onesignal.auto.35c3b21f-3634-4ed2-bd52-fd09e2637415",
+        notifyButton: { enable: true },
+        promptOptions: { slidedown: { prompts: [ { type: "push", autoPrompt: true,
+          text: { actionMessage: "Get notified about your application status, selection, and enrollment updates.", acceptButton: "Allow", cancelButton: "No Thanks" },
+          delay: { pageViews: 1, timeDelay: 3 } } ] } },
+      });
+    });
+  </script>
+</head>
+<body class="portal">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand-icon"><i class="fas fa-robot"></i></div>
+      <div><h2>DBERT</h2><p>Internship Portal</p></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-tab="overview" data-act-click="switchTab" data-arg-click='["overview"]'><i class="fas fa-th-large"></i> Overview</div>
+      <a class="nav-item" href="/courses" style="color:var(--gold); font-weight:700;"><i class="fas fa-book-open"></i> Full Courses Catalog</a>
+      <div class="nav-item" data-tab="learning" data-act-click="switchTab" data-arg-click='["learning"]' id="navLearning"><i class="fas fa-graduation-cap"></i> Guided Learning Workspace <span class="nav-dot" id="learnLockDot" style="display:none;"></span></div>
+      <a class="nav-item" href="/tasks"><i class="fas fa-tasks"></i> Micro-Tasks</a>
+      <a class="nav-item" href="/mentors/slots"><i class="fas fa-user-tie"></i> Book Mentor</a>
+      <div class="nav-item" data-tab="editprofile" data-act-click="switchTab" data-arg-click='["editprofile"]'><i class="fas fa-user-pen"></i> Edit Profile</div>
+      <div class="nav-item" data-tab="password" data-act-click="switchTab" data-arg-click='["password"]'><i class="fas fa-key"></i> Change Password</div>
+      <div class="nav-item" data-tab="applyanother" data-act-click="switchTab" data-arg-click='["applyanother"]' id="navApplyAnother"><i class="fas fa-layer-group"></i> Apply to Another Domain</div>
+      <div class="nav-item" data-tab="myapplications" data-act-click="switchTab" data-arg-click='["myapplications"]'><i class="fas fa-briefcase"></i> My Applications</div>
+      <!-- T11: CV builder moved out of the homepage and into its own tab-strip entry. -->
+      <a class="nav-item" href="/portal/cv"><i class="fas fa-file-lines"></i> My CV</a>
+      <div class="nav-item" data-tab="interview" data-act-click="switchTab" data-arg-click='["interview"]' id="navInterview"><i class="fas fa-robot"></i> Interview</div>
+      <div class="nav-item hidden" data-tab="paid" data-act-click="switchTab" data-arg-click='["paid"]' id="navPaid"><i class="fas fa-bolt"></i> Paid Program</div>
+      <!-- UAT #6/#7: Coins & Certificate are now first-class tabs inside the portal shell. -->
+      <div class="nav-item" data-tab="coins" data-act-click="switchTab" data-arg-click='["coins"]'><i class="fas fa-coins"></i> Coins</div>
+      <div class="nav-item" data-tab="certificate" data-act-click="switchTab" data-arg-click='["certificate"]'><i class="fas fa-certificate"></i> Certificate</div>
+      <div class="nav-item" data-tab="leaderboard" data-act-click="switchTab" data-arg-click='["leaderboard"]'><i class="fas fa-trophy"></i> Leaderboard</div>
+      <div class="nav-item" data-tab="cohorts" data-act-click="switchTab" data-arg-click='["cohorts"]'><i class="fas fa-users-rectangle"></i> Cohorts</div>
+      <!-- Track 2 §5 inbox stays a separate page (threaded view) — restyled to match. -->
+      <div class="nav-item" data-tab="messages" data-act-click="switchTab" data-arg-click='["messages"]'><i class="fas fa-comments"></i> Messages <span class="nav-dot" id="msgUnreadDot" style="display:none;"></span></div>
+      <div class="nav-item" data-tab="notifications" data-act-click="switchTab" data-arg-click='["notifications"]'><i class="fas fa-bell"></i> Notifications <span class="nav-dot" id="notifUnreadDot" style="display:none;"></span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="intern-pill" id="internName">Loading...</span>
+      <button class="btn-logout-sb" data-act-click="doLogout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" data-act-click="closeSidebar"></div>
+
+  <!-- ── MOBILE TOPBAR ── -->
+  <header class="m-topbar">
+    <button class="m-burger" data-act-click="toggleSidebar" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    <span class="m-title" id="mTitle">My Portal</span>
+  </header>
+
+  <main class="main">
+    <div class="content-wrap">
+
+      <!-- Loading -->
+      <div class="loading-screen" id="loadingScreen">
+        <div class="spinner-lg"></div>
+        <p style="color:var(--tx-muted);font-size:14px;">Loading your portal...</p>
+      </div>
+
+      <!-- ══════════════ OVERVIEW ══════════════ -->
+      <div class="panel" id="panel-overview">
+        <!-- Accepted welcome banner -->
+        <div class="welcome-banner hidden" id="ovWelcomeBanner">
+          <div class="wb-left">
+            <h1 id="wbHeading">Welcome back!</h1>
+            <p>Track your attendance, launch classes, and monitor your progress.</p>
+          </div>
+          <div>
+            <div class="batch-tag" id="wbBatchTag">Active Intern</div>
+            <div class="joining-tag" id="wbJoiningTag"></div>
+          </div>
+        </div>
+
+        <!-- Status + Next-step card -->
+        <div class="nextstep-card" id="nextStepCard">
+          <div class="ns-top">
+            <div class="ns-icon" id="nsIcon">&#128075;</div>
+            <span class="badge badge-blue" id="nsBadge">&mdash;</span>
+          </div>
+          <p class="ns-domain" id="nsDomain"></p>
+          <h2 class="ns-title" id="nsTitle">&mdash;</h2>
+          <p class="ns-msg" id="nsMsg"></p>
+          <div id="nsAction"></div>
+          <div class="ns-soft" id="nsSoft"></div>
+        </div>
+
+        <!-- OVERVIEW QUICK-ACCESS CARDS GRID (Below CTA Banner) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin: 20px 0;" id="overviewCardsGrid">
+          
+          <!-- Card 1: Guided Learning & Course Progress — progress-first per the
+               approved mockup: the completion ring leads, copy follows. Both
+               #ovCoursePct and #ovCourseProgressFill are preserved; the fill is
+               now the ring itself and is driven by its --pct custom property. -->
+          <div class="hero-progress" style="display:flex;flex-direction:column;justify-content:space-between">
+            <div>
+              <div class="hp-top">
+                <span class="hp-course">Current course</span>
+                <span class="badge b-violet" id="ovCourseStatusBadge">Active Learning</span>
+              </div>
+              <div class="hp-body">
+                <div class="ring ring-sm" id="ovCourseProgressFill" style="--pct:0">
+                  <div class="ring-txt"><b id="ovCoursePct">0%</b><span>Complete</span></div>
+                </div>
+                <div class="hp-detail">
+                  <h3 style="font-size:15px;margin-bottom:6px" id="ovCourseTitle">Guided Learning Workspace</h3>
+                  <p class="t-sm t-muted" id="ovCourseDesc">Access your enrolled courses, AI tutoring lessons, and subtopic quizzes.</p>
+                </div>
+              </div>
+            </div>
+            <a href="/courses" id="ovCourseBtn" class="btn btn-ai btn-sm mt-16">
+              <span>Continue Learning →</span>
+            </a>
+          </div>
+
+          <!-- Card 2: Micro-Tasks & Coins Rewards -->
+          <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(226, 185, 111, 0.15); border: 1px solid rgba(226, 185, 111, 0.3); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 16px;">
+                  <i class="fas fa-coins"></i>
+                </div>
+                <span class="badge badge-gold" id="ovCoinsVal">0 Coins</span>
+              </div>
+              <h3 style="color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 6px;">Micro-Tasks & Earn Rewards</h3>
+              <p style="color: var(--tx-muted); font-size: 12px; margin-bottom: 14px; line-height: 1.5;">Complete real-world tasks, earn coins, and unlock course discounts.</p>
+              
+              <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+                <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center;">
+                  <span style="font-size: 16px; font-weight: 800; color: #fff; display: block;" id="ovTasksDoneCount">0</span>
+                  <span style="font-size: 10px; color: var(--tx-muted);">Tasks Approved</span>
+                </div>
+                <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center;">
+                  <span style="font-size: 16px; font-weight: 800; color: var(--gold); display: block;" id="ovCoinsEarnedCount">0</span>
+                  <span style="font-size: 10px; color: var(--tx-muted);">Total Coins</span>
+                </div>
+              </div>
+            </div>
+            <a href="/tasks" class="btn-tutor" style="background: linear-gradient(135deg, var(--gold), var(--gold-deep)); color: #000; font-size: 13px; padding: 10px 16px; margin-top: 8px; text-decoration: none;">
+              <span>View Tasks & Rewards →</span>
+            </a>
+          </div>
+
+          <!-- Card 3: Weekly Attendance & 10-Hour Target -->
+          <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; color: var(--green); font-size: 16px;">
+                  <i class="fas fa-clock"></i>
+                </div>
+                <span class="badge badge-green" id="ovAttStatusBadge"><span class="ping-dot"></span><span id="ovAttBadgeText">Live Tracking</span></span>
+              </div>
+              <h3 style="color: #fff; font-size: 15px; font-weight: 800; margin-bottom: 6px;">Weekly Attendance (10h Target)</h3>
+              <p style="color: var(--tx-muted); font-size: 12px; margin-bottom: 14px; line-height: 1.5;">10 hours/week logged-in target required for internship stipend & certificate.</p>
+              
+              <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--tx-muted); margin-bottom: 4px;">
+                  <span>This Week Logged</span>
+                  <span id="ovAttHoursText" style="color: var(--green); font-weight: 700;">0.0 / 10.0 hrs</span>
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
+                  <div id="ovAttProgressFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--blue)); transition: width 0.4s ease;"></div>
+                </div>
+              </div>
+            </div>
+            <button id="ovAttCardBtn" data-act-click="switchTab" data-arg-click='["cohorts"]' class="btn-tutor" style="background: transparent; border: 1px solid var(--border); color: #fff; font-size: 13px; padding: 10px 16px; margin-top: 8px;">
+              <span>View Attendance Log →</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Step bar -->
+        <div class="step-bar hidden" id="overviewStepBar"></div>
+
+        <!-- SELECTED: payment block -->
+        <div class="glass-card hidden" id="ovSelected" style="margin-bottom:20px;">
+          <h3 style="color:#fff;font-size:16px;font-weight:800;margin-bottom:16px;"><i class="fas fa-lock" style="color:var(--green);margin-right:8px;"></i>Secure Your Seat &mdash; &#8377;499 Refundable Deposit</h3>
+          <ul class="perks">
+            <li class="perks-title"><i class="fas fa-gift"></i> What you get when you enroll</li>
+            <li><i class="fas fa-bolt"></i><span><strong>Offer letter within 2 hours</strong> of enrollment &mdash; delivered straight to your inbox.</span></li>
+            <li><i class="fas fa-certificate"></i><span><strong>Certificate of Completion</strong> &mdash; verifiable for academic &amp; industry use.</span></li>
+            <li><i class="fas fa-user-tie"></i><span><strong>Mentor-guided</strong>, hands-on internship in your chosen domain.</span></li>
+            <li><i class="fas fa-laptop-code"></i><span>Work on <strong>real projects</strong> &mdash; practical experience, not just theory.</span></li>
+            <li><i class="fas fa-rotate-left"></i><span>Your <strong>&#8377;499 deposit is fully refundable</strong> on successful completion.</span></li>
+          </ul>
+          <div class="upi-card">
+            <div class="upi-qr"><img src="/static/qr.jpg" alt="UPI QR" data-act-error="$hideParent"/></div>
+            <div class="upi-info">
+              <p>Scan QR or pay to UPI ID:</p>
+              <div class="upi-id-box"><span id="upiIdDisplay">Q681021429@ybl</span><button data-act-click="copyUPI" aria-label="Copy UPI"><i class="fas fa-copy"></i></button></div>
+              <p class="amount-tag">Amount: &#8377;499 (Refundable on completion)</p>
+              <p style="color:var(--tx-muted);font-size:11px;margin-top:4px;">Use PhonePe, GPay, Paytm or any UPI app</p>
+            </div>
+          </div>
+          <div class="joining-section">
+            <label>Choose Your Joining Date (Monday) *</label>
+            <div id="calendarWidget" class="cal-widget">
+              <div class="cal-header">
+                <button type="button" id="calPrev" class="cal-nav" data-act-click="calNav" data-arg-click='[-1]' aria-label="Previous month">&#8249;</button>
+                <span id="calMonthLabel" class="cal-month"></span>
+                <button type="button" id="calNext" class="cal-nav" data-act-click="calNav" data-arg-click='[1]' aria-label="Next month">&#8250;</button>
+              </div>
+              <div class="cal-dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+              <div id="calGrid" class="cal-grid" role="grid" aria-label="Available joining Mondays"></div>
+              <div id="calSelected" class="cal-selected" aria-live="polite"></div>
+            </div>
+            <input type="hidden" id="joiningDateValue" value=""/>
+            <p style="color:var(--tx-muted);font-size:11px;margin-top:6px;"><i class="fas fa-info-circle" style="color:var(--gold);margin-right:4px;"></i>Only the highlighted Mondays are available. Batches start every Monday, on or before 31 Dec 2026.</p>
+          </div>
+          <div class="joining-section">
+            <label class="file-label">Upload Payment Screenshot *</label>
+            <div class="file-input-wrap" id="fileDropZone">
+              <input type="file" id="paymentFile" accept=".png,.jpg,.jpeg,.pdf" data-act-change="onFileChange" data-arg-change='["$el"]'/>
+              <div class="file-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+              <p>Click or drag &amp; drop your payment screenshot</p>
+              <p style="font-size:10px;margin-top:4px;">PNG, JPG, PDF &bull; Max 6MB</p>
+              <div class="file-name hidden" id="fileNameDisplay"></div>
+            </div>
+          </div>
+          <div class="form-error" id="enrollError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="enrollErrorText"></span></div>
+          <button class="btn-enroll" id="enrollBtn" data-act-click="submitEnrollment">
+            <span class="btn-lbl"><i class="fas fa-check-circle"></i> &nbsp;Confirm Enrollment</span>
+            <span class="btn-spinner-sm"></span>
+          </button>
+        </div>
+
+        <!-- Track 5: ₹499 deposit for a job-board Hired applicant (separate from the
+             legacy ovSelected card above -- no joining-date calendar here, since the
+             company already sets its own start date). -->
+        <div class="glass-card hidden" id="ovJobDeposit" style="margin-bottom:20px;">
+          <h3 style="color:#fff;font-size:16px;font-weight:800;margin-bottom:16px;"><i class="fas fa-lock" style="color:var(--green);margin-right:8px;"></i>Secure Your Role &mdash; &#8377;499 Refundable Deposit</h3>
+          <p id="jdIntro" style="color:var(--tx-muted);font-size:13.5px;margin-bottom:14px;"></p>
+          <div class="upi-card" id="jdUpiCard">
+            <div class="upi-qr"><img src="/static/qr.jpg" alt="UPI QR" data-act-error="$hideParent"/></div>
+            <div class="upi-info">
+              <p>Scan QR or pay to UPI ID:</p>
+              <div class="upi-id-box"><span id="jdUpiIdDisplay">Q681021429@ybl</span><button data-act-click="copyUPI" aria-label="Copy UPI"><i class="fas fa-copy"></i></button></div>
+              <p class="amount-tag">Amount: &#8377;499 (Refundable on completion)</p>
+              <p style="color:var(--tx-muted);font-size:11px;margin-top:4px;">Use PhonePe, GPay, Paytm or any UPI app</p>
+            </div>
+          </div>
+          <div class="joining-section" id="jdUploadSection">
+            <label class="file-label">Upload Payment Screenshot *</label>
+            <div class="file-input-wrap" id="jdFileDropZone">
+              <input type="file" id="jdPaymentFile" accept=".png,.jpg,.jpeg,.pdf" data-act-change="onJobDepositFileChange" data-arg-change='["$el"]'/>
+              <div class="file-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+              <p>Click or drag &amp; drop your payment screenshot</p>
+              <p style="font-size:10px;margin-top:4px;">PNG, JPG, PDF &bull; Max 6MB</p>
+              <div class="file-name hidden" id="jdFileNameDisplay"></div>
+            </div>
+          </div>
+          <div class="form-error" id="jdError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="jdErrorText"></span></div>
+          <button class="btn-enroll" id="jdBtn" data-act-click="submitJobDeposit">
+            <span class="btn-lbl"><i class="fas fa-check-circle"></i> &nbsp;Submit Deposit</span>
+            <span class="btn-spinner-sm"></span>
+          </button>
+        </div>
+
+        <!-- ENROLLED / PAID-ENROLLED: payment under review -->
+        <div class="glass-card enrolled-wait hidden" id="ovEnrolled" style="margin-bottom:20px;">
+          <div class="big-icon" id="enrolledIcon">&#9889;</div>
+          <h2 id="enrolledWaitTitle">Payment verification in progress</h2>
+          <p id="enrolledWaitBody">We typically verify payments within <strong style="color:var(--gold);">24 hours</strong>. You&apos;ll receive an email once your enrollment is confirmed.</p>
+          <div id="enrolledDetails" style="margin-top:8px;"></div>
+        </div>
+
+        <!-- REJECTED: empathetic + heavy paid CTA + reapply -->
+        <div class="glass-card hidden" id="ovRejected" style="margin-bottom:20px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:14px;">&#128140;</div>
+          <h2 style="color:var(--red);font-size:20px;font-weight:800;margin-bottom:8px;">Not moving forward this time</h2>
+          <p id="rejectionNote" style="color:var(--tx-muted);font-size:14px;line-height:1.8;margin-bottom:18px;">Thank you for applying. Our team has reviewed your application carefully.</p>
+          <div class="countdown-strip" id="reapplyCountdown"><span>You can re-apply in</span><strong id="daysLeft">30</strong><span>days</span></div>
+          <div class="glass-card" style="margin-top:18px;text-align:left;border-color:rgba(76,175,80,0.28);background:rgba(76,175,80,0.05);">
+            <h3 style="font-size:16px;font-weight:800;color:#7ed492;margin-bottom:6px;"><i class="fas fa-bolt" style="margin-right:8px;"></i>You don't have to wait</h3>
+            <p style="color:#cfd8e6;font-size:13.5px;line-height:1.7;margin-bottom:14px;">This decision isn't the end of your journey. Our <strong style="color:#fff;">Paid Program</strong> gives you 15 days of training, a 45-day production role with mentor support, and a <strong style="color:#fff;">guaranteed placement opportunity</strong> with our hiring partners on completion + certification &mdash; your seat is confirmed the moment you enrol, no waiting to be shortlisted.</p>
+            <a class="btn-primary" href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"rejected_view"}]' style="justify-content:center;"><i class="fas fa-rocket"></i> &nbsp;Explore the Paid Program</a>
+          </div>
+          <div id="reapplyFormSection" class="hidden reapply-section" style="text-align:left;">
+            <h3><i class="fas fa-redo"></i> Re-Apply Now</h3>
+            <p style="color:var(--tx-muted);font-size:13px;margin-bottom:18px;">Your details are pre-filled. Review and update before submitting.</p>
+            <div class="form-grid">
+              <div class="form-section-label">Personal Details</div>
+              <div class="form-group"><label class="field-label" for="ra_name">Full Name *</label><input type="text" id="ra_name" class="field-input" placeholder="Your full name"/></div>
+              <div class="form-group"><label class="field-label" for="ra_email">Email</label><input type="email" id="ra_email" class="field-input" readonly/></div>
+              <div class="form-group"><label class="field-label" for="ra_phone">Phone *</label><input type="tel" id="ra_phone" class="field-input" placeholder="10-digit mobile" maxlength="10"/></div>
+              <div class="form-group"><label class="field-label" for="ra_city">City *</label><select id="ra_city" class="field-select"><option value="">-- Select --</option><option>Delhi</option><option>Mumbai</option><option>Bengaluru</option><option>Hyderabad</option><option>Chennai</option><option>Pune</option><option>Kolkata</option><option>Jaipur</option><option>Ahmedabad</option><option>Lucknow</option><option>Chandigarh</option><option>Bhopal</option><option>Indore</option><option>Noida</option><option>Other</option></select></div>
+              <div class="form-section-label">Academic Details</div>
+              <div class="form-group full"><label class="field-label" for="ra_college">College *</label><input type="text" id="ra_college" class="field-input" placeholder="College name"/></div>
+              <div class="form-group"><label class="field-label" for="ra_course">Course *</label><select id="ra_course" class="field-select"><option value="">-- Select --</option><option>B.Tech</option><option>B.E.</option><option>BCA</option><option>B.Sc</option><option>BBA</option><option>B.Com</option><option>M.Tech</option><option>MCA</option><option>M.Sc</option><option>MBA</option><option>Diploma</option><option>Other</option></select></div>
+              <div class="form-group"><label class="field-label" for="ra_semester">Semester *</label><select id="ra_semester" class="field-select"><option value="">-- Select --</option><option>1st Semester</option><option>2nd Semester</option><option>3rd Semester</option><option>4th Semester</option><option>5th Semester</option><option>6th Semester</option><option>7th Semester</option><option>8th Semester</option><option>Graduate</option></select></div>
+              <div class="form-group"><label class="field-label" for="ra_year">Year of Passing *</label><select id="ra_year" class="field-select"><option value="">-- Select --</option><option>2024</option><option>2025</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option><option>2031</option><option>2032</option></select></div>
+              <div class="form-section-label">Internship</div>
+              <div class="form-group full"><label class="field-label" for="ra_domain">Domain *</label><select id="ra_domain" class="field-select"><option value="">-- Select --</option><option>AI Agent Development</option><option>Data Analyst</option><option>Full Stack Development</option><option>Python Automation</option></select></div>
+              <div class="form-group full"><label class="field-label" for="ra_why">Why do you want to join? * <span id="raWhyCount" style="float:right;font-size:11px;color:var(--amber);">0 / 80 min</span></label><textarea id="ra_why" class="field-textarea" rows="4" placeholder="Updated motivation — min 80 characters" data-act-input="updateRaWhy"></textarea></div>
+              <div class="form-group full"><label class="field-label" for="ra_portfolio">Portfolio / GitHub (optional)</label><input type="url" id="ra_portfolio" class="field-input" placeholder="https://github.com/yourprofile"/></div>
+            </div>
+            <input type="text" name="company_website" id="ra_company_website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true"/>
+            <input type="hidden" id="ra_ts"/>
+            <div class="form-error" id="reapplyError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="reapplyErrorText"></span></div>
+            <button class="btn-primary" id="reapplyBtn" data-act-click="doReapply" style="margin-top:8px;width:100%;justify-content:center;">
+              <span class="btn-lbl"><i class="fas fa-paper-plane"></i> &nbsp;Re-Submit Application</span>
+              <span class="btn-spinner"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ACCEPTED: attendance + enrollment details -->
+        <div id="ovAccepted" class="hidden">
+          <div class="dash-grid">
+            <div class="glass-card">
+              <div class="att-live-header">
+                <h3><span class="ping-dot"></span>This Week&apos;s Attendance</h3>
+                <span class="att-week-label" id="weekLabel">Sun &ndash; Sat</span>
+              </div>
+              <div class="att-counter">
+                <span class="att-hours" id="liveHours" style="color:var(--gold);">0</span>
+                <span style="font-size:22px;font-weight:900;color:var(--gold);padding-bottom:2px;">h</span>
+                <span class="att-hours" id="liveMinutes" style="color:var(--tx-muted);font-size:24px;">00</span>
+                <span class="att-unit">min</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-bg"><div class="progress-bar-fill amber" id="attProgressBar" style="width:0%"></div></div>
+                <div class="progress-label"><span>0h</span><span>Goal: 10h</span></div>
+              </div>
+              <p class="att-threshold" id="attStatus">Minimum 10 hours / week (Sun &ndash; Sat)</p>
+            </div>
+            <div class="glass-card tutor-card" id="tutorCard">
+              <div id="tutorLocked">
+                <div class="tutor-locked-icon"><i class="fas fa-graduation-cap"></i></div>
+                <h3><i class="fas fa-lock" style="color:var(--violet);margin-right:8px;font-size:13px;"></i>Online Classes</h3>
+                <div class="locked-badge" style="margin-bottom:12px;"><i class="fas fa-clock"></i> Starting soon</div>
+                <p id="lockedMsg" style="margin-bottom:10px;color:var(--tx-muted);font-size:13px;">Your classes begin on your joining date at 6:00 PM. Get ready to learn!</p>
+                <div class="countdown-row" id="countdownRow">
+                  <div class="cd-unit"><span class="cd-num" id="cdDays">--</span><span class="cd-label">Days</span></div>
+                  <div class="cd-unit"><span class="cd-num" id="cdHours">--</span><span class="cd-label">Hours</span></div>
+                  <div class="cd-unit"><span class="cd-num" id="cdMins">--</span><span class="cd-label">Mins</span></div>
+                  <div class="cd-unit"><span class="cd-num" id="cdSecs">--</span><span class="cd-label">Secs</span></div>
+                </div>
+                <p style="color:var(--tx-muted);font-size:11px;text-align:center;">Learning unlocks at 6:00 PM on your joining day.</p>
+              </div>
+              <div id="tutorUnlocked" class="hidden">
+                <h3><i class="fas fa-graduation-cap" style="color:var(--violet);margin-right:8px;"></i>Online Classes</h3>
+                <p>Access your learning platform, course materials, and AI-guided sessions for your domain.</p>
+                <div class="progress-bar-wrap">
+                  <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+                    <span class="progress-pct" id="tutorPct">0%</span>
+                    <span style="color:var(--tx-muted);font-size:13px;">course complete</span>
+                  </div>
+                  <div class="progress-bar-bg"><div class="progress-bar-fill" id="tutorProgressBar" style="width:0%;background:linear-gradient(90deg,#5b21b6,var(--violet));"></div></div>
+                </div>
+                <button class="btn-tutor" id="tutorBtn" data-act-click="launchTutor">
+                  <span class="btn-lbl"><i class="fas fa-external-link-alt"></i>&nbsp; Launch Online Classes</span>
+                  <span class="btn-spinner"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="dash-grid">
+            <div class="glass-card">
+              <h3 style="color:#fff;font-size:15px;font-weight:800;margin-bottom:14px;"><i class="fas fa-id-card" style="color:var(--gold);margin-right:8px;"></i>Enrollment Details</h3>
+              <div class="info-row"><span class="info-label">Name</span><span class="info-value" id="infoName">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Domain</span><span class="info-value" id="infoDomain">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Joining Date</span><span class="info-value" id="infoJoining">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Batch</span><span class="info-value" id="infoBatch">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Email</span><span class="info-value" id="infoEmail">&mdash;</span></div>
+            </div>
+            <div class="glass-card">
+              <h3 style="color:#fff;font-size:15px;font-weight:800;margin-bottom:14px;"><i class="fas fa-chart-bar" style="color:var(--gold);margin-right:8px;"></i>Attendance Summary</h3>
+              <div class="info-row"><span class="info-label">This Week</span><span class="info-value" id="summThisWeek">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Total Weeks Tracked</span><span class="info-value" id="summTotalWeeks">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Weeks Met (10h+)</span><span class="info-value" id="summWeeksMet">&mdash;</span></div>
+              <div class="info-row"><span class="info-label">Weeks Missed</span><span class="info-value" id="summWeeksMissed" style="color:var(--red);">&mdash;</span></div>
+            </div>
+          </div>
+          <div class="glass-card">
+            <div class="section-title"><i class="fas fa-history" style="color:var(--gold);"></i>Weekly Attendance History</div>
+            <div class="att-table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Week</th><th>Hours Logged</th><th>Status</th></tr></thead>
+                <tbody id="attTableBody"><tr><td colspan="3" style="text-align:center;color:var(--tx-muted);padding:24px;">Loading history...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ EDIT PROFILE ══════════════ -->
+      <div class="panel" id="panel-editprofile">
+        <div class="panel-head"><h1>Edit Profile</h1><p>Email and domain are locked. Other details can be updated anytime.</p></div>
+        <div class="glass-card" style="max-width:640px;">
+          <div class="form-grid">
+            <div class="form-group full"><label class="field-label" for="ep_name">Full Name</label><input type="text" id="ep_name" class="field-input" placeholder="Your full name" maxlength="80"/></div>
+            <div class="form-group"><label class="field-label" for="ep_email">Email (locked)</label><input type="email" id="ep_email" class="field-input" disabled/></div>
+            <div class="form-group"><label class="field-label" for="ep_domain">Domain (locked)</label><input type="text" id="ep_domain" class="field-input" disabled/></div>
+            <div class="form-group"><label class="field-label" for="ep_phone">Phone</label><input type="tel" id="ep_phone" class="field-input" placeholder="10-digit mobile" maxlength="10"/></div>
+            <div class="form-group"><label class="field-label" for="ep_city">City</label><input type="text" id="ep_city" class="field-input" placeholder="City"/></div>
+            <div class="form-group full"><label class="field-label" for="ep_college">College</label><input type="text" id="ep_college" class="field-input" placeholder="College name"/></div>
+            <div class="form-group"><label class="field-label" for="ep_course">Course</label><select id="ep_course" class="field-select"><option value="">-- Select --</option><option>B.Tech</option><option>B.E.</option><option>BCA</option><option>B.Sc</option><option>BBA</option><option>B.Com</option><option>M.Tech</option><option>MCA</option><option>M.Sc</option><option>MBA</option><option>Diploma</option><option>Other</option></select></div>
+            <div class="form-group"><label class="field-label" for="ep_semester">Semester</label><select id="ep_semester" class="field-select"><option value="">-- Select --</option><option>1st Semester</option><option>2nd Semester</option><option>3rd Semester</option><option>4th Semester</option><option>5th Semester</option><option>6th Semester</option><option>7th Semester</option><option>8th Semester</option><option>Graduate</option></select></div>
+            <div class="form-group"><label class="field-label" for="ep_year">Year of Passing</label><select id="ep_year" class="field-select"><option value="">-- Select --</option><option>2024</option><option>2025</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option><option>2031</option><option>2032</option></select></div>
+          </div>
+          <div class="form-error" id="epError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="epErrorText"></span></div>
+          <button class="btn-primary" id="epBtn" data-act-click="saveProfile" style="margin-top:14px;width:100%;justify-content:center;">
+            <span class="btn-lbl"><i class="fas fa-floppy-disk"></i> &nbsp;Save Changes</span><span class="btn-spinner"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ══════════════ CHANGE PASSWORD ══════════════ -->
+      <div class="panel" id="panel-password">
+        <div class="panel-head"><h1>Change Password</h1><p>Enter your current password and choose a new one (min 8 characters).</p></div>
+        <div class="glass-card" style="max-width:520px;">
+          <div class="form-grid">
+            <div class="form-group full"><label class="field-label" for="cp_current">Current Password</label><input type="password" id="cp_current" class="field-input" placeholder="Current password" autocomplete="current-password"/></div>
+            <div class="form-group full"><label class="field-label" for="cp_new">New Password</label><input type="password" id="cp_new" class="field-input" placeholder="At least 8 characters" autocomplete="new-password"/></div>
+            <div class="form-group full"><label class="field-label" for="cp_confirm">Confirm New Password</label><input type="password" id="cp_confirm" class="field-input" placeholder="Re-enter new password" autocomplete="new-password"/></div>
+          </div>
+          <div class="form-error" id="cpError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="cpErrorText"></span></div>
+          <button class="btn-primary" id="cpBtn" data-act-click="changePassword" style="margin-top:14px;width:100%;justify-content:center;">
+            <span class="btn-lbl"><i class="fas fa-shield-halved"></i> &nbsp;Update Password</span><span class="btn-spinner"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ══════════════ APPLY TO ANOTHER DOMAIN ══════════════ -->
+      <div class="panel" id="panel-applyanother">
+        <div class="panel-head"><h1>Apply to Another Domain</h1><p>You can apply to up to 3 domains in total. Your personal &amp; academic details are reused from your profile.</p></div>
+        <div class="glass-card" id="applyAnotherCard" style="max-width:560px;">
+          <div class="form-grid">
+            <div class="form-group full"><label class="field-label" for="ad_domain">Domain *</label><select id="ad_domain" class="field-select"><option value="">-- Select --</option></select></div>
+            <div class="form-group full"><label class="field-label" for="ad_why">Why this domain? * <span id="adWhyCount" style="float:right;font-size:11px;color:var(--amber);">0 / 80 min</span></label><textarea id="ad_why" class="field-textarea" rows="4" placeholder="Your motivation for this domain — min 80 characters" data-act-input="updateAdWhy"></textarea></div>
+            <div class="form-group full"><label class="field-label" for="ad_portfolio">Portfolio / GitHub (optional)</label><input type="url" id="ad_portfolio" class="field-input" placeholder="https://github.com/yourprofile"/></div>
+          </div>
+          <input type="text" name="company_website" id="ad_company_website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true"/>
+          <input type="hidden" id="ad_ts"/>
+          <div class="form-error" id="adError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="adErrorText"></span></div>
+          <button class="btn-primary" id="adBtn" data-act-click="doApplyAnother" style="margin-top:14px;width:100%;justify-content:center;">
+            <span class="btn-lbl"><i class="fas fa-paper-plane"></i> &nbsp;Submit Application</span><span class="btn-spinner"></span>
+          </button>
+        </div>
+        <div class="glass-card hidden" id="applyAnotherFull" style="max-width:560px;text-align:center;color:var(--tx-muted);">
+          <div style="font-size:30px;margin-bottom:10px;">&#9989;</div>
+          <p>You've reached the maximum of 3 domain applications. Good luck!</p>
+        </div>
+      </div>
+
+      <!-- ══════════════ MY APPLICATIONS (Track 2 §B / UAT #4) ══════════════ -->
+      <div class="panel" id="panel-myapplications">
+        <div class="panel-head"><h1>My Applications</h1><p>Jobs &amp; internships you've applied to, and their status.</p></div>
+        <div id="myAppsBody"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+      </div>
+
+      <!-- ══════════════ COINS (UAT #6) ══════════════ -->
+      <div class="panel" id="panel-coins">
+        <div class="panel-head"><h1>Coins</h1><p>Your coins earned across micro-tasks and learning achievements on this portal.</p></div>
+        <div id="coinsBody"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+      </div>
+
+      <!-- ══════════════ CERTIFICATE (UAT #7) ══════════════ -->
+      <div class="panel" id="panel-certificate">
+        <div class="panel-head"><h1>Certificate</h1><p>Certificates you've earned, and a glimpse of the certificate you're working toward.</p></div>
+        <div id="certBody"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+      </div>
+
+      <!-- ══════════════ COHORTS (UAT #35) ══════════════ -->
+      <div class="panel" id="panel-cohorts">
+        <div class="panel-head"><h1>Cohorts</h1><p>Free, live virtual sessions hosted by companies — join to learn in-demand skills. You'll get the meeting link and a reminder before it starts.</p></div>
+        <div id="cohortsBody"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+      </div>
+
+      <!-- ══════════════ NOTIFICATIONS (UAT #26) ══════════════ -->
+      <div class="panel" id="panel-notifications">
+        <div class="panel-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div><h1>Notifications</h1><p>Updates on your applications, payments, certifications and more.</p></div>
+          <button class="btn-secondary" data-act-click="notifReadAll"><i class="fas fa-check-double"></i>&nbsp; Mark all read</button>
+        </div>
+        <div id="notifBody"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+      </div>
+
+      <!-- ══════════════ MESSAGES (UAT #23 — in-shell tab) ══════════════ -->
+      <div class="panel" id="panel-messages">
+        <div class="panel-head"><h1>Messages</h1><p>Chat with the DBERT team, your mentor, and companies you've applied to.</p></div>
+        <div id="msgInbox"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+        <div id="msgThread" style="display:none;">
+          <button data-act-click="msgBackToInbox" class="btn-secondary" style="margin-bottom:12px;"><i class="fas fa-arrow-left"></i>&nbsp; Inbox</button>
+          <div style="color:#fff;font-weight:800;font-size:15px;margin-bottom:10px;" id="msgThreadLabel"></div>
+          <div id="msgStream" style="display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;padding:6px 2px;margin-bottom:12px;"></div>
+          <form data-act-submit="msgSend" data-arg-submit='["$event"]' data-ret-submit style="display:flex;gap:10px;">
+            <input id="msgBody" class="field-input" autocomplete="off" maxlength="4000" placeholder="Type a message…" style="flex:1;">
+            <button type="submit" class="btn-primary">Send</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ══════════════ LEADERBOARD (UAT #11) ══════════════ -->
+      <div class="panel" id="panel-leaderboard">
+        <div class="panel-head"><h1>Leaderboard</h1><p>Ranked by a composite score — certifications, approved tasks, lessons completed and learning hours.</p></div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="lb-toggle active" id="lbBtnDomain" data-act-click="lbShow" data-arg-click='["domain"]'><i class="fas fa-layer-group"></i> My track</button>
+          <button class="lb-toggle" id="lbBtnGlobal" data-act-click="lbShow" data-arg-click='["global"]'><i class="fas fa-globe"></i> Global</button>
+        </div>
+        <div id="lbBody"><p style="color:var(--tx-muted);font-size:14px;">Loading…</p></div>
+      </div>
+
+      <!-- ══════════════ INTERVIEW ══════════════ -->
+      <div class="panel" id="panel-interview">
+        <div class="panel-head"><h1>Virtual Interview</h1><p>A short, AI-guided screening tailored to your domain.</p></div>
+        <div class="glass-card iv-card" id="interviewCard">
+          <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+            <div style="font-size:30px;line-height:1;" id="ivCardIcon">&#129302;</div>
+            <div style="flex:1;min-width:200px;">
+              <h3 style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;" id="ivCardTitle">Virtual Interview</h3>
+              <p style="color:var(--tx-muted);font-size:13px;line-height:1.6;" id="ivCardBody">Loading your interview status...</p>
+            </div>
+          </div>
+          <div id="ivCardAction" style="margin-top:16px;"></div>
+        </div>
+        <div class="glass-card hidden" id="interviewDisabled" style="text-align:center;color:var(--tx-muted);">
+          <div style="font-size:30px;margin-bottom:10px;">&#129488;</div>
+          <p>The virtual interview is not available right now. Your application is being reviewed by our mentors.</p>
+        </div>
+      </div>
+
+      <!-- ══════════════ PAID PROGRAM ══════════════ -->
+      <div class="panel" id="panel-paid">
+        <div class="panel-head"><h1>Paid Program &mdash; Guaranteed Placement Opportunity</h1><p>A faster route: train, build, and get a guaranteed placement opportunity with our hiring partners.</p></div>
+        <div class="glass-card" style="border-color:rgba(76,175,80,0.28);background:rgba(76,175,80,0.04);">
+          <div class="pitch-li"><i class="fas fa-check-circle"></i><span><strong style="color:#fff;">15 days of structured training</strong> in your chosen domain, mentor-guided from day one.</span></div>
+          <div class="pitch-li"><i class="fas fa-check-circle"></i><span><strong style="color:#fff;">45-day production role</strong> working on real projects with code review and support.</span></div>
+          <div class="pitch-li"><i class="fas fa-check-circle"></i><span><strong style="color:#fff;">Guaranteed placement opportunity</strong> with our hiring partners on completion + certification &mdash; your seat is confirmed the moment you enrol.</span></div>
+          <div class="pitch-li"><i class="fas fa-check-circle"></i><span>No waiting to be shortlisted &mdash; skip the selection queue entirely.</span></div>
+          <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <a class="btn-primary" href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"portal_paid_tab"}]' style="justify-content:center;"><i class="fas fa-rocket"></i> &nbsp;Explore &amp; Enrol in the Paid Program</a>
+            <span style="color:var(--tx-muted);font-size:13px;">One-time fee: <strong style="color:var(--gold);" id="paidAmt">&#8377;1599</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ LEARNING ══════════════ -->
+      <div class="panel" id="panel-learning">
+        <div class="panel-head"><h1>Learning</h1><p>Your courses, lessons, quizzes, and projects.</p></div>
+
+        <!-- Locked state -->
+        <div class="glass-card hidden" id="learnLockedCard" style="text-align:center;">
+          <div class="tutor-locked-icon" style="margin:0 auto 14px;"><i class="fas fa-lock"></i></div>
+          <h3 style="color:#fff;font-size:17px;font-weight:800;margin-bottom:8px;">Learning unlocks soon</h3>
+          <p id="learnLockedMsg" style="color:var(--tx-muted);font-size:13px;margin-bottom:14px;">Your classes begin on your joining date at 6:00 PM.</p>
+          <div class="countdown-row" id="learnCountdownRow" style="max-width:360px;margin:0 auto;">
+            <div class="cd-unit"><span class="cd-num" id="lcdDays">--</span><span class="cd-label">Days</span></div>
+            <div class="cd-unit"><span class="cd-num" id="lcdHours">--</span><span class="cd-label">Hours</span></div>
+            <div class="cd-unit"><span class="cd-num" id="lcdMins">--</span><span class="cd-label">Mins</span></div>
+            <div class="cd-unit"><span class="cd-num" id="lcdSecs">--</span><span class="cd-label">Secs</span></div>
+          </div>
+        </div>
+
+        <!-- Unlocked content -->
+        <div id="learnUnlockedWrap" class="hidden">
+          <div class="glass-card learning-section" id="learnCard1">
+            <div class="section-title"><i class="fas fa-book-open" style="color:var(--violet);"></i>Course Progress</div>
+            <div id="learnProgress"></div>
+          </div>
+          <div class="glass-card learning-section">
+            <div class="section-title"><i class="fas fa-list-check" style="color:var(--violet);"></i>Lessons</div>
+            <div class="att-table-wrap"><table class="data-table"><thead><tr><th>Day</th><th>Title</th><th>Status</th><th>Time Spent</th><th>Completed</th></tr></thead><tbody id="lessonsBody"><tr><td colspan="5" style="padding:20px;"><div id="lessonsSkel"></div></td></tr></tbody></table></div>
+          </div>
+          <div class="glass-card learning-section">
+            <div class="section-title"><i class="fas fa-question-circle" style="color:var(--violet);"></i>Quiz History</div>
+            <div class="att-table-wrap"><table class="data-table"><thead><tr><th>Quiz</th><th>Score</th><th>Result</th><th>Attempt</th><th>Date</th></tr></thead><tbody id="quizzesBody"><tr><td colspan="5" style="padding:20px;"><div id="quizSkel"></div></td></tr></tbody></table></div>
+          </div>
+          <div class="glass-card learning-section">
+            <div class="section-title"><i class="fas fa-code-branch" style="color:var(--violet);"></i>Projects</div>
+            <div class="att-table-wrap"><table class="data-table"><thead><tr><th>Project</th><th>Status</th><th>Phase</th><th>Confidence</th><th>Last Updated</th></tr></thead><tbody id="projectsBody"><tr><td colspan="5" style="padding:20px;"><div id="projSkel"></div></td></tr></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-wrap -->
+  </main>
+
+  <div id="_toast"></div>
+
+  <script nonce="{{ csp_nonce() }}">
+  'use strict';
+
+  /* ════ SHARED HELPERS ══════════════════════════════════════════════════
+     These five were called throughout this file but defined nowhere in it —
+     escHtml (44 call sites), showToast (14), fmtDate (7), fmtSecs (1),
+     fmtWeekRange (1). portal.html loads no external JS except the OneSignal
+     SDK, so every one of those calls threw ReferenceError and killed the
+     surrounding render — the Learning tab's lesson/quiz/project tables and
+     the attendance history among them.
+     escHtml/fmtDate are copied from admin.html; showToast is ported from
+     static/js/main.js (same (msg, color) signature this file already calls). */
+  function escHtml(s){
+    return (s === null || s === undefined ? '' : s).toString()
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function fmtDate(s){ return s ? String(s).split(' ')[0] : '—'; }
+  function fmtSecs(sec){
+    sec = parseInt(sec, 10);
+    if(!sec || sec < 0) return '—';
+    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
+    if(h) return h + 'h ' + m + 'm';
+    if(m) return m + 'm';
+    return sec + 's';
+  }
+  function fmtWeekRange(start, end){
+    const f = d => {
+      if(!d) return '';
+      const t = new Date(String(d).replace(' ', 'T'));
+      return isNaN(t) ? String(d)
+        : t.toLocaleDateString('en-IN', {day:'numeric', month:'short'});
+    };
+    const a = f(start), b = f(end);
+    return a && b ? a + ' – ' + b : (a || b || '—');
+  }
+  function showToast(msg, color){
+    let t = document.getElementById('_globalToast');
+    if(!t){
+      t = document.createElement('div');
+      t.id = '_globalToast';
+      t.style.cssText =
+        'position:fixed;bottom:24px;right:24px;background:var(--bg-surface,#0f1622);' +
+        'border:1px solid var(--border-strong,rgba(226,185,111,.3));' +
+        'padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;' +
+        'z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:opacity .3s;' +
+        'font-family:Inter,sans-serif;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.color = color || 'var(--gold, #e2b96f)';
+    t.style.display = 'block';
+    t.style.opacity = '1';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){
+      t.style.opacity = '0';
+      setTimeout(function(){ t.style.display = 'none'; }, 300);
+    }, 2800);
+  }
+
+  /* ════ APPLICATION STEP BAR ════════════════════════════════════════════
+     buildStepBar() had 5 call sites in renderOverview() and was defined
+     nowhere — every call threw ReferenceError and aborted the render.
+     The markup (#overviewStepBar, line ~429) and the full CSS component
+     (.step / .step-dot / .step-label / .step-line, lines ~82-92) were both
+     already present; only this function was missing.
+     Callers hide the bar first, so building it also reveals it. */
+  const STEP_SEQUENCE = ['Applied', 'Under Review', 'Selected', 'Enrolled', 'Accepted'];
+
+  function buildStepBar(elId, currentStep){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    let at = STEP_SEQUENCE.indexOf(currentStep);
+    if(at < 0) at = 0;
+
+    let html = '';
+    STEP_SEQUENCE.forEach(function(label, i){
+      const state = i < at ? 'done' : (i === at ? 'active' : '');
+      const mark  = i < at ? '<i class="fas fa-check"></i>' : String(i + 1);
+      if(i > 0){
+        html += '<div class="step-line' + (i <= at ? ' done' : '') + '"></div>';
+      }
+      html += '<div class="step">'
+            +   '<div class="step-inner">'
+            +     '<div class="step-dot ' + state + '">' + mark + '</div>'
+            +     '<div class="step-label ' + state + '">' + escHtml(label) + '</div>'
+            +   '</div>'
+            + '</div>';
+    });
+    el.innerHTML = html;
+    el.classList.remove('hidden');
+  }
+
+  /* ════ NOTIFICATION DOT ════════════════════════════════════════════════
+     Also undefined, and called at the top of loadPortal() — so it threw
+     before loadInterviewStatus() and renderOverview() could run, and the
+     surrounding catch reported it as "Network error". That single missing
+     function is why the Overview never rendered.
+     Deliberately fire-and-forget and fully swallowed: this is decoration,
+     and must never again be able to abort portal startup. */
+  function refreshNotifDot(){
+    const dot = document.getElementById('notifUnreadDot');
+    if(!dot) return;
+    fetch('/intern/notifications', {credentials:'include'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d || d.status !== 'success') return;
+        const unread = (d.notifications || []).filter(function(n){ return !n.is_read; }).length;
+        dot.style.display = unread > 0 ? '' : 'none';
+        dot.title = unread > 0 ? unread + ' unread' : '';
+      })
+      .catch(function(){ /* decoration only — never surface */ });
+  }
+
+  /* ════ STATE ════ */
+  let _intern=null,_apps=[],_jobApps=[],_enr=null,_status='',_ivStatus=null,_reapplyInfo=null;
+  let _upiId='Q681021429@ybl',_upiAmount=499,_selectedFile=null,_paidEligible=false;
+  let _currentJobAppId=null,_jobDepositFile=null;
+  let _joiningDate=null,_joiningDateStr='',_isUnlocked=false,_allWeeks=[];
+  let _attSummary={},_courseEnrs=[],_tasksCount=0,_totalCoins=0;
+  function badgeClass(s){const m={'Apply Pending':'badge-muted','Under Review':'badge-blue','On Hold':'badge-amber','Selected':'badge-gold','Selected - Pending Certifications':'badge-green','Pending-Certifications':'badge-gold','Shortlisted':'badge-blue','Hired':'badge-green','Applied':'badge-muted','Enrollment Pending':'badge-amber','Enrolled':'badge-blue','Accepted':'badge-green','Rejected':'badge-red','Paid-Enrolled':'badge-blue'};return m[s]||'badge-muted';}
+
+  /* ════ SIDEBAR / TABS ════ */
+  function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('scrim').classList.toggle('active');}
+  function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('scrim').classList.remove('active');}
+  function switchTab(name){
+    document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.tab===name));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    const panel=document.getElementById('panel-'+name);if(panel)panel.classList.add('active');
+    document.getElementById('mTitle').textContent=TAB_TITLES[name]||'My Portal';
+    if(name==='learning')onLearningTab();
+    if(name==='myapplications')loadMyApplications();
+    if(name==='coins')loadCoins();
+    if(name==='certificate')loadCertificates();
+    if(name==='leaderboard')loadLeaderboard();
+    if(name==='cohorts')loadCohorts();
+    if(name==='messages')loadMessages();
+    if(name==='notifications')loadNotifications();
+    closeSidebar();
+  }
+
+  /* ════ COHORTS (UAT #35) ════ */
+  let _cohortsLoaded=false;
+  function loadCohorts(force){
+    if(_cohortsLoaded && !force) return;
+    const box=document.getElementById('cohortsBody');
+    fetch('/intern/cohorts',{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success'){ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load cohorts.</p>'; return; }
+        _cohortsLoaded=true;
+        const cs=d.cohorts||[];
+        if(!cs.length){ box.innerHTML='<div class="glass-card" style="text-align:center;padding:26px;"><p style="color:var(--tx-muted);font-size:14px;">No cohorts scheduled right now. Check back soon!</p></div>'; return; }
+        box.innerHTML=cs.map(c=>{
+          const seats=(c.seats_left===null)?'':(' &middot; '+c.seats_left+' seats left');
+          let action;
+          if(c.enrolled){
+            action='<div style="margin-top:10px;border:1px solid rgba(52,175,80,.35);background:rgba(52,175,80,.08);border-radius:10px;padding:10px 12px;">'
+              +'<span style="color:var(--green,#34d399);font-weight:700;font-size:13px;"><i class="fas fa-check"></i> You\'re in.</span> '
+              +'<a href="'+escHtml(c.meeting_url)+'" target="_blank" rel="noopener" style="color:var(--gold);font-weight:600;">Join link</a></div>';
+          } else {
+            action='<button class="btn-primary" style="margin-top:10px;" '+actAttr('click','enrollCohort',[c.id,'$el'])+'><i class="fas fa-user-plus"></i>&nbsp; Join cohort</button>';
+          }
+          return '<div class="glass-card" style="margin-bottom:12px;padding:16px 18px;">'
+            +'<div style="color:#fff;font-weight:700;font-size:15px;">'+escHtml(c.title)+'</div>'
+            +'<div style="color:var(--tx-muted);font-size:12.5px;margin-top:3px;">'+escHtml(c.company_name)+' &middot; '+escHtml(c.platform||'Virtual')+' &middot; '+escHtml(c.starts_at||'')+seats+'</div>'
+            +(c.description?'<p style="color:#c9d3dd;font-size:13px;margin:8px 0 0;">'+escHtml(c.description)+'</p>':'')
+            +(c.skills?'<div style="color:var(--tx-muted);font-size:12px;margin-top:6px;"><i class="fas fa-bolt" style="color:var(--gold);"></i> '+escHtml(c.skills)+'</div>':'')
+            +action+'</div>';
+        }).join('');
+      }).catch(()=>{ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Network error.</p>'; });
+  }
+  function enrollCohort(id,btn){
+    btn.disabled=true; btn.innerHTML='Joining…';
+    fetch('/cohorts/'+id+'/enroll',{method:'POST',credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status==='success'){ showToast('Joined! Link sent to your notifications','gold'); loadCohorts(true); }
+        else { btn.disabled=false; btn.innerHTML='Join cohort'; showToast(d.message||'Could not join','red'); }
+      }).catch(()=>{ btn.disabled=false; btn.innerHTML='Join cohort'; showToast('Network error','red'); });
+  }
+
+  /* ════ MY APPLICATIONS (job board, Track 2 §B) ════ */
+  let _myAppsLoaded=false;
+  /* T5: per-applied-post interview action (Start/Resume/Locked/Cooling/Completed). */
+  function ivActionHtml(a){
+    const iv=a.interview;
+    if(!iv) return '';
+    const href='/interview?post_id='+a.post_id;
+    if(iv.in_progress) return '<a class="btn-secondary" href="'+href+'" style="margin-top:10px;display:inline-flex;"><i class="fas fa-play"></i>&nbsp; Resume Interview</a>';
+    if(iv.status==='completed') return '<span class="badge badge-blue" style="margin-top:10px;display:inline-block;"><i class="fas fa-circle-check"></i> Interview completed</span>';
+    if(iv.locked) return '<span class="badge" style="margin-top:10px;display:inline-block;color:var(--tx-muted);">Interview attempts used up for this post</span>';
+    if(iv.cooling_until) return '<span class="badge" style="margin-top:10px;display:inline-block;color:var(--tx-muted);">Next attempt available soon</span>';
+    if(iv.can_start) return '<a class="btn-secondary" href="'+href+'" style="margin-top:10px;display:inline-flex;"><i class="fas fa-robot"></i>&nbsp; Start Interview</a>';
+    return '';
+  }
+  function loadMyApplications(force){
+    if(_myAppsLoaded && !force) return;
+    const box=document.getElementById('myAppsBody');
+    fetch('/intern/my-applications',{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success'){ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load your applications.</p>'; return; }
+        _myAppsLoaded=true;
+        const apps=d.applications||[]; const tb=d.tutor_base||'';
+        if(!apps.length){
+          box.innerHTML='<div class="glass-card" style="text-align:center;padding:26px;"><p style="color:var(--tx-muted);font-size:14px;margin-bottom:12px;">You haven\'t applied to any jobs or internships yet.</p>'
+            +'<a class="btn-primary" href="/jobs" style="justify-content:center;text-decoration:none;display:inline-flex;"><i class="fas fa-briefcase"></i>&nbsp; Browse the board</a></div>';
+          return;
+        }
+        // T5: nudge if any applied post still has no interview attempt started.
+        const needsSelection=apps.some(a=>a.interview && a.interview.status==='not_started' && a.interview.can_start);
+        let html=needsSelection
+          ? '<div class="glass-card" style="margin-bottom:14px;padding:14px 18px;border-color:rgba(226,185,111,.3);background:rgba(226,185,111,.06);">'
+            +'<strong style="color:var(--gold);">Select an internship to continue your application</strong>'
+            +'<p style="color:var(--tx-muted);font-size:13px;margin:4px 0 0;">Pick any applied post below and start its interview whenever you\'re ready.</p></div>'
+          : '';
+        html+=apps.map(a=>{
+          const pending=(a.status==='Selected - Pending Certifications');
+          let certBlock='';
+          if(pending){
+            const certs=(a.needed_certs||[]);
+            const items=certs.length
+              ? '<ul style="margin:8px 0 0;padding-left:18px;">'+certs.map(c=>'<li style="margin:3px 0;"><a href="/course/'+c.course_id+'/start" style="color:var(--gold);font-weight:600;">'+escHtml(c.title)+'</a></li>').join('')+'</ul>'
+              : '<p style="color:var(--tx-muted);font-size:13px;margin:6px 0 0;">No specific certifications listed — check with the company.</p>';
+            certBlock='<div style="margin-top:12px;border:1px solid rgba(76,175,80,.35);background:rgba(76,175,80,.08);border-radius:12px;padding:14px 16px;">'
+              +'<div style="color:var(--green);font-weight:800;font-size:14px;">&#127881; You\'ve been selected for this role!</div>'
+              +'<p style="color:var(--tx-muted);font-size:13px;margin:6px 0 0;">Complete the certification(s) below on this portal to proceed:</p>'+items
+              +(a.decision_note?'<p style="color:#c9d3dd;font-size:13px;margin:10px 0 0;font-style:italic;">&ldquo;'+escHtml(a.decision_note)+'&rdquo;</p>':'')
+              +'</div>';
+          }
+          return '<div class="glass-card" style="margin-bottom:12px;padding:16px 18px;">'
+            +'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">'
+            +'<div><a href="'+escHtml(a.post_path)+'" style="color:#fff;font-weight:700;font-size:15px;text-decoration:none;">'+escHtml(a.post_title)+'</a>'
+            +'<div style="color:var(--tx-muted);font-size:12.5px;margin-top:2px;">'+escHtml(a.company_name)+' &middot; '+escHtml(a.post_type)+' &middot; applied '+fmtDate(a.created_at)+'</div></div>'
+            +'<span class="badge '+badgeClass(a.status)+'">'+escHtml(a.status)+'</span></div>'
+            +certBlock+ivActionHtml(a)+'</div>';
+        }).join('');
+        box.innerHTML=html;
+      }).catch(()=>{ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Network error.</p>'; });
+  }
+
+  /* --- LEADERBOARD --- */
+  let _lbData = null, _lbView = 'domain';
+  function loadLeaderboard(force){
+    if(_lbData && !force){ renderLeaderboard(); return; }
+    document.getElementById('lbBody').innerHTML = '<p style="color:var(--tx-muted);font-size:14px;">Loading…</p>';
+    fetch('/intern/leaderboard', {credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success'){ document.getElementById('lbBody').innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load leaderboard.</p>'; return; }
+        _lbData = d;
+        renderLeaderboard();
+      }).catch(()=>{ document.getElementById('lbBody').innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load leaderboard.</p>'; });
+  }
+  function lbShow(view){
+    _lbView = view;
+    document.getElementById('lbBtnDomain').classList.toggle('active', view==='domain');
+    document.getElementById('lbBtnGlobal').classList.toggle('active', view==='global');
+    renderLeaderboard();
+  }
+  function renderLeaderboard(){
+    if(!_lbData) return;
+    const rows = _lbData[_lbView] || [];
+    if(!rows.length){ document.getElementById('lbBody').innerHTML='<p style="color:var(--tx-muted);font-size:14px;">No ranked interns yet.</p>'; return; }
+    document.getElementById('lbBody').innerHTML = rows.map(r=>
+      `<div class="glass-card" style="display:flex;justify-content:space-between;padding:12px 16px;margin-bottom:8px;${r.is_me?'border-color:var(--gold);':''}">
+         <span>#${r.rank}${r.is_me?' (You)':''}</span>
+         <span>${escHtml(r.name || r.intern_name || 'Anonymous')} — ${r.score || r.points || 0} pts</span>
+       </div>`).join('');
+  }
+
+  /* --- NOTIFICATIONS --- */
+  let _notifLoaded=false;
+  function loadNotifications(force){
+    if(_notifLoaded && !force) return;
+    const box=document.getElementById('notifBody');
+    fetch('/intern/notifications',{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success'){ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load notifications.</p>'; return; }
+        _notifLoaded=true;
+        const rows=d.notifications||[];
+        if(!rows.length){ box.innerHTML='<div class="glass-card" style="text-align:center;padding:26px;"><p style="color:var(--tx-muted);font-size:14px;">No notifications yet.</p></div>'; return; }
+        /* n.title/body/created_at were escaped, but n.link was interpolated RAW
+           into an onclick attribute that navigated — a stored link containing a
+           single quote broke out of the string and executed. The URL now rides
+           in an escaped data attribute and a delegated listener navigates, so no
+           DB value ever lands inside executable markup. */
+        box.innerHTML = rows.map(n=>
+          `<div class="glass-card notif-row" style="padding:14px 16px;margin-bottom:8px;${n.is_read?'':'border-color:var(--gold);'}"${n.link?` data-link="${escHtml(n.link)}" style="cursor:pointer;"`:''}>
+             <div style="font-weight:700;color:#fff;">${escHtml(n.title||'')}</div>
+             <div style="color:var(--tx-muted);font-size:13px;">${escHtml(n.body||'')}</div>
+             <div style="color:var(--tx-muted);font-size:11px;margin-top:4px;">${escHtml(n.created_at||'')}</div>
+           </div>`).join('');
+        box.querySelectorAll('.notif-row[data-link]').forEach(function(el){
+          el.addEventListener('click', function(){
+            var href = el.getAttribute('data-link') || '';
+            /* same-origin / relative only — never let stored data send a user
+               to an arbitrary external site, or run a javascript: URL. */
+            if (/^\/(?!\/)/.test(href)) window.location.href = href;
+          });
+        });
+      }).catch(()=>{ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load notifications.</p>'; });
+  }
+  function notifReadAll(){
+    fetch('/intern/notifications/read-all',{method:'POST',credentials:'include'})
+      .then(()=>loadNotifications(true));
+  }
+
+  /* --- MESSAGES --- */
+  let _msgLoaded=false, _msgCurrentConv=null;
+  function loadMessages(force){
+    if(_msgLoaded && !force) return;
+    fetch('/intern/messages',{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success') return;
+        _msgLoaded=true;
+        const box=document.getElementById('msgInbox');
+        const rows=d.conversations||[];
+        box.innerHTML = rows.length
+          ? rows.map(c=>`<div class="glass-card" style="padding:14px;margin-bottom:8px;cursor:pointer;" ${actAttr('click','openMsgThread',[c.id])}>${escHtml(c.label||'Conversation')}</div>`).join('')
+          : '<p style="color:var(--tx-muted);font-size:14px;">No conversations yet.</p>';
+      });
+  }
+  function openMsgThread(convId){
+    _msgCurrentConv = convId;
+    fetch('/intern/messages/'+convId,{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success') return;
+        document.getElementById('msgInbox').style.display='none';
+        document.getElementById('msgThread').style.display='block';
+        document.getElementById('msgThreadLabel').textContent = d.label||'';
+        document.getElementById('msgStream').innerHTML = (d.messages||[]).map(m=>
+          `<div style="align-self:${m.sender_type===d.my_sender_type?'flex-end':'flex-start'};background:${m.sender_type===d.my_sender_type?'var(--gold)':'rgba(255,255,255,.05)'};padding:8px 12px;border-radius:10px;max-width:75%;margin-bottom:8px;">${escHtml(m.body)}</div>`
+        ).join('');
+      });
+  }
+  function msgBackToInbox(){
+    document.getElementById('msgThread').style.display='none';
+    document.getElementById('msgInbox').style.display='block';
+    _msgCurrentConv=null;
+  }
+  function msgSend(evt){
+    evt.preventDefault();
+    if(!_msgCurrentConv) return false;
+    const input=document.getElementById('msgBody');
+    const body=input.value.trim();
+    if(!body) return false;
+    fetch('/portal/messages/'+_msgCurrentConv+'/send', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({body})
+    }).then(r=>r.json()).then(d=>{
+      if(d.status==='success'){ input.value=''; openMsgThread(_msgCurrentConv); }
+    });
+    return false;
+  }
+
+  /* ════ COINS (UAT #6) ════ */
+  let _coinsLoaded=false;
+  function loadCoins(force){
+    if(_coinsLoaded && !force) return;
+    const box=document.getElementById('coinsBody');
+    fetch('/intern/coins',{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success'){ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load your coins.</p>'; return; }
+        _coinsLoaded=true;
+        const b=d.balances||{}, task=b.task||0, ad=b.ad||0, rows=d.rows||[];
+        let html='<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;">'
+          +'<div class="glass-card" style="flex:1;min-width:150px;padding:18px;"><div style="font-size:1.9rem;font-weight:800;color:#fff;">'+(task+ad)+'</div><div style="color:var(--tx-muted);font-size:13px;">Total coins</div></div>'
+          +'<div class="glass-card" style="flex:1;min-width:150px;padding:18px;"><div style="font-size:1.9rem;font-weight:800;color:#fff;">'+task+'</div><div style="color:var(--tx-muted);font-size:13px;"><span class="badge badge-blue">task</span> withdrawable</div></div>'
+          +'<div class="glass-card" style="flex:1;min-width:150px;padding:18px;"><div style="font-size:1.9rem;font-weight:800;color:#fff;">'+ad+'</div><div style="color:var(--tx-muted);font-size:13px;"><span class="badge badge-gold">ad</span> in-app</div></div>'
+          +'</div>';
+        html+='<div class="glass-card" style="padding:0;overflow:hidden;"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:520px;">'
+          +'<tr style="text-align:left;color:var(--tx-muted);font-size:12px;"><th style="padding:11px 14px;">When</th><th style="padding:11px 14px;">Type</th><th style="padding:11px 14px;">Change</th><th style="padding:11px 14px;">Balance</th><th style="padding:11px 14px;">Reason</th></tr>';
+        if(rows.length){
+          html+=rows.map(r=>{
+            const pos=(r.delta>=0);
+            const kind=(r.ledger_kind==='task')?'<span class="badge badge-blue">task</span>':'<span class="badge badge-gold">ad</span>';
+            return '<tr style="border-top:1px solid rgba(255,255,255,.06);font-size:13px;">'
+              +'<td style="padding:10px 14px;white-space:nowrap;">'+escHtml(r.event_ts||'—')+'</td>'
+              +'<td style="padding:10px 14px;">'+kind+'</td>'
+              +'<td style="padding:10px 14px;color:'+(pos?'#34d399':'#f87171')+';font-weight:700;">'+(pos?'+':'')+r.delta+'</td>'
+              +'<td style="padding:10px 14px;">'+(r.balance_after!=null?r.balance_after:'—')+'</td>'
+              +'<td style="padding:10px 14px;color:var(--tx-muted);">'+escHtml(r.reason||'—')+'</td></tr>';
+          }).join('');
+        } else {
+          html+='<tr><td colspan="5" style="padding:18px 14px;color:var(--tx-muted);text-align:center;">No coin activity yet.</td></tr>';
+        }
+        html+='</table></div></div>'
+          +'<p style="color:var(--tx-muted);font-size:12px;margin-top:12px;">Task-coins are withdrawable; ad-coins are in-app only. Balances are maintained by the AI Tutor — this view is read-only.</p>';
+        box.innerHTML=html;
+      }).catch(()=>{ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Network error.</p>'; });
+  }
+
+  /* ════ CERTIFICATE (UAT #7) ════ */
+  let _certLoaded=false;
+  function loadCertificates(force){
+    if(_certLoaded && !force) return;
+    const box=document.getElementById('certBody');
+    if(!box) return;
+    fetch('/intern/certificates',{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        if(d.status!=='success'){ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Could not load your certificates.</p>'; return; }
+        _certLoaded=true;
+        const certs=d.certificates||[];
+        if(!certs.length){
+          box.innerHTML='<div style="color:var(--tx-muted);text-align:center;padding:20px;">No certificates earned yet. Complete your internship courses to earn certificates!</div>';
+        } else {
+          box.innerHTML=certs.map(c=>'<div class="glass-card" style="padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;color:#fff;">'+escHtml(c.course_title)+'</div><div style="font-size:12px;color:var(--tx-muted);">Issued: '+escHtml(c.issued_at)+'</div></div><a href="'+escHtml(c.download_url)+'" target="_blank" class="btn btn-primary" style="font-size:13px;padding:6px 14px;">Download</a></div>').join('');
+        }
+      }).catch(()=>{ box.innerHTML='<p style="color:var(--tx-muted);font-size:14px;">Network error.</p>'; });
+  }
+
+  /* ════ MAIN PORTAL BOOTSTRAP ════ */
+  async function loadPortal(){
+    try{
+      const res  = await fetch('/intern/me',{credentials:'include'});
+      const data = await res.json();
+      if(data.status!=='success'){ showToast('Could not load your profile','red'); return; }
+
+      _intern  = data.intern || {};
+      _apps    = data.applications || [];
+      _jobApps = data.job_applications || [];
+      _enr     = data.enrollment;
+      _courseEnrs = data.course_enrollments || [];
+
+      _upiId=data.upi_id||_upiId;_upiAmount=data.upi_amount||_upiAmount;
+      _paidEligible=!!data.paid_eligible;_reapplyInfo=data.reapply_info;
+      _joiningDateStr=data.joining_date||(_enr&&_enr.joining_date)||'';
+      _joiningDate=parseJoiningDate(_joiningDateStr);
+
+      const nameEl = document.getElementById('internName');
+      if(nameEl) nameEl.textContent=_intern.name||'Intern';
+      const upiEl = document.getElementById('upiIdDisplay');
+      if(upiEl) upiEl.textContent=_upiId;
+      const pa=document.getElementById('paidAmt');if(pa&&data.paid_program_amount)pa.innerHTML='&#8377;'+data.paid_program_amount;
+
+      if(_intern.email){window.OneSignalDeferred=window.OneSignalDeferred||[];OneSignalDeferred.push(async function(OneSignal){try{await OneSignal.login(_intern.email);}catch(e){}});}
+
+      prefillAccountSettings();
+      populateApplyAnother();
+
+      // Determine the canonical status (Accepted on ANY application wins).
+      const acceptedApp=(_apps||[]).find(a=>a.status==='Accepted');
+      const latestApp=_apps[0]||null;
+      const latestJobApp=_jobApps[0]||null;
+      _status=acceptedApp?'Accepted':(latestApp?latestApp.status:(latestJobApp?'__JOB_ONLY__':''));
+
+      // Tab visibility
+      const navPaid = document.getElementById('navPaid');
+      if(navPaid) navPaid.classList.toggle('hidden',!_paidEligible);
+      const showLearning=(_status==='Accepted'||_status==='Paid-Enrolled');
+      const navLearn = document.getElementById('navLearning');
+      if(navLearn) navLearn.classList.toggle('hidden',!showLearning);
+      const POST_SCREENING=new Set(['Selected','Enrollment Pending','Enrolled','Accepted','Paid-Enrolled']);
+      const navIv = document.getElementById('navInterview');
+      if(navIv) navIv.classList.toggle('hidden',POST_SCREENING.has(_status));
+
+      // Reveal portal
+      const loadScr = document.getElementById('loadingScreen');
+      if(loadScr) loadScr.classList.add('hidden');
+      switchTab('overview');
+      const _h=(location.hash||'').replace('#','');
+      if(_h && document.getElementById('panel-'+_h)) switchTab(_h);
+      refreshNotifDot();
+
+      await loadInterviewStatus();
+
+      renderOverview();
+
+      if(_status==='Accepted'){initAccepted();}
+    }catch(e){showToast('Network error','red');}
+  }
+
+  async function fetchApplyToken(){
+    try{const r=await fetch('/apply-token',{credentials:'include'});const d=await r.json();if(d&&d.token){['ra_ts','ad_ts'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=d.token;});}}catch(e){}
+  }
+
+  /* ════ INTERVIEW STATUS (Overview card + Interview tab) ════ */
+  async function loadInterviewStatus(){
+    try{
+      const res=await fetch('/intern/interview/status',{credentials:'include'});
+      if(!res.ok){_ivStatus=null;}else{_ivStatus=await res.json();}
+    }catch(e){_ivStatus=null;}
+    renderInterviewTab();
+  }
+  function ivDone(){return !!(_ivStatus&&(_ivStatus.interview_status==='completed'||(_ivStatus.attempts_used||0)>0));}
+
+  function renderInterviewTab(){
+    const card=document.getElementById('interviewCard'),disabled=document.getElementById('interviewDisabled');
+    const s=_ivStatus;
+    if(!s||s.status!=='success'||!s.enabled){card.classList.add('hidden');disabled.classList.remove('hidden');return;}
+    disabled.classList.add('hidden');card.classList.remove('hidden');
+    const icon=document.getElementById('ivCardIcon'),title=document.getElementById('ivCardTitle'),body=document.getElementById('ivCardBody'),action=document.getElementById('ivCardAction');
+    const startBtn='<a class="btn-primary" href="/interview" style="justify-content:center;"><i class="fas fa-robot"></i>&nbsp; Start Virtual Interview</a>';
+    const ftCta='<a class="btn-primary" href="/program" '+actAttr('click','dbertGA',['paid_program_cta_click',{source:'portal_interview_card'}])+' style="background:linear-gradient(135deg,var(--green),#2e7d32);color:#fff;justify-content:center;"><i class="fas fa-bolt"></i>&nbsp; Explore the Paid Program</a>';
+    const priorDone=(s.interview_status==='completed')||((s.attempts_used||0)>0);
+    if(s.in_progress){
+      icon.innerHTML='&#9203;';title.textContent='Resume your interview';
+      body.innerHTML='You have an interview in progress. Pick up where you left off — it only takes a few minutes.';
+      action.innerHTML='<a class="btn-primary" href="/interview" style="justify-content:center;"><i class="fas fa-play"></i>&nbsp; Resume Interview</a>';
+    }else if(s.can_start){
+      icon.innerHTML='&#129302;';title.textContent=priorDone?'Take another attempt':'Take your Virtual Interview';
+      body.innerHTML=priorDone?'You can take one more attempt with fresh questions — this is optional, your application is already under review.':'A short, AI-guided screening (~5 questions) tailored to your domain. Completing it helps our mentors review you faster.';
+      action.innerHTML=startBtn;
+    }else if(s.locked){
+      icon.innerHTML='&#9989;';title.textContent='Interview completed';
+      body.innerHTML='Thanks for completing your virtual interview — our mentors are reviewing your responses. Want a faster route? The Paid Program trains you and includes a guaranteed placement opportunity with our hiring partners on completion + certification.';
+      action.innerHTML=ftCta;
+    }else if(s.cooling_until){
+      icon.innerHTML='&#9203;';title.textContent='Next attempt cooling down';
+      const until=new Date(s.cooling_until.replace(' ','T'));
+      const b2='<a href="/program" '+actAttr('click','dbertGA',['paid_program_cta_click',{source:'portal_interview_cooldown'}])+' style="color:var(--gold);font-weight:700;text-decoration:none;">Want a guaranteed placement opportunity without waiting on selection? Explore the paid fast-track &rarr;</a>';
+      const tick=()=>{let diff=Math.max(0,Math.floor((until-new Date())/1000));
+        if(diff<=0){body.innerHTML='Your next attempt is ready. <a href="/interview" style="color:var(--gold);font-weight:700;">Open it &rarr;</a>';action.innerHTML='';return;}
+        const h=Math.floor(diff/3600),m=Math.floor((diff%3600)/60);
+        body.innerHTML='You can take an optional second attempt in <strong style="color:var(--gold);">'+h+'h '+m+'m</strong>. Your application is already under review.<br><span style="font-size:12px;">'+b2+'</span>';
+        action.innerHTML='';setTimeout(tick,30000);};
+      tick();
+    }else if(s.interview_status==='completed'){
+      icon.innerHTML='&#9989;';title.textContent='Interview completed';
+      body.innerHTML='Thanks for completing your virtual interview — our mentors are reviewing your responses. Want a faster route? The Paid Program trains you and includes a guaranteed placement opportunity with our hiring partners on completion + certification.';
+      action.innerHTML=ftCta;
+    }else{
+      icon.innerHTML='&#129302;';title.textContent='Virtual Interview';
+      body.innerHTML='Your interview entry will appear here when available.';action.innerHTML='';
+    }
+  }
+
+  /* ════ OVERVIEW: status + next-step card ════ */
+  function updateOverviewCardsGrid() {
+    // Card 1: Active Course & Next Lesson Redirect
+    const courseTitleEl = document.getElementById('ovCourseTitle');
+    const courseDescEl  = document.getElementById('ovCourseDesc');
+    const coursePctEl   = document.getElementById('ovCoursePct');
+    const courseFillEl  = document.getElementById('ovCourseProgressFill');
+    const courseBtnEl   = document.getElementById('ovCourseBtn');
+
+    if (_courseEnrs && _courseEnrs.length > 0) {
+      const c = _courseEnrs[0];
+      if (courseTitleEl) courseTitleEl.textContent = c.title || 'Enrolled Course';
+      const dayNum = c.current_day || 1;
+      if (courseDescEl) courseDescEl.innerHTML = `Enrolled &bull; Current Lesson: <strong>Day ${dayNum}</strong>`;
+      const pct = c.guided_completion_pct || c.learning_completion_pct || c.tutor_completion_pct || 0;
+      if (coursePctEl) coursePctEl.textContent = pct + '%';
+      /* #ovCourseProgressFill is the .ring now, not a linear bar — it reads
+         the --pct custom property rather than a width. */
+      if (courseFillEl) courseFillEl.style.setProperty('--pct', pct);
+      if (courseBtnEl) {
+        courseBtnEl.href = `/courses/${c.course_id}/learn`;
+        courseBtnEl.innerHTML = `<i class="fas fa-play-circle"></i> &nbsp;Resume Lesson (Day ${dayNum}) →`;
+        courseBtnEl.style.background = 'linear-gradient(135deg, var(--violet), #3b82f6)';
+        courseBtnEl.style.color = '#fff';
+      }
+    } else {
+      if (courseTitleEl) courseTitleEl.textContent = 'Guided Learning Workspace';
+      if (courseDescEl) courseDescEl.textContent = 'Access your enrolled courses, guided learning lessons, and subtopic quizzes.';
+      if (coursePctEl) coursePctEl.textContent = '0%';
+      if (courseFillEl) courseFillEl.style.setProperty('--pct', 0);
+      if (courseBtnEl) {
+        courseBtnEl.href = '/courses';
+        courseBtnEl.innerHTML = '<span>Continue Learning →</span>';
+      }
+    }
+
+    // Card 2: Micro-Tasks & Coins Rewards
+    const coinsValEl       = document.getElementById('ovCoinsVal');
+    const tasksDoneCountEl = document.getElementById('ovTasksDoneCount');
+    const coinsEarnedEl    = document.getElementById('ovCoinsEarnedCount');
+
+    if (coinsValEl) coinsValEl.textContent = (_totalCoins || 0) + ' Coins';
+    if (tasksDoneCountEl) tasksDoneCountEl.textContent = _tasksCount || 0;
+    if (coinsEarnedEl) coinsEarnedEl.textContent = _totalCoins || 0;
+
+    // Card 3: Weekly Attendance & 10-Hour Target
+    const attBadgeEl   = document.getElementById('ovAttStatusBadge');
+    const attTextEl    = document.getElementById('ovAttBadgeText');
+    const attHoursEl   = document.getElementById('ovAttHoursText');
+    const attFillEl    = document.getElementById('ovAttProgressFill');
+    const attCardBtnEl = document.getElementById('ovAttCardBtn');
+
+    const attMins = (_attSummary && _attSummary.total_minutes != null) ? _attSummary.total_minutes : 0;
+    const hours = (attMins / 60.0).toFixed(1);
+    const pct = Math.min(100, Math.round((attMins / 600.0) * 100));
+
+    if (attHoursEl) attHoursEl.textContent = hours + ' / 10.0 hrs';
+    if (attFillEl) attFillEl.style.width = pct + '%';
+
+    if (hours < 10.0 || (_attSummary && _attSummary.status === 'Action Needed')) {
+      if (attBadgeEl) {
+        attBadgeEl.className = 'badge badge-gold';
+        attBadgeEl.style.background = 'rgba(239, 68, 68, 0.18)';
+        attBadgeEl.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        attBadgeEl.style.color = '#ef4444';
+      }
+      if (attTextEl) attTextEl.innerHTML = `⚠️ Action Needed: ${hours}h / 10h`;
+      if (attCardBtnEl) {
+        attCardBtnEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> &nbsp;Log Attendance Hours (${hours}/10h) →`;
+        attCardBtnEl.style.background = 'rgba(239, 68, 68, 0.15)';
+        attCardBtnEl.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+        attCardBtnEl.style.color = '#ef4444';
+        attCardBtnEl.style.fontWeight = '700';
+      }
+    } else {
+      if (attBadgeEl) {
+        attBadgeEl.className = 'badge badge-green';
+        attBadgeEl.style.background = '';
+        attBadgeEl.style.border = '';
+        attBadgeEl.style.color = '';
+      }
+      if (attTextEl) attTextEl.innerHTML = `On Track: ${hours}h / 10h`;
+      if (attCardBtnEl) {
+        attCardBtnEl.innerHTML = `<span>View Attendance Log →</span>`;
+        attCardBtnEl.style.background = 'transparent';
+        attCardBtnEl.style.border = '1px solid var(--border)';
+        attCardBtnEl.style.color = '#fff';
+      }
+    }
+  }
+
+  function showOvBlock(id){['ovSelected','ovEnrolled','ovRejected','ovAccepted'].forEach(b=>document.getElementById(b).classList.toggle('hidden',b!==id));}
+  function renderOverview(){
+    updateOverviewCardsGrid();
+    const name=(_intern.name||'').split(' ')[0]||'there';
+    const domain=_intern.domain||'';const emoji=DOMAIN_EMOJIS[domain]||'';
+    const nsIcon=document.getElementById('nsIcon'),nsBadge=document.getElementById('nsBadge'),nsTitle=document.getElementById('nsTitle'),nsMsg=document.getElementById('nsMsg'),nsAction=document.getElementById('nsAction'),nsSoft=document.getElementById('nsSoft'),nsDomain=document.getElementById('nsDomain');
+    document.getElementById('ovWelcomeBanner').classList.add('hidden');
+    document.getElementById('nextStepCard').classList.remove('hidden');  // UAT #39: default visible; the Accepted branch hides it
+    nsBadge.className='badge '+badgeClass(_status);nsBadge.textContent=_status;
+    nsDomain.innerHTML=emoji+' '+escHtml(domain);nsSoft.innerHTML='';nsAction.innerHTML='';
+    const stepBar=document.getElementById('overviewStepBar');stepBar.classList.add('hidden');
+    const btnTab=(tab,label,icon,cls)=>`<button class="btn-primary ${cls||''}" ${actAttr('click','switchTab',[tab])} style="justify-content:center;"><i class="fas ${icon}"></i>&nbsp; ${label}</button>`;
+
+    if(_status==='__JOB_ONLY__'){
+      const latestJobApp=_jobApps[0];
+      document.getElementById('ovJobDeposit').classList.add('hidden');
+      if(latestJobApp.status==='Hired'){
+        _currentJobAppId=latestJobApp.id;
+        const ds=latestJobApp.deposit_status;
+        nsIcon.innerHTML='&#127881;';
+        nsBadge.className='badge badge-green';nsBadge.textContent='Hired';
+        nsTitle.textContent=latestJobApp.post_title;
+        if(!ds || ds==='rejected'){
+          nsMsg.textContent=(ds==='rejected'
+            ? 'Your previous deposit payment could not be verified — please re-upload below.'
+            : escHtml(latestJobApp.company_name||'The company')+' has hired you! Pay your refundable ₹499 security deposit to confirm.');
+          nsAction.innerHTML='';
+          document.getElementById('ovJobDeposit').classList.remove('hidden');
+          document.getElementById('jdIntro').textContent=(ds==='rejected'
+            ? 'We could not verify your last payment screenshot. Please upload a clear one below.'
+            : 'This fully refundable deposit is returned 100% once you successfully complete the internship.');
+          document.getElementById('jdError').classList.remove('visible');
+        }else if(ds==='pending'){
+          nsMsg.textContent='Your ₹499 deposit is submitted and under review. We verify within 24 hours.';
+          nsAction.innerHTML='';
+        }else if(ds==='verified'){
+          nsMsg.textContent='Your ₹499 deposit is confirmed — you\'re all set. It\'s fully refundable on successful completion.';
+          nsAction.innerHTML=btnTab('myapplications','View in My Applications','fa-briefcase');
+        }else if(ds==='refunded'){
+          nsMsg.textContent='Your ₹499 deposit has been refunded. Congratulations on completing the internship!';
+          nsAction.innerHTML=btnTab('myapplications','View in My Applications','fa-briefcase');
+        }
+        stepBar.classList.add('hidden');
+      }else if(latestJobApp.status==='Pending-Certifications' || latestJobApp.status==='Selected - Pending Certifications'){
+        nsIcon.innerHTML='&#127891;';
+        nsBadge.className='badge badge-gold';
+        nsBadge.textContent='Certification Pending';
+        nsTitle.textContent='Complete Required Course Certification';
+        nsMsg.textContent='Your application for '+escHtml(latestJobApp.post_title)+' at '+escHtml(latestJobApp.company_name||'the company')+' requires a verified course certificate to unlock final hiring approval.';
+        const certCourseId=(_courseEnrs&&_courseEnrs.length)?_courseEnrs[0].course_id:1;
+        nsAction.innerHTML='<a class="btn-primary" href="/courses/'+certCourseId+'/learn" style="background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#000;font-weight:700;justify-content:center;"><i class="fas fa-certificate"></i>&nbsp; Complete Required Course Certificate &rarr;</a>';
+        stepBar.classList.add('hidden');
+      }else{
+        nsIcon.innerHTML='&#128188;';
+        nsBadge.className='badge '+badgeClass(latestJobApp.status);nsBadge.textContent=latestJobApp.status;
+        nsTitle.textContent=latestJobApp.post_title;
+        nsMsg.textContent='Applied to '+escHtml(latestJobApp.company_name||'this company')+' &middot; view full status and any next steps in My Applications.';
+        nsAction.innerHTML=btnTab('myapplications','View in My Applications','fa-briefcase');
+        stepBar.classList.add('hidden');
+      }
+      showOvBlock('');
+    }else if(_status==='Apply Pending'||_status==='Under Review'){
+      buildStepBar('overviewStepBar','Under Review');
+      // "Complete your interview" is the focal action only when an interview is
+      // actually available to take and not already done; otherwise it's under review.
+      const ivAvailable=_ivStatus&&_ivStatus.enabled&&(_ivStatus.can_start||_ivStatus.in_progress);
+      if(ivAvailable&&!ivDone()){
+        nsIcon.innerHTML='&#129302;';nsTitle.textContent='Complete your virtual interview';
+        nsMsg.textContent='A short, AI-guided screening (~5 questions) tailored to your domain. Completing it helps our mentors review you faster.';
+        nsAction.innerHTML=btnTab('interview',_ivStatus.in_progress?'Resume Interview':'Start Virtual Interview','fa-robot');
+      }else{
+        nsIcon.innerHTML='&#128269;';nsTitle.textContent='Your application is under review';
+        nsMsg.textContent='Mentors are evaluating your application. We\'ll email you the moment your status changes.';
+        if(_paidEligible)nsSoft.innerHTML='<a href="/program" '+actAttr('click','dbertGA',['paid_program_cta_click',{source:'portal_overview_under_review'}])+'>Want a guaranteed placement opportunity without waiting on selection? Explore the paid fast-track &rarr;</a>';
+      }
+      showOvBlock('');
+    }else if(_status==='On Hold'){
+      nsIcon.innerHTML='&#9203;';nsTitle.textContent='Your application is on hold';
+      nsMsg.textContent='This is usually due to high volume — we\'ll update you by email when review resumes.';
+      buildStepBar('overviewStepBar','Under Review');showOvBlock('');
+    }else if(_status==='Selected'||_status==='Enrollment Pending'){
+      const isPending=_status==='Enrollment Pending';
+      nsIcon.innerHTML='&#127881;';
+      nsTitle.textContent=isPending?'Upload your payment proof to confirm enrollment':'You\'re selected! Pay your ₹499 deposit to confirm your seat';
+      nsMsg.textContent=isPending?'Complete the steps below to confirm your enrollment.':'Secure your seat with a refundable ₹499 deposit and choose your joining Monday below.';
+      buildStepBar('overviewStepBar','Selected');
+      showOvBlock('ovSelected');loadUpcomingMondays();
+    }else if(_status==='Enrolled'){
+      nsIcon.innerHTML='&#9889;';nsTitle.textContent='Payment under review — we\'ll confirm shortly';
+      nsMsg.textContent='We typically verify within 24 hours and email you once your enrollment is confirmed.';
+      buildStepBar('overviewStepBar','Enrolled');
+      document.getElementById('enrolledIcon').innerHTML='&#9889;';
+      document.getElementById('enrolledWaitTitle').textContent='Payment verification in progress';
+      document.getElementById('enrolledWaitBody').innerHTML='We typically verify payments within <strong style="color:var(--gold);">24 hours</strong>. You\'ll receive an email once your enrollment is confirmed.';
+      renderEnrolledDetails(false);showOvBlock('ovEnrolled');
+    }else if(_status==='Paid-Enrolled'){
+      const rejected=_enr&&(_enr.payment_status==='Rejected');
+      nsIcon.innerHTML=rejected?'&#9888;':'&#128179;';
+      nsTitle.textContent=rejected?'Action needed — re-upload your payment':'Welcome to the Paid Program — here\'s what\'s next';
+      nsMsg.innerHTML=rejected?'We couldn\'t verify your payment screenshot. Your seat is still held — please re-upload a clear payment proof to confirm your enrolment.':'Thanks for enrolling in the Paid Program. We typically verify payments within 24 hours and will email you once your seat is confirmed.';
+      if(rejected)nsAction.innerHTML='<a class="btn-primary" href="/program" style="justify-content:center;"><i class="fas fa-cloud-upload-alt"></i>&nbsp; Re-upload payment proof</a>';
+      document.getElementById('enrolledIcon').innerHTML=rejected?'&#9888;':'&#128179;';
+      document.getElementById('enrolledWaitTitle').textContent=rejected?'Action needed — re-upload your payment':'Paid enrolment received';
+      document.getElementById('enrolledWaitBody').innerHTML=rejected?'Re-upload a clear payment proof on the <a href="/program" style="color:var(--gold);font-weight:700;">program page</a> to confirm your enrolment.':'Thanks for enrolling in the Paid Program. We\'ll email you once your seat is confirmed.';
+      renderEnrolledDetails(true);showOvBlock('ovEnrolled');
+    }else if(_status==='Accepted'){
+      document.getElementById('ovWelcomeBanner').classList.remove('hidden');
+      document.getElementById('wbHeading').textContent='Welcome back, '+name+'!';
+      document.getElementById('wbBatchTag').textContent=(_enr&&_enr.batch_label)||'Active Intern';
+      document.getElementById('wbJoiningTag').textContent=_joiningDateStr?'Joining: '+fmtDate(_joiningDateStr):'';
+      // UAT #39: drop the redundant "You're in! … Learning unlocks at 6:00 PM" next-step
+      // card for accepted interns — the welcome banner + #ovAccepted (countdown + Launch
+      // Online Classes) already convey joining/unlock. Notifications live in their own tab now.
+      document.getElementById('nextStepCard').classList.add('hidden');
+      buildStepBar('overviewStepBar','Accepted');showOvBlock('ovAccepted');
+    }else if(_status==='Rejected'){
+      nsIcon.innerHTML='&#128140;';nsTitle.textContent='Not moving forward this time';
+      nsMsg.textContent='This decision isn\'t the end of your journey — our Paid Program includes a guaranteed placement opportunity with our hiring partners on completion + certification.';
+      nsAction.innerHTML='<a class="btn-primary" href="/program" '+actAttr('click','dbertGA',['paid_program_cta_click',{source:'portal_overview_rejected'}])+' style="background:linear-gradient(135deg,var(--green),#2e7d32);color:#fff;justify-content:center;"><i class="fas fa-rocket"></i>&nbsp; Explore the Paid Program</a>';
+      const latestApp=_apps[0];
+      if(latestApp&&latestApp.mentor_note)document.getElementById('rejectionNote').textContent=latestApp.mentor_note;
+      const strip=document.getElementById('reapplyCountdown'),formSection=document.getElementById('reapplyFormSection');
+      if(_reapplyInfo){
+        if(_reapplyInfo.can_reapply){strip.innerHTML='<span style="color:var(--green);">&#10003; You can re-apply now!</span>';formSection.classList.remove('hidden');prefillReapply();}
+        else{document.getElementById('daysLeft').textContent=_reapplyInfo.days_left;strip.style.display='flex';formSection.classList.add('hidden');}
+      }
+      showOvBlock('ovRejected');dbertGA('rejected_view',{domain});
+    }else{
+      nsIcon.innerHTML='&#128075;';nsTitle.textContent='Welcome to your portal';
+      nsMsg.textContent='You haven\'t applied to a role yet.';
+      nsAction.innerHTML='<a class="btn-primary" href="/internships" style="justify-content:center;"><i class="fas fa-compass"></i>&nbsp; Browse open roles</a>';
+      showOvBlock('');
+    }
+  }
+
+  function renderEnrolledDetails(paid){
+    if(!_enr){document.getElementById('enrolledDetails').innerHTML='';return;}
+    const rejected=_enr.payment_status==='Rejected';
+    let rows=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span>Joining Date</span><strong style="color:var(--gold);">${escHtml(_enr.joining_date||'TBD')}</strong></div>`;
+    if(paid){rows=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span>Program</span><strong style="color:#fff;">Paid Program</strong></div>`+rows;}
+    else{rows+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span>Batch</span><strong style="color:#fff;">${escHtml(_enr.batch_label||'')}</strong></div>`;}
+    rows+=`<div style="display:flex;justify-content:space-between;padding:6px 0;"><span>Payment Status</span><strong style="color:${rejected?'var(--red)':'var(--amber)'};">${escHtml(_enr.payment_status||'Pending Verification')}</strong></div>`;
+    document.getElementById('enrolledDetails').innerHTML=`<div style="background:rgba(226,185,111,.06);border:1px solid rgba(226,185,111,.15);border-radius:var(--r-sm);padding:14px 16px;font-size:13px;color:var(--tx-muted);text-align:left;max-width:420px;margin:8px auto 0;">${rows}</div>`;
+  }
+
+  /* ════ JOINING CALENDAR ════ */
+  let _mondays=[],_selectedJoining='',_calMonths=[],_calIdx=0,_calKeyBound=false;
+  async function loadUpcomingMondays(){
+    try{const res=await fetch('/upcoming-mondays');const data=await res.json();_mondays=(data.status==='success'&&Array.isArray(data.mondays))?data.mondays:[];}catch(e){_mondays=[];}
+    _selectedJoining='';const hv=document.getElementById('joiningDateValue');if(hv)hv.value='';
+    _calMonths=[...new Set(_mondays.map(d=>d.slice(0,7)))].sort();_calIdx=0;bindCalKeys();renderCalendar();
+  }
+  function bindCalKeys(){if(_calKeyBound)return;const grid=document.getElementById('calGrid');if(!grid)return;grid.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('available')){e.preventDefault();selectJoining(e.target.dataset.iso);}});_calKeyBound=true;}
+  function renderCalendar(){
+    const grid=document.getElementById('calGrid'),lbl=document.getElementById('calMonthLabel');if(!grid)return;
+    if(_calMonths.length===0){grid.innerHTML='<p style="grid-column:1/-1;color:var(--tx-muted);font-size:12px;text-align:center;padding:8px;">No joining dates available right now.</p>';if(lbl)lbl.textContent='';document.getElementById('calPrev').disabled=true;document.getElementById('calNext').disabled=true;return;}
+    const [y,m]=_calMonths[_calIdx].split('-').map(Number);const first=new Date(y,m-1,1);
+    if(lbl)lbl.textContent=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+    const startDow=(first.getDay()+6)%7;const daysInMonth=new Date(y,m,0).getDate();let html='';
+    for(let i=0;i<startDow;i++)html+='<div class="cal-day empty"></div>';
+    for(let d=1;d<=daysInMonth;d++){const iso=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const avail=_mondays.includes(iso),sel=_selectedJoining===iso;const cls='cal-day '+(avail?(sel?'selected':'available'):'disabled');const attrs=avail?` data-iso="${iso}" role="button" tabindex="0" aria-label="${iso}" ${actAttr('click','selectJoining',[iso])}`:' aria-disabled="true"';html+=`<div class="${cls}"${attrs}>${d}</div>`;}
+    grid.innerHTML=html;document.getElementById('calPrev').disabled=(_calIdx<=0);document.getElementById('calNext').disabled=(_calIdx>=_calMonths.length-1);
+  }
+  function calNav(dir){const n=_calIdx+dir;if(n>=0&&n<_calMonths.length){_calIdx=n;renderCalendar();}}
+  function selectJoining(iso){if(!_mondays.includes(iso))return;_selectedJoining=iso;document.getElementById('joiningDateValue').value=iso;const dt=new Date(iso);document.getElementById('calSelected').innerHTML='Selected: <strong>'+dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'})+'</strong>';renderCalendar();}
+  function onFileChange(input){const fn=document.getElementById('fileNameDisplay');if(input.files&&input.files[0]){_selectedFile=input.files[0];fn.textContent=_selectedFile.name;fn.classList.remove('hidden');}else{_selectedFile=null;fn.classList.add('hidden');}}
+  function showEnrollError(msg){const el=document.getElementById('enrollError');el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  function hideEnrollError(){document.getElementById('enrollError').classList.remove('visible');}
+  async function submitEnrollment(){
+    hideEnrollError();
+    const joining=document.getElementById('joiningDateValue').value;
+    if(!joining){showEnrollError('Please select a joining date.');return;}
+    if(!_selectedFile){showEnrollError('Please upload your payment screenshot.');return;}
+    if(_selectedFile.size>6*1024*1024){showEnrollError('File must be under 6MB.');return;}
+    const ext=_selectedFile.name.split('.').pop().toLowerCase();
+    if(!['png','jpg','jpeg','pdf'].includes(ext)){showEnrollError('Only PNG, JPG, JPEG or PDF accepted.');return;}
+    const btn=document.getElementById('enrollBtn');btn.disabled=true;btn.classList.add('loading');
+    const fd=new FormData();fd.append('payment_screenshot',_selectedFile);fd.append('joining_date',joining);
+    try{
+      const res=await fetch('/enroll',{method:'POST',credentials:'include',body:fd});const data=await res.json();
+      if(data.status==='success'){dbertGA('free_enroll_submitted',{});showToast('Enrollment submitted! Verifying within 24h.','green');setTimeout(()=>window.location.reload(),1500);}
+      else{showEnrollError(data.message||'Enrollment failed.');btn.disabled=false;btn.classList.remove('loading');}
+    }catch(e){showEnrollError('Network error. Please try again.');btn.disabled=false;btn.classList.remove('loading');}
+  }
+  function copyUPI(){navigator.clipboard.writeText(_upiId).then(()=>showToast('UPI ID copied: '+_upiId,'gold')).catch(()=>showToast('UPI: '+_upiId));}
+
+  /* ════ TRACK 5: job-hire ₹499 deposit (post_applications/Hired flow) ════ */
+  function onJobDepositFileChange(input){
+    const fn=document.getElementById('jdFileNameDisplay');
+    if(input.files&&input.files[0]){_jobDepositFile=input.files[0];fn.textContent=_jobDepositFile.name;fn.classList.remove('hidden');}
+    else{_jobDepositFile=null;fn.classList.add('hidden');}
+  }
+  function showJdError(msg){const el=document.getElementById('jdError');el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  function hideJdError(){document.getElementById('jdError').classList.remove('visible');}
+  async function submitJobDeposit(){
+    hideJdError();
+    if(!_currentJobAppId){showJdError('Could not find your application. Please refresh and try again.');return;}
+    if(!_jobDepositFile){showJdError('Please upload your payment screenshot.');return;}
+    if(_jobDepositFile.size>6*1024*1024){showJdError('File must be under 6MB.');return;}
+    const ext=_jobDepositFile.name.split('.').pop().toLowerCase();
+    if(!['png','jpg','jpeg','pdf'].includes(ext)){showJdError('Only PNG, JPG, JPEG or PDF accepted.');return;}
+    const btn=document.getElementById('jdBtn');btn.disabled=true;btn.classList.add('loading');
+    const fd=new FormData();fd.append('payment_screenshot',_jobDepositFile);fd.append('post_application_id',_currentJobAppId);
+    try{
+      const res=await fetch('/post-hire/deposit',{method:'POST',credentials:'include',body:fd});const data=await res.json();
+      if(data.status==='success'){dbertGA('job_hire_deposit_submitted',{});showToast('Deposit submitted! Verifying within 24h.','green');setTimeout(()=>window.location.reload(),1500);}
+      else{showJdError(data.message||'Submission failed.');btn.disabled=false;btn.classList.remove('loading');}
+    }catch(e){showJdError('Network error. Please try again.');btn.disabled=false;btn.classList.remove('loading');}
+  }
+
+  /* ════ RE-APPLY ════ */
+  function prefillReapply(){if(!_intern)return;const f=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};f('ra_name',_intern.name);f('ra_email',_intern.email);f('ra_phone',_intern.phone);f('ra_city',_intern.city);f('ra_college',_intern.college);f('ra_course',_intern.course);f('ra_semester',_intern.semester);f('ra_year',_intern.year_of_passing);f('ra_domain',_intern.domain);}
+  function updateRaWhy(){const ta=document.getElementById('ra_why'),ctr=document.getElementById('raWhyCount');if(!ta||!ctr)return;const len=ta.value.length;ctr.textContent=len+' / 80 min';ctr.style.color=len>=80?'var(--green)':'var(--amber)';}
+  function showReapplyError(msg){const el=document.getElementById('reapplyError');el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  function hideReapplyError(){document.getElementById('reapplyError').classList.remove('visible');}
+  async function doReapply(){
+    hideReapplyError();
+    const name=document.getElementById('ra_name').value.trim(),phone=document.getElementById('ra_phone').value.trim(),city=document.getElementById('ra_city').value,college=document.getElementById('ra_college').value.trim(),course=document.getElementById('ra_course').value,semester=document.getElementById('ra_semester').value,year=document.getElementById('ra_year').value,domain=document.getElementById('ra_domain').value,why=document.getElementById('ra_why').value.trim(),portfolio=document.getElementById('ra_portfolio').value.trim();
+    if(!name||!phone||!city||!college||!course||!semester||!year||!domain||!why){showReapplyError('Please fill all required fields.');return;}
+    if(why.length<80){showReapplyError('Please write at least 80 characters in the Why join field.');return;}
+    const btn=document.getElementById('reapplyBtn');btn.disabled=true;btn.classList.add('loading');
+    try{
+      const res=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name,email:_intern.email,phone,city,college,course,semester,year_of_passing:year,domain,why_join:why,portfolio,is_reapply:true,company_website:document.getElementById('ra_company_website').value,_ts:document.getElementById('ra_ts').value})});
+      const data=await res.json();
+      if(data.status==='success'){showToast('Application re-submitted!','green');setTimeout(()=>window.location.reload(),1500);}
+      else{showReapplyError(data.message||'Submission failed.');btn.disabled=false;btn.classList.remove('loading');}
+    }catch(e){showReapplyError('Network error. Please try again.');btn.disabled=false;btn.classList.remove('loading');}
+  }
+
+  /* ════ ACCOUNT SETTINGS ════ */
+  function prefillAccountSettings(){
+    if(!_intern)return;const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+    set('ep_name',_intern.name);set('ep_email',_intern.email);set('ep_domain',_intern.domain);set('ep_phone',_intern.phone);set('ep_city',_intern.city);set('ep_college',_intern.college);set('ep_course',_intern.course);set('ep_semester',_intern.semester);set('ep_year',_intern.year_of_passing);
+  }
+  function populateApplyAnother(){
+    const card=document.getElementById('applyAnotherCard'),full=document.getElementById('applyAnotherFull');
+    const used=new Set((_apps||[]).map(a=>a.domain));const available=ALL_DOMAINS.filter(d=>!used.has(d));
+    if(used.size>=3||available.length===0){card.classList.add('hidden');full.classList.remove('hidden');return;}
+    card.classList.remove('hidden');full.classList.add('hidden');
+    const sel=document.getElementById('ad_domain');sel.innerHTML='<option value="">-- Select --</option>'+available.map(d=>`<option>${escHtml(d)}</option>`).join('');
+  }
+  function updateAdWhy(){const ta=document.getElementById('ad_why'),ctr=document.getElementById('adWhyCount');if(!ta||!ctr)return;const len=ta.value.length;ctr.textContent=len+' / 80 min';ctr.style.color=len>=80?'var(--green)':'var(--amber)';}
+  function showAdError(msg){const el=document.getElementById('adError');el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  function hideAdError(){document.getElementById('adError').classList.remove('visible');}
+  async function doApplyAnother(){
+    hideAdError();if(!_intern){showAdError('Profile not loaded yet.');return;}
+    const domain=document.getElementById('ad_domain').value,why=document.getElementById('ad_why').value.trim(),portfolio=document.getElementById('ad_portfolio').value.trim();
+    if(!domain){showAdError('Please choose a domain.');return;}
+    if(why.length<80){showAdError('Please write at least 80 characters in the Why field.');return;}
+    const btn=document.getElementById('adBtn');btn.disabled=true;btn.classList.add('loading');
+    try{
+      const res=await fetch('/apply',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name:_intern.name,email:_intern.email,phone:_intern.phone,city:_intern.city,college:_intern.college,course:_intern.course,semester:_intern.semester,year_of_passing:_intern.year_of_passing,domain,why_join:why,portfolio,is_reapply:false,company_website:document.getElementById('ad_company_website').value,_ts:document.getElementById('ad_ts').value})});
+      const data=await res.json();
+      if(data.status==='success'){showToast('Application submitted for '+domain+'!','green');setTimeout(()=>window.location.reload(),1500);}
+      else{showAdError(data.message||'Submission failed.');btn.disabled=false;btn.classList.remove('loading');}
+    }catch(e){showAdError('Network error. Please try again.');btn.disabled=false;btn.classList.remove('loading');}
+  }
+  function showEpError(msg){const el=document.getElementById('epError');el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  function showCpError(msg){const el=document.getElementById('cpError');el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  async function saveProfile(){
+    document.getElementById('epError').classList.remove('visible');
+    const name=document.getElementById('ep_name').value.trim(),phone=document.getElementById('ep_phone').value.trim(),city=document.getElementById('ep_city').value.trim(),college=document.getElementById('ep_college').value.trim(),course=document.getElementById('ep_course').value,semester=document.getElementById('ep_semester').value,year=document.getElementById('ep_year').value;
+    if(name.length<2||name.length>80){showEpError('Name must be 2–80 characters.');return;}
+    if(!/^[6-9]\d{9}$/.test(phone)){showEpError('Enter a valid 10-digit phone number.');return;}
+    if(!city){showEpError('City cannot be empty.');return;}
+    if(!college){showEpError('College cannot be empty.');return;}
+    if(!course){showEpError('Please select a course.');return;}
+    if(!semester){showEpError('Please select a semester.');return;}
+    if(!year){showEpError('Please select a year of passing.');return;}
+    const btn=document.getElementById('epBtn');btn.disabled=true;btn.classList.add('loading');
+    try{
+      const res=await fetch('/intern/update-profile',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name,phone,city,college,course,semester,year_of_passing:year})});
+      const data=await res.json();
+      if(data.status==='success'){Object.assign(_intern,{name,phone,city,college,course,semester,year_of_passing:year});document.getElementById('internName').textContent=name||'Intern';showToast('Profile updated.','green');}
+      else{showEpError(data.message||'Update failed.');}
+    }catch(e){showEpError('Network error. Please try again.');}
+    btn.disabled=false;btn.classList.remove('loading');
+  }
+  async function changePassword(){
+    document.getElementById('cpError').classList.remove('visible');
+    const current=document.getElementById('cp_current').value,next=document.getElementById('cp_new').value,confirm=document.getElementById('cp_confirm').value;
+    if(!current||!next){showCpError('All password fields are required.');return;}
+    if(next.length<8){showCpError('New password must be at least 8 characters.');return;}
+    if(next!==confirm){showCpError('Passwords do not match.');return;}
+    const btn=document.getElementById('cpBtn');btn.disabled=true;btn.classList.add('loading');
+    try{
+      const res=await fetch('/intern/change-password',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({current_password:current,new_password:next,confirm_password:confirm})});
+      const data=await res.json();
+      if(data.status==='success'){['cp_current','cp_new','cp_confirm'].forEach(id=>document.getElementById(id).value='');showToast('Password changed successfully.','green');}
+      else{showCpError(data.message||'Could not change password.');}
+    }catch(e){showCpError('Network error. Please try again.');}
+    btn.disabled=false;btn.classList.remove('loading');
+  }
+
+  /* ════ ACCEPTED: attendance / tutor / learning (6 PM gate) ════ */
+  function parseJoiningDate(str){if(!str)return null;try{const[y,m,d]=str.split('-').map(Number);return new Date(y,m-1,d,18,0,0);}catch(e){return null;}}
+  function checkUnlocked(){if(!_joiningDate)return true;return new Date()>=_joiningDate;}
+
+  function initAccepted(){
+    if(_acceptedInit)return;_acceptedInit=true;
+    document.getElementById('infoName').textContent=_intern.name||'';
+    document.getElementById('infoDomain').textContent=_intern.domain||'';
+    document.getElementById('infoJoining').textContent=_joiningDateStr?fmtDate(_joiningDateStr):'—';
+    document.getElementById('infoBatch').textContent=(_enr&&_enr.batch_label)||'—';
+    document.getElementById('infoEmail').textContent=_intern.email||'';
+    if(_joiningDate){const opts={day:'numeric',month:'long',year:'numeric'};const msg=`Your classes begin on ${_joiningDate.toLocaleDateString('en-IN',opts)} at 6:00 PM. Get ready to learn!`;document.getElementById('lockedMsg').textContent=msg;document.getElementById('learnLockedMsg').textContent=msg;}
+    _isUnlocked=checkUnlocked();
+    document.getElementById('learnLockDot').classList.toggle('hidden',_isUnlocked);
+    if(_isUnlocked){onUnlock();renderTutorCard();}else{startCountdown();}
+    loadAttendance();
+    if(_isUnlocked&&!_pingInterval){_pingInterval=setInterval(pingAttendance,3*60*1000);}
+  }
+  async function loadAttendance(){
+    try{
+      const attRes=await fetch('/intern/attendance',{credentials:'include'});
+      if(!attRes.ok)return;const attData=await attRes.json();
+      if(attData.status==='success'){
+        _allWeeks=attData.weeks||[];const curWeek=_allWeeks.find(w=>w.is_current);
+        updateLiveCounter(curWeek?curWeek.total_minutes:0);renderAttHistory(_allWeeks);
+        if(curWeek){const fmt=d=>{try{return new Date(d).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});}catch(e){return d;}};document.getElementById('weekLabel').innerHTML=fmt(curWeek.week_start)+' &ndash; '+fmt(curWeek.week_end);}
+      }
+    }catch(e){}
+  }
+  function startCountdown(){
+    if(_countdownInterval)clearInterval(_countdownInterval);
+    _countdownInterval=setInterval(()=>{
+      const now=new Date();const diff=Math.max(0,Math.floor((_joiningDate-now)/1000));
+      if(diff<=0){clearInterval(_countdownInterval);onUnlock();renderTutorCard();return;}
+      const d=Math.floor(diff/86400),h=Math.floor((diff%86400)/3600),m=Math.floor((diff%3600)/60),s=diff%60;
+      const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=String(v).padStart(2,'0');};
+      set('cdDays',d);set('cdHours',h);set('cdMins',m);set('cdSecs',s);
+      set('lcdDays',d);set('lcdHours',h);set('lcdMins',m);set('lcdSecs',s);
+    },1000);
+  }
+  function onUnlock(){
+    _isUnlocked=true;
+    document.getElementById('learnLockDot').classList.add('hidden');
+    document.getElementById('tutorLocked').classList.add('hidden');
+    document.getElementById('tutorUnlocked').classList.remove('hidden');
+    document.getElementById('learnLockedCard').classList.add('hidden');
+    document.getElementById('learnUnlockedWrap').classList.remove('hidden');
+    if(!_pingInterval){_pingInterval=setInterval(pingAttendance,3*60*1000);}
+  }
+  function renderTutorCard(){const pct=Math.round((_intern&&(_intern.learning_completion_pct||_intern.tutor_completion_pct))||0);const p=document.getElementById('tutorPct');if(p)p.textContent=pct+'%';const b=document.getElementById('tutorProgressBar');if(b)b.style.width=pct+'%';}
+  function updateLiveCounter(mins){
+    const h=Math.floor(mins/60),m=mins%60;
+    document.getElementById('liveHours').textContent=h;document.getElementById('liveMinutes').textContent=String(m).padStart(2,'0');
+    const pct=Math.min(100,Math.round((mins/600)*100));const bar=document.getElementById('attProgressBar');bar.style.width=pct+'%';bar.className='progress-bar-fill '+(mins>=600?'green':mins>=360?'amber':'red');
+    const statusEl=document.getElementById('attStatus');
+    if(mins>=600){statusEl.innerHTML='<span style="color:var(--green);">&#10003; Weekly goal met! Great work.</span>';}
+    else{const rem=600-mins;const rh=Math.floor(rem/60),rm=rem%60;statusEl.innerHTML=`<span style="color:var(--amber);">&#9888; ${rh}h ${rm}m more to reach 10-hour goal</span>`;}
+    const summEl=document.getElementById('summThisWeek');if(summEl)summEl.innerHTML=`${h}h ${m}m ${mins>=600?'<span style="color:var(--green);">&#10003;</span>':'<span style="color:var(--amber);">&#9888;</span>'}`;
+  }
+  function renderAttHistory(weeks){
+    const tbody=document.getElementById('attTableBody');
+    if(!weeks||!weeks.length){tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--tx-muted);padding:24px;">No attendance data yet.</td></tr>';return;}
+    let met=0,missed=0;
+    tbody.innerHTML=weeks.map(w=>{const h=Math.floor(w.total_minutes/60),m=w.total_minutes%60;const isCur=w.is_current;if(!isCur){w.met_threshold?met++:missed++;}const pill=w.met_threshold?'<span class="status-pill met"><i class="fas fa-check"></i> Met</span>':'<span class="status-pill missed"><i class="fas fa-times"></i> Below 10h</span>';return `<tr${isCur?' class="current-week-row"':''}><td>${fmtWeekRange(w.week_start,w.week_end)}${isCur?' <span style="font-size:10px;color:var(--gold);font-weight:700;">(Current)</span>':''}</td><td><strong>${h}h ${m}m</strong><span style="color:var(--tx-muted);font-size:11px;margin-left:4px;">/ 10h goal</span></td><td>${pill}</td></tr>`;}).join('');
+    document.getElementById('summTotalWeeks').textContent=weeks.length;document.getElementById('summWeeksMet').textContent=met;document.getElementById('summWeeksMissed').textContent=missed;
+  }
+  async function pingAttendance(){try{const res=await fetch('/attendance/ping',{method:'POST',credentials:'include'});const data=await res.json();if(data.status==='success'){updateLiveCounter(data.total_minutes);}}catch(e){}}
+  let _allCourseProgress = [];
+  let _selectedCourseId = null;
+
+  /* ══ F6 FIX — multi-course learning ══════════════════════════════════════
+     /intern/tutor-progress returns each entry of `all_courses` with its
+     fields at the TOP level (course_id, title, completion_pct, lessons,
+     quizzes, projects, done_lessons, total_lessons, updated_at).
+     The previous code read them from a nested `.data` the endpoint has never
+     sent, which caused three separate bugs:
+       1. selectCourseLearning() found no `.data`, so changing the dropdown
+          silently did nothing — the headline F6 symptom.
+       2. loadLearning() fell through to `data.data`, which is always
+          courses_progress[0] — so every course rendered as the first one.
+       3. the <option> labels read `c.course_title` (also absent), so every
+          course showed as "Course #7" instead of its title.
+     normalizeCourse() accepts either shape, so a future backend change to a
+     nested payload cannot silently break this again. */
+  function normalizeCourse(c){
+    if(!c) return null;
+    const d = (c.data && typeof c.data === 'object') ? c.data : c;
+    const id = (c.course_id != null) ? c.course_id : d.course_id;
+    return {
+      course_id:      id,
+      title:          c.title || c.course_title || d.title || d.course_title || ('Course #' + (id != null ? id : '')),
+      completion_pct: d.completion_pct || 0,
+      lessons:        d.lessons  || [],
+      quizzes:        d.quizzes  || [],
+      projects:       d.projects || [],
+      done_lessons:   d.done_lessons  || 0,
+      total_lessons:  d.total_lessons || 0,
+      updated_at:     d.updated_at || ''
+    };
+  }
+
+  function launchTutor(courseId){
+    /* An explicit choice always wins. */
+    const explicit = courseId || _selectedCourseId;
+    if(explicit){ window.location.href='/courses/'+explicit+'/learn'; return; }
+
+    /* No choice made yet. _allCourseProgress is only populated once the
+       Learning tab has loaded, so fall back to the enrollment list. */
+    const list = (_allCourseProgress && _allCourseProgress.length)
+               ? _allCourseProgress
+               : (_courseEnrs || []);
+
+    if(list.length === 1){
+      const only = normalizeCourse(list[0]);
+      if(only && only.course_id != null){
+        window.location.href='/courses/'+only.course_id+'/learn';
+        return;
+      }
+    }
+    if(list.length > 1){
+      /* Don't guess on the learner's behalf — send them to the Learning tab
+         and let the course selector decide. */
+      switchTab('learning');
+      return;
+    }
+    window.location.href='/courses';
+  }
+
+  function selectCourseLearning(courseId){
+    _selectedCourseId = parseInt(courseId, 10);
+    const item = _allCourseProgress.find(c => Number(c.course_id) === _selectedCourseId);
+    if(item) renderLearningData(normalizeCourse(item));
+  }
+
+  function renderCourseSelector(courses){
+    let wrap = document.getElementById('courseSelectorWrap');
+    if(!wrap){
+      const parent = document.getElementById('learnUnlockedWrap');
+      if(!parent) return;
+      wrap = document.createElement('div');
+      wrap.id = 'courseSelectorWrap';
+      parent.insertBefore(wrap, parent.firstChild);
+    }
+    wrap.className = 'course-switch';   /* component class, per spec §2 */
+    wrap.style.display = 'flex';
+    const opts = courses.map(raw => {
+      const c = normalizeCourse(raw);
+      const pct = Math.round(c.completion_pct || 0);
+      const sel = Number(c.course_id) === Number(_selectedCourseId) ? ' selected' : '';
+      return `<option value="${escHtml(c.course_id)}"${sel}>${escHtml(c.title)} — ${pct}% complete</option>`;
+    }).join('');
+    wrap.innerHTML =
+        `<label for="courseSwitchSel"><i class="fa-solid fa-graduation-cap" style="color:var(--gold)"></i> Course</label>`
+      + `<select id="courseSwitchSel" ${actAttr('change','selectCourseLearning',['$value'])}>${opts}</select>`;
+  }
+
+  /* ════ LEARNING TAB ════ */
+  function onLearningTab(){
+    if(_status!=='Accepted'&&_status!=='Paid-Enrolled')return;
+    if(!_isUnlocked){document.getElementById('learnLockedCard').classList.remove('hidden');document.getElementById('learnUnlockedWrap').classList.add('hidden');return;}
+    document.getElementById('learnLockedCard').classList.add('hidden');document.getElementById('learnUnlockedWrap').classList.remove('hidden');
+    if(!_learningLoaded)loadLearning();
+  }
+  function renderSkeletons(){
+    document.getElementById('learnProgress').innerHTML=`<div class="skeleton skel-line w-40" style="height:32px;margin-bottom:14px;"></div><div class="skeleton skel-line w-80" style="height:8px;margin-bottom:8px;"></div><div class="skeleton skel-line w-60" style="height:11px;"></div>`;
+    document.getElementById('lessonsSkel').innerHTML=[1,2,3,4,5].map(()=>`<div class="skel-row">${[1,2,3,4,5].map(()=>`<div class="skeleton skel-cell" style="flex:1;"></div>`).join('')}</div>`).join('');
+    document.getElementById('quizSkel').innerHTML=[1,2].map(()=>`<div class="skel-row">${[1,2,3,4,5].map(()=>`<div class="skeleton skel-cell" style="flex:1;"></div>`).join('')}</div>`).join('');
+    document.getElementById('projSkel').innerHTML=[1,2].map(()=>`<div class="skel-row">${[1,2,3,4,5].map(()=>`<div class="skeleton skel-cell" style="flex:1;"></div>`).join('')}</div>`).join('');
+  }
+  function renderLearningData(d){
+    const pct=Math.round(d.completion_pct||0);const circ=2*Math.PI*26;const dash=circ*(pct/100);
+    document.getElementById('learnProgress').innerHTML=`<div class="completion-hero"><div class="completion-ring"><svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="26" fill="none" stroke="rgba(139,92,246,0.12)" stroke-width="7"/><circle cx="36" cy="36" r="26" fill="none" stroke="var(--violet)" stroke-width="7" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/></svg><div class="completion-ring-pct">${pct}%</div></div><div class="completion-meta"><h4>${d.done_lessons} / ${d.total_lessons} Lessons Completed</h4><p>${d.total_lessons-d.done_lessons} lessons remaining</p><div class="last-updated">Last synced: ${d.updated_at?fmtDate(d.updated_at):'Never'}</div></div></div>`;
+    const lb=document.getElementById('lessonsBody');
+    if(!d.lessons||!d.lessons.length){lb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--tx-muted);padding:20px;">No lesson data yet.</td></tr>';}
+    else{lb.innerHTML=d.lessons.map(l=>{const sb=l.status==='completed'?'<span class="badge badge-green"><i class="fas fa-check"></i> Done</span>':l.status==='in_progress'?'<span class="badge badge-amber"><i class="fas fa-spinner"></i> In Progress</span>':'<span class="badge badge-muted">Not Started</span>';return `<tr><td style="color:var(--tx-muted);">Day ${escHtml(l.day_number)}</td><td>${escHtml(l.title)}</td><td>${sb}</td><td>${fmtSecs(l.time_spent_sec)}</td><td style="color:var(--tx-muted);font-size:12px;">${l.completed_at?fmtDate(l.completed_at):'—'}</td></tr>`;}).join('');}
+    const qb=document.getElementById('quizzesBody');
+    if(!d.quizzes||!d.quizzes.length){qb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--tx-muted);padding:20px;">No quizzes taken yet.</td></tr>';}
+    else{qb.innerHTML=d.quizzes.map(q=>{const res=q.passed?'<span class="badge badge-green">Passed</span>':'<span class="badge badge-red">Failed</span>';const score=q.total_questions?`${q.correct_answers||q.score||0}/${q.total_questions}`:(q.score||0)+'%';return `<tr><td>${escHtml(q.title)}</td><td style="font-weight:700;">${escHtml(score)}</td><td>${res}</td><td style="color:var(--tx-muted);">#${escHtml(q.attempt_number||1)}</td><td style="color:var(--tx-muted);font-size:12px;">${q.completed_at?fmtDate(q.completed_at):'—'}</td></tr>`;}).join('');}
+    const pb=document.getElementById('projectsBody');
+    if(!d.projects||!d.projects.length){pb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--tx-muted);padding:20px;">No projects yet.</td></tr>';}
+    else{const phaseBadge=p=>({planning:'<span class="badge badge-blue">Planning</span>',development:'<span class="badge badge-amber">Development</span>',review:'<span class="badge badge-violet">Review</span>',completed:'<span class="badge badge-green">Completed</span>'}[p]||`<span class="badge badge-muted">${escHtml(p)}</span>`);pb.innerHTML=d.projects.map(p=>`<tr><td style="font-weight:600;">${escHtml(p.name)}</td><td><span class="badge badge-muted">${escHtml(p.status)}</span></td><td>${phaseBadge(p.phase)}</td><td style="color:var(--violet);font-weight:700;">${p.confidence?p.confidence+'%':'—'}</td><td style="color:var(--tx-muted);font-size:12px;">${p.updated_at?fmtDate(p.updated_at):'—'}</td></tr>`).join('');}
+  }
+  async function loadLearning(){
+    _learningLoaded=true;renderSkeletons();
+    try{
+      const res=await fetch('/intern/tutor-progress',{credentials:'include'});const data=await res.json();
+      if(data.status==='ok'){
+        _allCourseProgress = data.all_courses || [];
+        if(_allCourseProgress.length > 1){
+          renderCourseSelector(_allCourseProgress);
+        } else {
+          const sel = document.getElementById('courseSelectorWrap');
+          if(sel) sel.style.display = 'none';
+        }
+        const activeCourse = _allCourseProgress.find(c => Number(c.course_id) === Number(_selectedCourseId))
+                          || _allCourseProgress[0];
+        if(activeCourse){
+          _selectedCourseId = activeCourse.course_id;
+          renderLearningData(normalizeCourse(activeCourse));
+        } else if(data.data){
+          renderLearningData(normalizeCourse(data.data));
+        } else {
+          renderLearningData({lessons:[],quizzes:[],projects:[],completion_pct:0,total_lessons:0,done_lessons:0,updated_at:''});
+        }
+      } else {
+        renderLearningData({lessons:[],quizzes:[],projects:[],completion_pct:0,total_lessons:0,done_lessons:0,updated_at:''});
+      }
+    }catch(e){showToast('Could not load learning data','red');}
+  }
+
+  async function doLogout(){try{await fetch('/logout',{method:'POST',credentials:'include'});}catch(e){}window.location.href='/';}
+
+  document.addEventListener('DOMContentLoaded',loadPortal);
+  </script>
+</body>
+</html>

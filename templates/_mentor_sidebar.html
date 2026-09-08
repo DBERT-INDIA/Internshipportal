@@ -1,0 +1,19 @@
+{# Mentor nav config → _app_shell.html.  Build phase: 1
+   All 3 hrefs and active_page values carried over unchanged.
+   Note /staff/mentor-slots is intentionally shared with the staff sidebar —
+   that was true before this refactor and is preserved. #}
+
+{% set brand = {'mark': 'M', 'title': 'DBERT', 'sub': 'Mentor Portal'} %}
+
+{% set nav_groups = [
+  {'items': [
+    {'href': '/mentor',           'icon': 'fa-solid fa-user-tie', 'label': 'My Candidates',   'match': ['mentor_dashboard']},
+    {'href': '/staff/mentor-slots','icon': 'fa-solid fa-clock',   'label': 'Set 1:1 Slots',   'match': ['mentor_slots']},
+    {'href': '/mentor/earnings',  'icon': 'fa-solid fa-wallet',   'label': 'Earnings Ledger', 'match': ['mentor_earnings']}
+  ]}
+] %}
+
+{# /logout is POST-only (app.py:8954) — the old <a href> returned 405. #}
+{% set logout = {'href': '/logout', 'label': 'Logout', 'method': 'post'} %}
+
+{% include '_app_shell.html' %}

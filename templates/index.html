@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+{# Homepage SEO is preserved byte-for-byte: title, description, robots and the
+   Organization/FAQ structured data below all drive live search results. #}
+{% set page_title_full = "DBERT Internship 2026 — Remote AI, Data, Full Stack & Python | India" %}
+{% set page_desc = "Apply free for the DBERT Remote Internship 2026 — AI Agent Development, Data Analyst, Full Stack & Python Automation. Open to students across India." %}
+{% set page_robots = "index,follow,max-image-preview:large" %}
+{% set page_canonical = SITE_ORIGIN ~ "/" %}
+{% include "_head.html" %}
+
+  <meta property="og:type" content="website"/>
+  <meta property="og:locale" content="en_IN"/>
+  <meta property="og:site_name" content="DBERT"/>
+  <meta property="og:title" content="DBERT Internship 2026 — Remote AI, Data, Full Stack & Python"/>
+  <meta property="og:description" content="Apply for DBERT Internship 2026. Remote internships + a guaranteed-placement paid program across AI Agent Development, Data Analyst, Full Stack Development, and Python Automation."/>
+  <meta property="og:url" content="{{ SITE_ORIGIN }}/"/>
+  {% if OG_IMAGE_URL %}<meta property="og:image" content="{{ OG_IMAGE_URL }}"/>{% endif %}
+  <meta name="twitter:card" content="{% if OG_IMAGE_URL %}summary_large_image{% else %}summary{% endif %}"/>
+  <meta name="twitter:title" content="DBERT Internship 2026"/>
+  <meta name="twitter:description" content="Remote internships + guaranteed-placement paid program. AI, Data, Full Stack, Python Automation."/>
+  {% if OG_IMAGE_URL %}<meta name="twitter:image" content="{{ OG_IMAGE_URL }}"/>{% endif %}
+  <meta name="robots" content="index,follow,max-image-preview:large"/>
+<meta name="author" content="DBERT"/>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+  <script nonce="{{ csp_nonce() }}" type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {"@type":["Organization","EducationalOrganization"],"@id":"{{ SITE_ORIGIN }}/#org","name":"DBERT",
+       "legalName":"Digital Blinc Education Research and Technology",
+       "alternateName":"Digital Blinc Education Research and Technology",
+       "url":"{{ SITE_ORIGIN }}/","email":"careers@dbert.info","areaServed":"IN"{% if LOGO_URL %},"logo":"{{ LOGO_URL }}","image":"{{ LOGO_URL }}"{% endif %},
+       "address":{"@type":"PostalAddress","addressLocality":"Noida","addressRegion":"Uttar Pradesh","postalCode":"201301","addressCountry":"IN"},
+       "contactPoint":{"@type":"ContactPoint","email":"careers@dbert.info","contactType":"admissions","areaServed":"IN","availableLanguage":["en","hi"]}},
+      {"@type":"WebSite","@id":"{{ SITE_ORIGIN }}/#website","url":"{{ SITE_ORIGIN }}/",
+       "name":"DBERT Internship","publisher":{"@id":"{{ SITE_ORIGIN }}/#org"},"inLanguage":"en"},
+      {"@type":"EducationalOccupationalProgram","name":"DBERT Internship 2026",
+       "provider":{"@id":"{{ SITE_ORIGIN }}/#org"},"url":"{{ SITE_ORIGIN }}/",
+       "programType":"Internship","educationalProgramMode":"online",
+       "occupationalCategory":["AI Agent Development","Data Analyst","Full Stack Development","Python Automation"],
+       "description":"Remote internship across AI Agent Development, Data Analysis, Full Stack Development, and Python Automation, with an optional guaranteed-placement paid track."},
+      {"@type":"FAQPage","@id":"{{ SITE_ORIGIN }}/#faq","mainEntity":[
+        {"@type":"Question","name":"Who can apply for the DBERT internship?","acceptedAnswer":{"@type":"Answer","text":"Any student enrolled in B.Tech, BCA, B.Sc, MCA, MBA, Diploma or any tech or management course. We accept students from 1st semester to final year as well as fresh graduates."}},
+        {"@type":"Question","name":"Is there any fee to apply?","acceptedAnswer":{"@type":"Answer","text":"Application is 100% free. After selection, a one-time Rs. 499 refundable security deposit is required to confirm your seat, and it is refunded on successful completion."}},
+        {"@type":"Question","name":"When does the batch start?","acceptedAnswer":{"@type":"Answer","text":"Batches start every Monday throughout 2026 up to 31 December 2026. You choose your joining Monday during enrollment after selection."}},
+        {"@type":"Question","name":"How many hours per week are required?","acceptedAnswer":{"@type":"Answer","text":"A minimum of 10 hours per week, any time Sunday to Saturday. All tasks are async and fully remote."}},
+        {"@type":"Question","name":"What documents do I get on completion?","acceptedAnswer":{"@type":"Answer","text":"An MSME-registered Completion Certificate, a Letter of Recommendation from your assigned mentor, and an Offer Letter issued after enrollment."}},
+        {"@type":"Question","name":"Can I apply for multiple domains?","acceptedAnswer":{"@type":"Answer","text":"Yes. Each domain application is reviewed independently, but you will be enrolled in only one domain at a time."}},
+        {"@type":"Question","name":"Is my payment secure?","acceptedAnswer":{"@type":"Answer","text":"Yes. All payments are made via UPI directly, with no card or bank details stored. DBERT is MSME registered. Contact careers@dbert.info for any queries."}}
+      ]}
+    ]
+  }
+  </script>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script nonce="{{ csp_nonce() }}">
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "1b181bc1-46b8-4359-ac7a-e87ecab91be4",
+        safari_web_id: "web.onesignal.auto.35c3b21f-3634-4ed2-bd52-fd09e2637415",
+        notifyButton: { enable: true },
+        promptOptions: {
+          slidedown: {
+            prompts: [
+              {
+                type: "push",
+                autoPrompt: true,
+                text: {
+                  actionMessage: "Get notified about your application status, selection, and enrollment updates.",
+                  acceptButton: "Allow",
+                  cancelButton: "No Thanks",
+                },
+                delay: { pageViews: 1, timeDelay: 3 },
+              },
+            ],
+          },
+        },
+      });
+    });
+  </script>
+</head>
+<body class="home">
+
+  <div id="urgencyBanner" class="urgency-banner">
+    <div class="urgency-inner">
+      <div class="urgency-left"><i class="fas fa-bolt"></i><span><strong>DBERT Internship 2026</strong> — Applications open. Batches start every Monday. Limited seats per domain.</span></div>
+      <button class="urgency-close" type="button" aria-label="Dismiss" data-act-click="dismissBanner"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="brand">
+        <div class="brand-icon"><i class="fas fa-robot"></i></div>
+        <div class="brand-text"><h2>DBERT</h2><p>Internship Portal &middot; 2026</p></div>
+      </a>
+      <nav id="navLinks" class="nav-links">
+        <a href="/courses" style="color:var(--gold); font-weight:700;"><i class="fas fa-graduation-cap"></i> Courses & Learning</a>
+        <a href="/tasks"><i class="fas fa-tasks"></i> Micro-Tasks</a>
+        <a href="/mentors/slots"><i class="fas fa-user-tie"></i> Book Mentor</a>
+        <a href="/internships">Internships</a>
+        <a href="/jobs">Jobs</a>
+        <a href="#benefits">Benefits</a>
+        <a href="#faq">FAQ</a>
+        <span id="navAuthLinks" class="nav-auth-links">
+          <a href="#" data-act-click="showAuthOverlay" data-arg-click='["signin"]' data-prevent-click>Sign In</a>
+          <a href="#" data-act-click="showAuthOverlay" data-arg-click='["signup"]' data-prevent-click class="nav-cta">Sign Up</a>
+        </span>
+      </nav>
+      <button class="hamburger" type="button" data-act-click="toggleMenu" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+    </div>
+  </header>
+
+  <main id="marketingContent">
+    <section class="hero">
+      <div class="hero-badge"><span class="live-dot"></span>{% if job_openings and job_openings > 0 %}{{ job_openings }} Job Openings — Live Now{% else %}New Internships &amp; Jobs Posted Weekly{% endif %}</div>
+      <h1>Launch your career with the<br/><span>DBERT Internship</span></h1>
+      <p class="hero-sub">Join our 2-month remote internship for students and freshers who want real project exposure in AI, Data Analysis, Full Stack Development, and Python Automation.</p>
+      <div class="hero-cta-row">
+        <button class="btn-hero-primary" data-act-click="showAuthOverlay" data-arg-click='["signup"]'><i class="fas fa-paper-plane"></i>&nbsp; Sign Up Free</button>
+        <button class="btn-hero-secondary" data-act-click="scrollToId" data-arg-click='["positions"]'><i class="fas fa-briefcase"></i>&nbsp; Explore Roles</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="hero-stat-val">2 Months</span><span class="hero-stat-lbl">Duration</span></div>
+        <div class="hero-stat-div"></div>
+        <div class="hero-stat"><span class="hero-stat-val">Certificate + LOR</span><span class="hero-stat-lbl">On Completion</span></div>
+        <div class="hero-stat-div"></div>
+        <div class="hero-stat"><span class="hero-stat-val">100% Remote</span><span class="hero-stat-lbl">Work Mode</span></div>
+      </div>
+    </section>
+
+    <section id="positions" class="section container">
+      <div class="section-header"><span class="section-tag">OPEN POSITIONS</span><h2>Browse by Domain</h2><p>Live internships and jobs posted by companies on the DBERT board — pick a domain to see what's open now.</p></div>
+      <div class="jd-grid">
+        {% set domain_emoji = {'AI Agent Development': '&#129302;', 'Data Analyst': '&#128202;', 'Full Stack Development': '&#128187;', 'Python Automation': '&#9881;&#65039;'} %}
+        {% for tile in domain_tiles %}
+        <div class="jd-card">
+          <div class="jd-card-head"><span class="jd-emoji">{{ domain_emoji.get(tile.domain, '&#128188;')|safe }}</span></div>
+          <h3>{{ tile.domain }}</h3>
+          <div class="jd-card-meta"><span class="jd-tag">{{ tile.internship_count }} Internship{{ '' if tile.internship_count == 1 else 's' }}</span><span class="jd-tag">{{ tile.job_count }} Job{{ '' if tile.job_count == 1 else 's' }}</span></div>
+          <div class="jd-tile-links">
+            <a class="jd-tile-link" href="/internships/{{ tile.slug }}">View Internships <i class="fas fa-arrow-right"></i></a>
+            <a class="jd-tile-link" href="/jobs/{{ tile.slug }}">View Jobs <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Phase 12.4 — indirect steering: guaranteed-placement fast-track value prop -->
+    <section id="fasttrack" class="section container">
+      <div style="background:linear-gradient(135deg,rgba(15,46,15,0.55),rgba(20,24,33,0.5));border:1px solid rgba(76,175,80,0.28);border-radius:18px;padding:30px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:260px;">
+          <span class="section-tag" style="color:#7ed492;">PAID PROGRAM</span>
+          <h2 style="font-size:22px;font-weight:900;margin:8px 0 8px;">Skip the wait with our Paid Program</h2>
+          <p style="color:var(--tx-muted);font-size:14px;line-height:1.7;max-width:560px;">Prefer certainty? Get 15 days of training, a 45-day production role with mentor support, and a <strong style="color:#fff;">guaranteed placement opportunity</strong> with our hiring partners on completion + certification — plus an Offer Letter. Your seat is confirmed the moment you enrol.</p>
+        </div>
+        <a href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"index_fasttrack"}]' class="btn-hero-primary" style="white-space:nowrap;text-decoration:none;"><i class="fas fa-rocket"></i>&nbsp; Explore Paid Program</a>
+      </div>
+    </section>
+
+    <section id="benefits" class="section container">
+      <div class="section-header"><span class="section-tag">WHAT YOU GET</span><h2>Benefits &amp; Perks</h2><p>Every intern gets these on successful completion of the program</p></div>
+      <div class="benefits-grid">
+        <div class="benefit-card"><div class="benefit-icon">&#127942;</div><h4>Completion Certificate</h4><p>MSME-registered certificate valid for jobs, higher studies &amp; LinkedIn.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">&#128196;</div><h4>Letter of Recommendation</h4><p>Signed LOR from your assigned mentor on official DBERT letterhead.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">&#128176;</div><h4>Performance Stipend</h4><p>Earn &#8377;5,000 &ndash; &#8377;18,000/month based on domain and performance milestones.</p></div>
+        <div class="benefit-card"><div class="benefit-icon">&#128203;</div><h4>Offer Letter</h4><p>Official offer letter issued after enrollment &mdash; shareable &amp; verifiable.</p></div>
+      </div>
+    </section>
+
+    <section id="faq" class="section container">
+      <div class="section-header"><span class="section-tag">FAQ</span><h2>Frequently Asked Questions</h2><p>Everything you need to know before applying</p></div>
+      <div class="faq-list">
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-graduation-cap" style="color:var(--gold);margin-right:10px;"></i>Who can apply?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Any student enrolled in <strong>B.Tech, BCA, B.Sc, MCA, MBA, Diploma</strong> or any tech/management course. We accept students from 1st semester to final year as well as fresh graduates.</p></div></div>
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-rupee-sign" style="color:var(--green);margin-right:10px;"></i>Is there any fee?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p><strong style="color:var(--gold);">Application is 100% free.</strong> After selection, a one-time <strong>&#8377;499 refundable security deposit</strong> is required to confirm your seat. Refunded on successful completion.</p></div></div>
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-calendar-check" style="color:var(--green);margin-right:10px;"></i>When does the batch start?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Batches start every Monday throughout 2026 up to <strong style="color:var(--gold);">31 Dec 2026</strong>. You choose your joining Monday during enrollment after selection.</p></div></div>
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-clock" style="color:var(--amber);margin-right:10px;"></i>How many hours per week?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>A minimum of <strong>10 hours per week</strong> (Sunday to Saturday). All tasks are async and remote.</p></div></div>
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-file-alt" style="color:var(--gold);margin-right:10px;"></i>What documents do I get on completion?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><ul><li><strong>Completion Certificate</strong> &mdash; MSME-registered</li><li><strong>Letter of Recommendation (LOR)</strong> &mdash; from assigned mentor</li><li><strong>Offer Letter</strong> &mdash; issued after enrollment</li></ul></div></div>
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-redo" style="color:var(--blue);margin-right:10px;"></i>Can I apply for multiple domains?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Yes. Each domain application is reviewed independently. You will be enrolled in only one domain at a time.</p></div></div>
+        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-shield-alt" style="color:var(--blue);margin-right:10px;"></i>Is my payment secure?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Yes. All payments via <strong>UPI</strong> directly &mdash; no card or bank details stored. MSME registered. Contact <strong>careers@dbert.info</strong> for queries.</p></div></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-brand"><strong>DBERT</strong><p>MSME Registered &middot; Internship Portal 2026</p></div>
+        <div class="footer-links"><a href="https://dbert.online" target="_blank">Home</a><a href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"footer"}]'>Paid Program</a><a href="mailto:careers@dbert.info">Email Us</a><a href="#" data-act-click="showAuthOverlay" data-arg-click='["signin"]' data-prevent-click>Sign In</a></div>
+        <p class="footer-copy">&copy; 2026 DBERT. All rights reserved.</p>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Phase 12.6 — JobPosting structured data (one per domain JD). -->
+  <script nonce="{{ csp_nonce() }}" type="application/ld+json">
+  [
+    {"@context":"https://schema.org","@type":"JobPosting","title":"AI Agent Development Intern","description":"Remote internship building AI agents and LLM-powered applications at DBERT. 2-month program with certificate and LOR on completion.","datePosted":"2026-01-01","validThrough":"2026-12-31T23:59","employmentType":"INTERN","hiringOrganization":{"@type":"Organization","name":"DBERT","sameAs":"{{ SITE_ORIGIN }}"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"India"},"directApply":true,"url":"{{ SITE_ORIGIN }}/"},
+    {"@context":"https://schema.org","@type":"JobPosting","title":"Data Analyst Intern","description":"Remote data analyst internship at DBERT working with SQL, Python and dashboards. 2-month program with certificate and LOR on completion.","datePosted":"2026-01-01","validThrough":"2026-12-31T23:59","employmentType":"INTERN","hiringOrganization":{"@type":"Organization","name":"DBERT","sameAs":"{{ SITE_ORIGIN }}"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"India"},"directApply":true,"url":"{{ SITE_ORIGIN }}/"},
+    {"@context":"https://schema.org","@type":"JobPosting","title":"Full Stack Development Intern","description":"Remote full stack development internship at DBERT building web apps end to end. 2-month program with certificate and LOR on completion.","datePosted":"2026-01-01","validThrough":"2026-12-31T23:59","employmentType":"INTERN","hiringOrganization":{"@type":"Organization","name":"DBERT","sameAs":"{{ SITE_ORIGIN }}"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"India"},"directApply":true,"url":"{{ SITE_ORIGIN }}/"},
+    {"@context":"https://schema.org","@type":"JobPosting","title":"Python Automation Intern","description":"Remote Python automation internship at DBERT scripting and automating workflows. 2-month program with certificate and LOR on completion.","datePosted":"2026-01-01","validThrough":"2026-12-31T23:59","employmentType":"INTERN","hiringOrganization":{"@type":"Organization","name":"DBERT","sameAs":"{{ SITE_ORIGIN }}"},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"India"},"directApply":true,"url":"{{ SITE_ORIGIN }}/"}
+  ]
+  </script>
+
+  <!-- AUTH OVERLAY -->
+  <div id="authOverlay">
+    <div class="auth-wrapper">
+      <button class="auth-back" data-act-click="hideAuthOverlay"><i class="fas fa-arrow-left"></i> Back to Portal</button>
+      <div class="auth-brand">
+        <div class="auth-brand-icon">&#129302;</div>
+        <h2>DBERT</h2>
+        <p>Internship Portal 2026</p>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabSignup" data-act-click="switchAuthTab" data-arg-click='["signup"]'>Sign Up &amp; Apply</button>
+        <button class="auth-tab" id="tabSignin" data-act-click="switchAuthTab" data-arg-click='["signin"]'>Sign In</button>
+      </div>
+      <div class="auth-card">
+
+        <!-- SIGNUP -->
+        <div class="auth-panel active" id="panelSignup">
+          <div class="auth-error" id="signupError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="signupErrorText"></span></div>
+          <div class="auth-success" id="signupSuccess">
+            <div class="success-icon-wrap"><i class="fas fa-check"></i></div>
+            <h3>Application Submitted!</h3>
+            <p>Your application is now <strong style="color:var(--gold);">Under Review</strong>. Redirecting to your portal&hellip;</p>
+            <div class="success-tags"><span class="success-tag">Status: Under Review</span></div>
+          </div>
+          <div id="signupFormWrap">
+            <div class="su-steps" id="suSteps">
+              <div class="su-dot active" id="suDot1"><span>1</span><label>Account</label></div>
+              <div class="su-line"></div>
+              <div class="su-dot" id="suDot2"><span>2</span><label>Academics</label></div>
+              <div class="su-line"></div>
+              <div class="su-dot" id="suDot3"><span>3</span><label>Profile</label></div>
+            </div>
+
+            <!-- STEP 1 — account -->
+            <div class="su-step" id="suStep1">
+              <div class="form-grid">
+                <div class="form-section-label">Create your account</div>
+                <div class="form-group"><label class="field-label" for="su_name">Full Name *</label><input type="text" id="su_name" class="field-input" placeholder="Your full name" autocomplete="name"/></div>
+                <div class="form-group"><label class="field-label" for="su_email">Email *</label><input type="email" id="su_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
+                <div class="form-group"><label class="field-label" for="su_phone">Phone / WhatsApp *</label><input type="tel" id="su_phone" class="field-input" placeholder="10-digit mobile" maxlength="10" autocomplete="tel"/></div>
+                <div class="form-group"></div>
+                <div class="form-group"><label class="field-label" for="su_password">Password *</label><div class="pw-field"><input type="password" id="su_password" class="field-input" placeholder="At least 8 characters" autocomplete="new-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["su_password", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
+                <div class="form-group"><label class="field-label" for="su_confirm">Confirm Password *</label><div class="pw-field"><input type="password" id="su_confirm" class="field-input" placeholder="Re-enter password" autocomplete="new-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["su_confirm", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
+              </div>
+              <label class="su-chk"><input type="checkbox" id="su_terms"/><span>I agree to the <a href="/terms" target="_blank" rel="noopener">Terms &amp; Conditions</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>. <span style="color:#ff6b6b;">*</span></span></label>
+              <label class="su-chk"><input type="checkbox" id="su_newsletter"/><span>Send me internship tips, opportunities &amp; updates by email <span style="color:#94A3B8;">(optional)</span>.</span></label>
+              <!-- 8.4 bot defenses: off-screen honeypot (must stay empty) + signed timing token -->
+              <input type="text" name="company_website" id="su_company_website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;"/>
+              <input type="hidden" id="su_ts"/>
+              <button class="btn-auth-submit" id="suBtn1" data-act-click="suNext1"><span class="btn-label"><i class="fas fa-user-plus"></i> &nbsp;Create account &amp; continue</span><span class="btn-spinner"></span></button>
+              <p style="text-align:center;margin-top:12px;font-size:11px;color:#94A3B8;">Takes 2 minutes &middot; Offer letter within 2 hours of enrollment</p>
+            </div>
+
+            <!-- STEP 2 — academics -->
+            <div class="su-step" id="suStep2" style="display:none;">
+              <div class="form-grid">
+                <div class="form-section-label">Your academic background</div>
+                <div class="form-group"><label class="field-label" for="su_city">City *</label>
+                  <select id="su_city" class="field-select"><option value="">-- Select City --</option><option>Delhi</option><option>Mumbai</option><option>Bengaluru</option><option>Hyderabad</option><option>Chennai</option><option>Pune</option><option>Kolkata</option><option>Jaipur</option><option>Ahmedabad</option><option>Lucknow</option><option>Chandigarh</option><option>Bhopal</option><option>Indore</option><option>Noida</option><option>Other</option></select></div>
+                <div class="form-group full"><label class="field-label" for="su_college">College / University *</label><input type="text" id="su_college" class="field-input" placeholder="Your college name" autocomplete="organization"/></div>
+                <div class="form-group"><label class="field-label" for="su_course">Course *</label>
+                  <select id="su_course" class="field-select"><option value="">-- Select Course --</option><option>B.Tech</option><option>B.E.</option><option>BCA</option><option>B.Sc</option><option>BBA</option><option>B.Com</option><option>M.Tech</option><option>MCA</option><option>M.Sc</option><option>MBA</option><option>Diploma</option><option>Other</option></select></div>
+                <div class="form-group"><label class="field-label" for="su_semester">Semester *</label>
+                  <select id="su_semester" class="field-select"><option value="">-- Select Semester --</option><option>1st Semester</option><option>2nd Semester</option><option>3rd Semester</option><option>4th Semester</option><option>5th Semester</option><option>6th Semester</option><option>7th Semester</option><option>8th Semester</option><option>Graduate</option></select></div>
+                <div class="form-group"><label class="field-label" for="su_year">Year of Passing *</label>
+                  <select id="su_year" class="field-select"><option value="">-- Select Year --</option><option>2024</option><option>2025</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option><option>2031</option><option>2032</option></select></div>
+              </div>
+              <div class="su-nav">
+                <button type="button" class="btn-step-back" data-act-click="suGoStep" data-arg-click='[1]'><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn-auth-submit" id="suBtn2" data-act-click="suNext2"><span class="btn-label">Continue &nbsp;<i class="fas fa-arrow-right"></i></span><span class="btn-spinner"></span></button>
+              </div>
+            </div>
+
+            <!-- STEP 3 — profile + goals -->
+            <div class="su-step" id="suStep3" style="display:none;">
+              <div class="form-grid">
+                <div class="form-section-label">Your profile &amp; goals</div>
+                <div class="form-group full"><label class="field-label" for="su_why">Why do you want to join? * <span id="whyCount" style="float:right;font-size:11px;color:var(--amber);">0 / 80 min</span></label><textarea id="su_why" class="field-textarea" rows="4" placeholder="Tell us why you want this internship, what excites you about the domain, and what you hope to achieve. (min 80 characters)" data-act-input="updateWhyCount"></textarea></div>
+                <div class="form-group"><label class="field-label" for="su_linkedin">LinkedIn URL <span style="color:var(--tx-muted);font-size:10px;">(optional)</span></label><input type="url" id="su_linkedin" class="field-input" placeholder="https://linkedin.com/in/yourprofile"/></div>
+                <div class="form-group"><label class="field-label" for="su_github">GitHub URL <span style="color:var(--tx-muted);font-size:10px;">(optional)</span></label><input type="url" id="su_github" class="field-input" placeholder="https://github.com/yourprofile"/></div>
+                <div class="form-group full"><label class="field-label" for="su_portfolio">Portfolio / Personal Website <span style="color:var(--tx-muted);font-size:10px;">(optional)</span></label><input type="url" id="su_portfolio" class="field-input" placeholder="https://yourportfolio.com"/></div>
+                <div class="form-section-label">A few quick questions</div>
+                <div class="form-group"><label class="field-label" for="su_start">When do you hope to start in this field? *</label>
+                  <select id="su_start" class="field-select"><option value="">-- Select --</option><option>As soon as possible</option><option>In 1&ndash;3 months</option><option>In 6+ months</option><option>Just exploring for now</option></select></div>
+                <div class="form-group"><label class="field-label" for="su_learnmode">How are you building your skills now? *</label>
+                  <select id="su_learnmode" class="field-select"><option value="">-- Select --</option><option>Mostly self-taught</option><option>College curriculum only</option><option>Online paid courses</option><option>With a mentor / guided program</option></select></div>
+                <div class="form-group full"><label class="field-label" for="su_priority">What matters most to you in an internship? *</label>
+                  <select id="su_priority" class="field-select"><option value="">-- Select --</option><option>A guaranteed placement</option><option>Stipend / earning</option><option>Learning &amp; skills</option><option>Certificate &amp; resume value</option></select></div>
+              </div>
+              <div class="su-nav">
+                <button type="button" class="btn-step-back" data-act-click="suGoStep" data-arg-click='[2]'><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn-auth-submit" id="suBtn3" data-act-click="suSubmit3"><span class="btn-label"><i class="fas fa-paper-plane"></i> &nbsp;Submit application</span><span class="btn-spinner"></span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIGNIN -->
+        <div class="auth-panel" id="panelSignin">
+          <div class="auth-error" id="signinError" role="alert"><i class="fa fa-circle-exclamation"></i><span id="signinErrorText"></span></div>
+
+          <!-- Step 1: Email check -->
+          <div id="siStepEmail">
+            <div class="form-grid" style="grid-template-columns:1fr;">
+              <div class="form-group"><label class="field-label" for="si_email">Email</label><input type="email" id="si_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
+            </div>
+            <button class="btn-auth-submit" id="siEmailBtn" data-act-click="doEmailCheck"><span class="btn-label"><i class="fas fa-arrow-right"></i> &nbsp;Continue</span><span class="btn-spinner"></span></button>
+            <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--tx-muted);">No account yet? <a href="#" style="color:var(--gold);font-weight:700;" data-act-click="switchAuthTab" data-arg-click='["signup"]' data-prevent-click>Sign Up &amp; Apply</a></p>
+          </div>
+
+          <!-- Step 2a: Normal login (has_password) -->
+          <div id="siStepLogin" style="display:none;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;">
+              <i class="fas fa-user" style="color:var(--tx-muted);font-size:12px;"></i>
+              <span id="siEmailDisplay" style="font-size:13px;color:var(--tx-muted);flex:1;"></span>
+              <button data-act-click="resetSiFlow" style="background:none;border:none;color:var(--gold);font-size:11px;cursor:pointer;font-weight:700;">Change</button>
+            </div>
+            <div class="form-grid" style="grid-template-columns:1fr;">
+              <div class="form-group"><label class="field-label" for="si_password">Password</label><div class="pw-field"><input type="password" id="si_password" class="field-input" placeholder="Your password" autocomplete="current-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["si_password", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
+            </div>
+            <button class="btn-auth-submit" id="signinBtn" data-act-click="doSignin"><span class="btn-label"><i class="fas fa-arrow-right-to-bracket"></i> &nbsp;Sign In</span><span class="btn-spinner"></span></button>
+            <p style="text-align:center;margin-top:14px;font-size:12px;"><a href="#" style="color:var(--gold);font-weight:700;text-decoration:none;" data-act-click="openForgotModal" data-prevent-click>Forgot password?</a></p>
+          </div>
+
+          <!-- Step 2b: Set password (legacy no_password accounts) -->
+          <div id="siStepSetPw" style="display:none;">
+            <div style="background:rgba(226,185,111,.07);border:1px solid rgba(226,185,111,.2);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--tx-muted);line-height:1.7;">
+              <i class="fas fa-info-circle" style="color:var(--gold);margin-right:6px;"></i>
+              Your application is on file. This is your <strong style="color:var(--tx-body);">first login</strong> — please create a password to access your portal.
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;">
+              <i class="fas fa-user" style="color:var(--tx-muted);font-size:12px;"></i>
+              <span id="siEmailDisplayPw" style="font-size:13px;color:var(--tx-muted);flex:1;"></span>
+              <button data-act-click="resetSiFlow" style="background:none;border:none;color:var(--gold);font-size:11px;cursor:pointer;font-weight:700;">Change</button>
+            </div>
+            <div class="form-grid" style="grid-template-columns:1fr;">
+              <div class="form-group"><label class="field-label" for="si_newpw">Create Password *</label><div class="pw-field"><input type="password" id="si_newpw" class="field-input" placeholder="At least 8 characters" autocomplete="new-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["si_newpw", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
+              <div class="form-group"><label class="field-label" for="si_confirmpw">Confirm Password *</label><div class="pw-field"><input type="password" id="si_confirmpw" class="field-input" placeholder="Re-enter password" autocomplete="new-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["si_confirmpw", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
+            </div>
+            <button class="btn-auth-submit" id="setpwBtn" data-act-click="doSetPassword"><span class="btn-label"><i class="fas fa-lock"></i> &nbsp;Set Password &amp; Sign In</span><span class="btn-spinner"></span></button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="toastEl"></div>
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- FORGOT PASSWORD MODAL -->
+  <div id="forgotOverlay" style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:rgba(15,20,30,0.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--gold);border-radius:var(--r-md);max-width:440px;width:100%;box-shadow:var(--shadow-md);padding:28px 26px;" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <h3 id="forgotTitle" style="font-size:17px;font-weight:800;color:var(--tx-body);margin:0;">Reset your password</h3>
+        <button data-act-click="closeForgotModal" aria-label="Close" style="background:none;border:none;color:var(--tx-muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+      <p style="font-size:13px;color:var(--tx-muted);line-height:1.6;margin:0 0 18px;">Enter your account email and we'll send a reset link if an account exists. The link expires in 1 hour.</p>
+
+      <div class="auth-error" id="forgotError" role="alert" style="display:none;align-items:center;gap:8px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);border-radius:var(--r-sm);color:var(--red);font-size:13px;font-weight:600;padding:10px 14px;margin-bottom:14px;"><i class="fa fa-circle-exclamation"></i><span></span></div>
+      <div id="forgotSuccess" role="status" aria-live="polite" style="display:none;align-items:center;gap:8px;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.25);color:var(--green);border-radius:var(--r-sm);font-size:13px;font-weight:600;padding:10px 14px;margin-bottom:14px;"><i class="fa fa-circle-check"></i><span id="forgotSuccessText"></span></div>
+
+      <div id="forgotFormArea">
+        <div class="form-group"><label class="field-label" for="fp_email">Email</label><input type="email" id="fp_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
+        <input type="text" name="company_website" id="fp_company_website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;"/>
+        <button class="btn-auth-submit" id="forgotBtn" data-act-click="submitForgot" style="margin-top:8px;"><span class="btn-label"><i class="fas fa-paper-plane"></i> &nbsp;Send Reset Link</span><span class="btn-spinner"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+  'use strict';
+  let _visitorId=getOrCreateVid(),_pageLoadTime=Date.now();
+  function getCookie(n){const m=document.cookie.match(new RegExp('(?:^|; )'+n.replace(/[.$?*|{}()[\]\\/+^]/g,'\\$&')+'=([^;]*)'));return m?decodeURIComponent(m[1]):'';}
+  function setCookie(n,v,d){const e=new Date();e.setTime(e.getTime()+d*86400000);const sec=location.protocol==='https:'?';Secure':'';document.cookie=`${n}=${encodeURIComponent(v)};expires=${e.toUTCString()};path=/;SameSite=Lax${sec}`;}
+  function getOrCreateVid(){let vid=getCookie('dbert_vid');if(!vid){vid='v_'+Math.random().toString(36).substr(2,9)+Date.now().toString(36);setCookie('dbert_vid',vid,90);}return vid;}
+
+  function dismissBanner(){const b=document.getElementById('urgencyBanner');if(b){b.style.display='none';document.body.classList.add('banner-hidden');}setCookie('dbert_banner','1',3);}
+  function initBanner(){if(getCookie('dbert_banner')==='1'){const b=document.getElementById('urgencyBanner');if(b){b.style.display='none';document.body.classList.add('banner-hidden');}}}
+  function toggleMenu(){document.getElementById('navLinks').classList.toggle('open');}
+  function scrollToId(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+  function toggleFAQ(btn){const item=btn.closest('.faq-item'),isOpen=item.classList.contains('open');document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));if(!isOpen)item.classList.add('open');}
+
+  let _tt=null;
+  function showToast(msg,type='info'){const el=document.getElementById('toastEl');if(!el)return;el.textContent=msg;el.style.background=type==='error'?'rgba(30,10,10,.95)':type==='success'?'rgba(10,25,15,.95)':'rgba(15,20,30,.95)';el.style.borderColor=type==='error'?'rgba(255,107,107,.3)':type==='success'?'rgba(76,175,80,.3)':'rgba(226,185,111,.25)';el.style.transform='translateX(-50%) translateY(0)';el.style.opacity='1';if(_tt)clearTimeout(_tt);_tt=setTimeout(()=>{el.style.transform='translateX(-50%) translateY(80px)';el.style.opacity='0';},3600);}
+
+  function launchConfetti(){const c=document.getElementById('confettiCanvas');if(!c)return;const ctx=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const ps=Array.from({length:100},()=>({x:Math.random()*c.width,y:Math.random()*c.height-c.height,r:4+Math.random()*6,d:1+Math.random()*2,color:['#e2b96f','#c9922a','#4caf50','#64b5f6','#ff6b6b','#fff'][Math.floor(Math.random()*6)],tilt:Math.random()*10-5,ta:0,ts:.1+Math.random()*.1}));let fr;function draw(){ctx.clearRect(0,0,c.width,c.height);ps.forEach(p=>{ctx.beginPath();ctx.lineWidth=p.r/2;ctx.strokeStyle=p.color;ctx.moveTo(p.x+p.tilt+p.r/4,p.y);ctx.lineTo(p.x+p.tilt,p.y+p.tilt+p.r/4);ctx.stroke();p.ta+=p.ts;p.y+=p.d;p.tilt=15*Math.sin(p.ta);if(p.y>c.height){p.y=-10;p.x=Math.random()*c.width;}});fr=requestAnimationFrame(draw);}draw();setTimeout(()=>{cancelAnimationFrame(fr);ctx.clearRect(0,0,c.width,c.height);},3200);}
+
+  // 8.4: fetch a fresh signed timing token when the apply form opens (starts the >3s timer)
+  async function fetchApplyToken(){
+    try{
+      const r=await fetch('/apply-token',{credentials:'include'});
+      const d=await r.json();
+      if(d&&d.token){const el=document.getElementById('su_ts');if(el)el.value=d.token;}
+    }catch(e){}
+  }
+  function showAuthOverlay(tab,domain){
+    const ov=document.getElementById('authOverlay');
+    ov.classList.add('active');
+    ov.scrollTop=0;
+    document.body.style.overflow='auto';
+    switchAuthTab(tab||'signup');
+    /* `domain` is still accepted so the "Browse by Domain" tiles can keep
+       calling showAuthOverlay('signup', tile.domain), but there is no #su_domain
+       field to prefill: the three-stage signup (/signup/stage1|2|3) does not
+       collect a domain — that happens later via /apply?domain=. The old write
+       here targeted an element that has not existed for some time. */
+    fetchApplyToken();
+    if((tab||'signup')==='signup'){try{suGoStep(1);}catch(e){} suResume();}
+    history.pushState(null,'',tab==='signin'?'#signin':'#signup');
+  }
+  function hideAuthOverlay(){const ov=document.getElementById('authOverlay');ov.classList.remove('active');ov.scrollTop=0;document.body.style.overflow='';history.pushState(null,'','#');}
+  function switchAuthTab(tab){
+    document.getElementById('panelSignup').classList.toggle('active',tab==='signup');
+    document.getElementById('panelSignin').classList.toggle('active',tab==='signin');
+    document.getElementById('tabSignup').classList.toggle('active',tab==='signup');
+    document.getElementById('tabSignin').classList.toggle('active',tab==='signin');
+    ['signupError','signinError'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('visible');});
+    if(tab==='signin') resetSiFlow();
+    const ov=document.getElementById('authOverlay');if(ov) ov.scrollTop=0;
+  }
+  function togglePw(inputId,btn){const inp=document.getElementById(inputId);if(!inp)return;const show=inp.type==='password';inp.type=show?'text':'password';btn.querySelector('i').className=show?'fa fa-eye-slash':'fa fa-eye';}
+  function updateWhyCount(){const ta=document.getElementById('su_why'),ctr=document.getElementById('whyCount');if(!ta||!ctr)return;const len=ta.value.length;ctr.textContent=len+' / 80 min';ctr.style.color=len>=80?'var(--green)':'var(--amber)';}
+  function showAuthError(id,msg){const el=document.getElementById(id);if(!el)return;el.querySelector('span').textContent=msg;el.classList.add('visible');}
+  function hideAuthError(id){const el=document.getElementById(id);if(el)el.classList.remove('visible');}
+  function setLoading(id,v){const btn=document.getElementById(id);if(!btn)return;btn.disabled=v;btn.classList.toggle('loading',v);}
+
+  // ── FORGOT PASSWORD ──
+  function openForgotModal(){
+    const ov=document.getElementById('forgotOverlay');if(!ov)return;
+    document.getElementById('forgotError').style.display='none';
+    document.getElementById('forgotSuccess').style.display='none';
+    document.getElementById('forgotFormArea').style.display='block';
+    setLoading('forgotBtn',false);
+    const emailInput=document.getElementById('fp_email');
+    emailInput.value=_siEmail||document.getElementById('si_email')?.value.trim()||'';
+    ov.style.display='flex';
+    setTimeout(()=>emailInput.focus(),80);
+  }
+  function closeForgotModal(){const ov=document.getElementById('forgotOverlay');if(ov)ov.style.display='none';}
+  function showForgotError(msg){const el=document.getElementById('forgotError');el.querySelector('span').textContent=msg;el.style.display='flex';}
+  async function submitForgot(){
+    document.getElementById('forgotError').style.display='none';
+    const email=document.getElementById('fp_email').value.trim().toLowerCase();
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){showForgotError('Please enter a valid email address.');return;}
+    setLoading('forgotBtn',true);
+    try{
+      const res=await fetch('/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,company_website:document.getElementById('fp_company_website').value})});
+      const data=await res.json();
+      if(data.status==='success'){
+        document.getElementById('forgotFormArea').style.display='none';
+        document.getElementById('forgotSuccessText').textContent=data.message||'If that email exists, a reset link has been sent.';
+        document.getElementById('forgotSuccess').style.display='flex';
+      }else{
+        showForgotError(data.message||'Something went wrong. Please try again.');
+        setLoading('forgotBtn',false);
+      }
+    }catch(e){showForgotError('Network error. Please try again.');setLoading('forgotBtn',false);}
+  }
+
+  // ── MULTISTEP SIGNUP (Phase 13): stage1 account -> stage2 academics -> stage3 profile+intent ──
+  let _suStage=1;
+  function _suVal(id){const el=document.getElementById(id);return el?(el.value||'').trim():'';}
+  function suGoStep(n){
+    _suStage=n;
+    for(let i=1;i<=3;i++){
+      const step=document.getElementById('suStep'+i); if(step)step.style.display=(i===n)?'':'none';
+      const dot=document.getElementById('suDot'+i); if(dot){dot.classList.toggle('active',i===n);dot.classList.toggle('done',i<n);}
+    }
+    hideAuthError('signupError');
+    try{document.getElementById('panelSignup').scrollTop=0;}catch(e){}
+  }
+  async function suNext1(){
+    hideAuthError('signupError');
+    const name=_suVal('su_name'),email=_suVal('su_email').toLowerCase(),phone=_suVal('su_phone'),
+          password=document.getElementById('su_password').value,confirm=document.getElementById('su_confirm').value,
+          terms=document.getElementById('su_terms').checked,newsletter=document.getElementById('su_newsletter').checked;
+    if(!name||!email||!phone||!password||!confirm){showAuthError('signupError','Please fill in all required fields.');return;}
+    if(password.length<8){showAuthError('signupError','Password must be at least 8 characters.');return;}
+    if(password!==confirm){showAuthError('signupError','Passwords do not match.');return;}
+    if(!terms){showAuthError('signupError','Please accept the Terms & Conditions and Privacy Policy to continue.');return;}
+    setLoading('suBtn1',true);
+    try{
+      const res=await fetch('/signup/stage1',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name,email,phone,password,terms_accepted:true,newsletter_opt_in:newsletter,visitor_id:_visitorId,company_website:document.getElementById('su_company_website').value,_ts:document.getElementById('su_ts').value,/* §6.1 attribution: the 30-day ref cookie set on landing */ref:(window.dbertRefCode?window.dbertRefCode():'')})});
+      const data=await res.json(); setLoading('suBtn1',false);
+      if(data.status==='success'){dbertGA('signup_stage1',{});osLogin(email);suGoStep(2);}
+      else if(res.status===409&&data.code==='account_exists'){switchAuthTab('signin');const si=document.getElementById('si_email');if(si)si.value=email;showAuthError('signinError','You already have an account — please sign in.');}
+      else{showAuthError('signupError',data.message||'Could not create your account.');}
+    }catch(e){setLoading('suBtn1',false);showAuthError('signupError','Network error. Please try again.');}
+  }
+  async function suNext2(){
+    hideAuthError('signupError');
+    const city=_suVal('su_city'),college=_suVal('su_college'),course=_suVal('su_course'),
+          semester=_suVal('su_semester'),year=_suVal('su_year');
+    if(!city||!college||!course||!semester||!year){showAuthError('signupError','Please fill in all required fields.');return;}
+    setLoading('suBtn2',true);
+    try{
+      // T9: domain is no longer collected at signup -- interns browse posts and apply
+      // directly; the operative domain comes from whichever post they apply to.
+      const res=await fetch('/signup/stage2',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({city,college,course,semester,year_of_passing:year})});
+      const data=await res.json(); setLoading('suBtn2',false);
+      if(data.status==='success'){dbertGA('signup_stage2',{});suGoStep(3);}
+      else if(res.status===401){switchAuthTab('signin');showAuthError('signinError','Please sign in to continue your application.');}
+      else{showAuthError('signupError',data.message||'Could not save your details.');}
+    }catch(e){setLoading('suBtn2',false);showAuthError('signupError','Network error. Please try again.');}
+  }
+  async function suSubmit3(){
+    hideAuthError('signupError');
+    const why=_suVal('su_why'),portfolio=_suVal('su_portfolio'),linkedin_url=_suVal('su_linkedin'),github_url=_suVal('su_github');
+    const intent_answers={start_timeline:_suVal('su_start'),learning_mode:_suVal('su_learnmode'),priority:_suVal('su_priority')};
+    if(why.length<80){showAuthError('signupError','Please write at least 80 characters in the Why join field.');return;}
+    if(why.length>1200){showAuthError('signupError','Please keep the Why join field under 1200 characters.');return;}
+    setLoading('suBtn3',true);
+    try{
+      const res=await fetch('/signup/stage3',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({why_join:why,portfolio,linkedin_url,github_url,intent_answers,visitor_id:_visitorId})});
+      const data=await res.json();
+      if(data.status==='success'){dbertGA('apply_submitted',{});launchConfetti();document.getElementById('signupFormWrap').style.display='none';document.getElementById('signupSuccess').classList.add('visible');showToast('Application submitted!','success');setTimeout(()=>{window.location.href=data.redirect||'/portal';},1800);}
+      else if(res.status===401){setLoading('suBtn3',false);switchAuthTab('signin');showAuthError('signinError','Please sign in to finish your application.');}
+      else if(data.next===2){setLoading('suBtn3',false);showAuthError('signupError',data.message||'Please complete your academic details.');suGoStep(2);}
+      else{setLoading('suBtn3',false);showAuthError('signupError',data.message||'Submission failed.');}
+    }catch(e){setLoading('suBtn3',false);showAuthError('signupError','Network error. Please try again.');}
+  }
+  // Resume an incomplete signup: logged-in user with signup_stage 1 or 2 -> prefill + jump.
+  async function suResume(){
+    try{
+      const r=await fetch('/intern/me',{credentials:'include'});
+      if(r.status!==200)return; const d=await r.json(); if(d.status!=='success'||!d.intern)return;
+      const it=d.intern, st=parseInt(it.signup_stage||3,10);
+      if(st>=3)return;
+      if(it.name)document.getElementById('su_name').value=it.name;
+      if(it.email)document.getElementById('su_email').value=it.email;
+      if(it.phone)document.getElementById('su_phone').value=it.phone;
+      if(st>=2){
+        const set=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v;};
+        set('su_city',it.city);set('su_college',it.college);set('su_course',it.course);
+        set('su_semester',it.semester);set('su_year',it.year_of_passing);
+      }
+      suGoStep(st===1?2:3);
+    }catch(e){}
+  }
+
+  // ── SIGNIN FLOW (3-state: email check → login OR set password) ──
+  let _siEmail='';
+  function resetSiFlow(){_siEmail='';['siStepEmail'].forEach(id=>document.getElementById(id).style.display='block');['siStepLogin','siStepSetPw'].forEach(id=>document.getElementById(id).style.display='none');['si_email','si_password','si_newpw','si_confirmpw'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});hideAuthError('signinError');setLoading('siEmailBtn',false);}
+  async function doEmailCheck(){
+    hideAuthError('signinError');
+    const email=document.getElementById('si_email').value.trim().toLowerCase();
+    if(!email){showAuthError('signinError','Please enter your email.');return;}
+    setLoading('siEmailBtn',true);
+    try{
+      const res=await fetch('/check-email',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email})});
+      const data=await res.json();
+      if(data.status!=='success'){showAuthError('signinError',data.message||'Error.');setLoading('siEmailBtn',false);return;}
+      _siEmail=email;
+      if(data.result==='no_account'){showAuthError('signinError','No account found. Please Sign Up & Apply.');setLoading('siEmailBtn',false);}
+      else if(data.result==='no_password'){
+        document.getElementById('siEmailDisplayPw').textContent=email;
+        document.getElementById('siStepEmail').style.display='none';
+        document.getElementById('siStepSetPw').style.display='block';
+        setLoading('siEmailBtn',false);
+        setTimeout(()=>document.getElementById('si_newpw').focus(),100);
+      } else {
+        document.getElementById('siEmailDisplay').textContent=email;
+        document.getElementById('siStepEmail').style.display='none';
+        document.getElementById('siStepLogin').style.display='block';
+        setLoading('siEmailBtn',false);
+        setTimeout(()=>document.getElementById('si_password').focus(),100);
+      }
+    }catch(e){showAuthError('signinError','Network error.');setLoading('siEmailBtn',false);}
+  }
+  async function doSetPassword(){
+    hideAuthError('signinError');
+    const password=document.getElementById('si_newpw').value,confirm=document.getElementById('si_confirmpw').value;
+    if(!password||password.length<8){showAuthError('signinError','Password must be at least 8 characters.');return;}
+    if(password!==confirm){showAuthError('signinError','Passwords do not match.');return;}
+    setLoading('setpwBtn',true);
+    try{
+      const res=await fetch('/set-password',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:_siEmail,password,confirm_password:confirm,visitor_id:_visitorId})});
+      const data=await res.json();
+      if(data.status==='success'){osLogin(_siEmail);showToast('Password set! Redirecting...','success');setTimeout(()=>{window.location.href=data.redirect||'/profile';},900);}
+      else{showAuthError('signinError',data.message||'Could not set password.');setLoading('setpwBtn',false);}
+    }catch(e){showAuthError('signinError','Network error.');setLoading('setpwBtn',false);}
+  }
+
+  // Link this browser's push subscription to the intern's email (external_user_id) after login.
+  // Tie this browser's push subscription to the user's email AND auto-subscribe them to push.
+  // Browsers require an explicit permission grant, so we trigger the native prompt at sign-up
+  // (requestPermission is a no-op once the user has already allowed/blocked, so this is safe to
+  // call on every login). optIn() (re)activates the subscription in case they had opted out.
+  function osLogin(email){if(!email)return;window.OneSignalDeferred=window.OneSignalDeferred||[];OneSignalDeferred.push(async function(OneSignal){
+    try{await OneSignal.login(email);}catch(e){}
+    try{if(OneSignal.Notifications.permission!==true){await OneSignal.Notifications.requestPermission();}}catch(e){}
+    try{await OneSignal.User.PushSubscription.optIn();}catch(e){}
+  });}
+
+  async function doSignin(){
+    hideAuthError('signinError');
+    const email=_siEmail||document.getElementById('si_email').value.trim().toLowerCase(),password=document.getElementById('si_password').value;
+    if(!email||!password){showAuthError('signinError','Please enter email and password.');return;}
+    setLoading('signinBtn',true);
+    try{const res=await fetch('/intern/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,password,visitor_id:_visitorId})});const data=await res.json();if(data.status==='success'){osLogin(email);showToast('Login successful! Redirecting...','success');setTimeout(()=>{window.location.href=data.redirect||'/profile';},800);}else{showAuthError('signinError',data.message||'Invalid credentials.');setLoading('signinBtn',false);document.getElementById('si_password').value='';}}catch(e){showAuthError('signinError','Network error. Please try again.');setLoading('signinBtn',false);}
+  }
+
+  function initVisitTracking(){let vc=parseInt(getCookie('dbert_vc')||'0')+1;setCookie('dbert_vc',vc,60);if(vc>1)setCookie('dbert_rv','1',60);setTimeout(async()=>{try{await fetch('/track-visit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:_visitorId,user_agent:navigator.userAgent,screen_res:screen.width+'x'+screen.height,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,language:navigator.language,device_type:window.innerWidth>768?'desktop':'mobile',referrer:document.referrer,is_return_visit:getCookie('dbert_rv')==='1',visit_count:vc,time_on_page:Math.floor((Date.now()-_pageLoadTime)/1000),path:window.location.pathname})});}catch(e){}},3000);}
+
+  function handleHash(){const h=window.location.hash;if(h==='#signup')showAuthOverlay('signup');else if(h==='#signin')showAuthOverlay('signin');}
+  window.addEventListener('hashchange',handleHash);
+
+  // T1: the homepage is a discovery portal interns can browse while signed in, so a logged-in
+  // intern stays here (no more bounce-to-portal) and the nav swaps to Dashboard/Profile/Sign out.
+  async function doSignOut(){
+    try{await fetch('/logout',{method:'POST',credentials:'include'});}catch(e){}
+    window.location.href='/';
+  }
+  async function initNav(){
+    try{
+      const r=await fetch('/intern/me',{credentials:'include'});
+      if(r.status!==200)return;
+      const d=await r.json();
+      if(d.status==='success'&&d.intern){
+        const el=document.getElementById('navAuthLinks');
+        if(el)el.innerHTML='<a href="/portal">Dashboard</a><a href="/portal">Profile</a><a href="#" data-act-click="doSignOut" data-prevent-click class="nav-cta">Sign Out</a>';
+      }
+    }catch(e){}
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    initNav();
+    document.getElementById('si_password')?.addEventListener('keydown',e=>{if(e.key==='Enter')doSignin();});
+    document.getElementById('si_email')?.addEventListener('keydown',e=>{if(e.key==='Enter')doEmailCheck();});
+    document.getElementById('si_confirmpw')?.addEventListener('keydown',e=>{if(e.key==='Enter')doSetPassword();});
+    document.getElementById('su_confirm')?.addEventListener('keydown',e=>{if(e.key==='Enter')suNext1();});
+    document.getElementById('fp_email')?.addEventListener('keydown',e=>{if(e.key==='Enter')submitForgot();});
+    document.getElementById('forgotOverlay')?.addEventListener('click',e=>{if(e.target.id==='forgotOverlay')closeForgotModal();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeForgotModal();hideAuthOverlay();}});
+    initBanner();initVisitTracking();handleHash();
+  });
+  </script>
+</body>
+</html>

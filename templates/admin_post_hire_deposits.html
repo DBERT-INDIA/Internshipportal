@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full = "Job-Hire Deposits · DBERT Admin" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-admin-post-hire-deposits has-staff-sidebar">
+{% set active_page = 'admin_main' %}
+{% include '_staff_sidebar.html' %}
+
+  <div class="wrap">
+    <div class="top-row">
+      <div>
+        <h1>Job-Hire Deposits</h1>
+        <p class="muted" style="font-size:13px;">₹499 refundable security deposits, triggered once a company marks an applicant Hired.</p>
+      </div>
+      <a class="back" href="/admin"><i class="fas fa-arrow-left"></i> Back to admin</a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card gold"><div class="stat-val">{{ counts.pending }}</div><div class="stat-lbl">Pending</div></div>
+      <div class="stat-card green"><div class="stat-val">{{ counts.verified }}</div><div class="stat-lbl">Verified</div></div>
+      <div class="stat-card red"><div class="stat-val">{{ counts.rejected }}</div><div class="stat-lbl">Rejected</div></div>
+      <div class="stat-card blue"><div class="stat-val">{{ counts.refunded }}</div><div class="stat-lbl">Refunded</div></div>
+      <div class="stat-card blue"><div class="stat-val">{{ counts.total }}</div><div class="stat-lbl">Total</div></div>
+    </div>
+
+    <div class="tabs">
+      {% for s in ['pending','verified','rejected','refunded','all'] %}
+      <a href="/admin/post-hire-deposits?status={{ s }}" class="{{ 'active' if active==s else '' }}">{{ s|capitalize }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>#</th><th>Intern</th><th>Email</th><th>Post</th><th>Company</th><th>Amount</th><th>Screenshot</th><th>Submitted</th><th>Status</th><th></th></tr>
+        {% for d in deposits %}
+        <tr id="row-{{ d.id }}">
+          <td>{{ d.id }}</td>
+          <td>{{ d.intern_name }}</td>
+          <td class="muted">{{ d.intern_email }}</td>
+          <td>{{ d.post_title }}</td>
+          <td>{{ d.company_name }}</td>
+          <td>₹{{ d.amount }}</td>
+          <td>{% if d.payment_screenshot %}<a class="lnk" href="/admin/screenshot/{{ d.payment_screenshot }}" target="_blank" rel="noopener"><i class="fas fa-image"></i> view</a>{% else %}—{% endif %}</td>
+          <td class="muted">{{ d.created_at }}</td>
+          <td><span class="badge b-{{ d.status }}">{{ d.status }}</span></td>
+          <td style="white-space:nowrap;">
+            {% if d.status == 'pending' %}
+            <button class="btn v" data-act-click="review" data-arg-click='[{{ d.id|tojson }}, "verify"]'>Verify</button>
+            <button class="btn r" data-act-click="review" data-arg-click='[{{ d.id|tojson }}, "reject"]'>Reject</button>
+            {% elif d.status == 'verified' %}
+            <button class="btn f" data-act-click="refund" data-arg-click='[{{ d.id|tojson }}]'>Mark Refunded</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10" class="empty">No deposits here.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    async function review(id, decision){
+      if(decision==='reject' && !confirm('Reject this deposit payment?'))return;
+      try{
+        const r=await fetch('/admin/post-hire-deposits/'+id+'/review',{
+          method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({decision:decision})});
+        const d=await r.json();
+        if(d.status==='success'){ location.reload(); } else { alert(d.message||'Could not update.'); }
+      }catch(e){ alert('Network error.'); }
+    }
+    async function refund(id){
+      if(!confirm('Mark this deposit as refunded? This is a manual, one-way action.'))return;
+      try{
+        const r=await fetch('/admin/post-hire-deposits/'+id+'/refund',{method:'POST',credentials:'include'});
+        const d=await r.json();
+        if(d.status==='success'){ location.reload(); } else { alert(d.message||'Could not update.'); }
+      }catch(e){ alert('Network error.'); }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+{# Title/description/robots formats are preserved byte-for-byte: these pages are
+   indexed and a reformat would churn every SERP entry. #}
+{% set page_title_full %}{% if page_title %}{{ page_title }}{% else %}{{ label }} {% if active_domain %}· {{ active_domain }} {% endif %}| DBERT{% endif %}{% endset %}
+{% set page_desc %}{% if page_meta_description %}{{ page_meta_description }}{% else %}Browse {{ label|lower }} across AI, Data, Full Stack and Automation on DBERT.{% endif %}{% endset %}
+{% if noindex %}{% set page_robots = "noindex,follow" %}{% endif %}
+{% set page_canonical = canonical %}
+{% include "_head.html" %}
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script nonce="{{ csp_nonce() }}">
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "1b181bc1-46b8-4359-ac7a-e87ecab91be4",
+        safari_web_id: "web.onesignal.auto.35c3b21f-3634-4ed2-bd52-fd09e2637415",
+        notifyButton: { enable: true },
+        promptOptions: { slidedown: { prompts: [ { type: "push", autoPrompt: true,
+          text: { actionMessage: "Get notified about new internships, jobs and application updates.", acceptButton: "Allow", cancelButton: "No Thanks" },
+          delay: { pageViews: 1, timeDelay: 3 } } ] } },
+      });
+    });
+    fetch('/intern/me', {credentials: 'include'}).then(r => r.ok ? r.json() : null).then(d => {
+      const email = d && d.status === 'success' && d.intern && d.intern.email;
+      if (!email) return;
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) { try { await OneSignal.login(email); } catch(e) {} });
+    }).catch(() => {});
+  </script>
+</head>
+<body class="public">
+  <header class="public-topbar"><div class="public-topbar-inner">
+    <a class="brand-link" href="/">
+      <span class="brand-icon"><i class="fas fa-graduation-cap"></i></span>
+      <span><b>DBERT</b><span>Careers</span></span>
+    </a>
+    <nav class="public-nav">
+      <a href="/jobs" class="{{ 'on' if post_type == 'job' else '' }}">Jobs</a>
+      <a href="/internships" class="{{ 'on' if post_type == 'internship' else '' }}">Internships</a>
+      <a href="/#signin" class="signin">Sign in</a>
+    </nav></div>
+  </header>
+
+  <main class="public-wrap">
+    <div id="welcomeBanner" class="hidden" style="display:none;background:linear-gradient(135deg,rgba(226,185,111,.14),rgba(226,185,111,.05));border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:22px;">&#128075;</span>
+      <div>
+        <div style="font-weight:800;color:#fff;font-size:14.5px;">Your account is ready &mdash; pick a role to apply to.</div>
+        <div style="color:var(--tx-muted);font-size:13px;margin-top:2px;">Browse the roles below and tap Apply on the one that fits you best.</div>
+      </div>
+    </div>
+    <script nonce="{{ csp_nonce() }}">
+      (function(){
+        try{
+          const p = new URLSearchParams(window.location.search);
+          if (p.get('welcome') === '1') {
+            const el = document.getElementById('welcomeBanner');
+            if (el) el.style.display = 'flex';
+            // one-time: strip the param so refresh/back doesn't re-show it
+            p.delete('welcome');
+            const rest = p.toString();
+            history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : ''));
+          }
+        }catch(e){}
+      })();
+    </script>
+    <h1>{{ page_h1 or label }}</h1>
+    <p class="sub">Live {{ label|lower }} from verified companies on DBERT{% if location_page %} in {{ active_location }}{% endif %}.</p>
+
+    <div class="filters">
+      <a href="{% if active_city_slug %}{{ base_path }}/{{ active_city_slug }}{% else %}{{ base_path }}{% endif %}" class="{{ 'on' if not active_domain else '' }}">All Domains</a>
+      {% for d in domains %}
+        {% set d_slug = domain_slugs[d] %}
+        <a href="{% if active_city_slug %}{{ base_path }}/{{ d_slug }}/{{ active_city_slug }}{% else %}{{ base_path }}/{{ d_slug }}{% endif %}" class="{{ 'on' if active_domain == d else '' }}">{{ d }}</a>
+      {% endfor %}
+    </div>
+
+    {% if active_city_slug or locations %}
+    <div class="filters">
+      <a href="{% if active_domain_slug %}{{ base_path }}/{{ active_domain_slug }}{% else %}{{ base_path }}{% endif %}" class="{{ 'on' if not active_city_slug else '' }}">All Locations</a>
+      {% if active_city_slug %}
+        <a href="{% if active_domain_slug %}{{ base_path }}/{{ active_domain_slug }}/{{ active_city_slug }}{% else %}{{ base_path }}/{{ active_city_slug }}{% endif %}" class="on">{{ active_location }}</a>
+      {% endif %}
+      {% for loc in locations %}
+        <a href="{% if active_domain_slug %}{{ base_path }}/{{ active_domain_slug }}/{{ loc.slug }}{% else %}{{ base_path }}/{{ loc.slug }}{% endif %}">{{ loc.location }} ({{ loc.n }})</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if posts %}
+    <div id="t2FilterBar" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:16px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+      <div style="flex:1;min-width:180px;">
+        <label style="display:block;font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Search</label>
+        <input id="t2Search" type="text" placeholder="Title or skill…" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+      </div>
+      <div style="min-width:130px;">
+        <label style="display:block;font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Work mode</label>
+        <select id="t2WorkMode" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div style="min-width:130px;">
+        <label style="display:block;font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Duration</label>
+        <select id="t2Duration" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div style="min-width:150px;">
+        <label style="display:block;font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Min stipend (₹/mo)</label>
+        <select id="t2Stipend" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+          <option value="0">Any</option>
+          <option value="5000">₹5,000+</option>
+          <option value="10000">₹10,000+</option>
+          <option value="15000">₹15,000+</option>
+        </select>
+      </div>
+      <div style="min-width:130px;">
+        <label style="display:block;font-size:11px;color:var(--tx-muted);margin-bottom:4px;">Posted</label>
+        <select id="t2Freshness" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;">
+          <option value="">Anytime</option>
+          <option value="1">Today</option>
+          <option value="7">This week</option>
+          <option value="30">This month</option>
+        </select>
+      </div>
+      <button id="t2Clear" type="button" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--tx-muted);font-size:13px;cursor:pointer;white-space:nowrap;">Clear filters</button>
+    </div>
+    <div id="t2ResultCount" style="color:var(--tx-muted);font-size:13px;margin-bottom:8px;"></div>
+    {% endif %}
+
+    <div class="catalog-grid" id="t2Grid">
+      {% if posts %}
+        {% for p in posts %}
+        <a class="card post-card" href="{{ post_path(p) }}"
+           data-domain="{{ p.domain }}"
+           data-workmode="{{ (p.work_mode or '')|lower|trim }}"
+           data-duration="{{ (p.duration or '')|lower|trim|replace('months','month')|replace(' month','month') }}"
+           data-stipend-min="{{ p.stipend_min or 0 }}"
+           data-stipend-max="{{ p.stipend_max or p.stipend_min or 0 }}"
+           data-unpaid="{{ 1 if p.is_unpaid else 0 }}"
+           data-published="{{ p.published_at or p.created_at or '' }}"
+           data-search="{{ (p.title ~ ' ' ~ (p.skills or ''))|lower }}">
+          <h2>{{ p.title }}</h2>
+          <div class="co"><i class="fas fa-building"></i> {{ p.company_name }}</div>
+          <div class="meta">
+            <span class="pill">{{ p.domain }}</span>
+            {% if p.work_mode %}<span class="pill dim">{{ p.work_mode|capitalize }}</span>{% endif %}
+            {% if p.location %}<span class="pill dim">{{ p.location }}</span>{% endif %}
+            {% if p.duration %}<span class="pill dim">{{ p.duration }}</span>{% endif %}
+            {% if p.is_unpaid %}<span class="pill dim">Unpaid</span>
+            {% elif p.stipend_min or p.stipend_max %}<span class="pill pay">₹{{ p.stipend_min or p.stipend_max }}{% if p.stipend_min and p.stipend_max %}–{{ p.stipend_max }}{% endif %}{% if p.pay_period %}/{{ p.pay_period }}{% endif %}</span>{% endif %}
+          </div>
+          <div class="apply-row">View &amp; apply <i class="fas fa-arrow-right"></i></div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty" id="t2ServerEmpty"><i class="fas fa-folder-open" style="font-size:1.6rem;display:block;margin-bottom:10px;opacity:.6;"></i>No live {{ label|lower }}{% if active_domain %} in {{ active_domain }}{% endif %}{% if active_location %} in {{ active_location }}{% endif %} right now. Check back soon{% if active_domain or active_location %}, or browse all {{ label|lower }}{% endif %}.</div>
+      {% endif %}
+    </div>
+    {% if posts %}
+    <div class="empty" id="t2FilterEmpty" style="display:none;"><i class="fas fa-filter" style="font-size:1.6rem;display:block;margin-bottom:10px;opacity:.6;"></i>No {{ label|lower }} match your filters. <a href="#" data-act-click="$click" data-arg-click='["t2Clear"]' data-prevent-click style="color:var(--amber);">Clear filters</a> to see everything.</div>
+    {% endif %}
+
+    {% if posts %}
+    <div class="pager">
+      {% if page > 1 %}<a href="{{ listing_base }}?page={{ page - 1 }}{% if active_domain %}&domain={{ active_domain|urlencode }}{% endif %}">← Newer</a>{% else %}<span>← Newer</span>{% endif %}
+      {% if has_next %}<a href="{{ listing_base }}?page={{ page + 1 }}{% if active_domain %}&domain={{ active_domain|urlencode }}{% endif %}">Older →</a>{% else %}<span>Older →</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <script nonce="{{ csp_nonce() }}">
+      (function(){
+        const grid = document.getElementById('t2Grid');
+        if (!grid) return; // no posts on this page at all — nothing to filter
+        const cards = Array.from(grid.querySelectorAll('.card'));
+
+        // Populate Work mode + Duration dropdowns from what's actually on the page,
+        // rather than a hardcoded list, so they always match live data.
+        function fillSelect(sel, values, labelFn){
+          const seen = new Set();
+          values.forEach(v=>{ if(v) seen.add(v); });
+          Array.from(seen).sort().forEach(v=>{
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = labelFn ? labelFn(v) : v;
+            sel.appendChild(opt);
+          });
+        }
+        fillSelect(document.getElementById('t2WorkMode'),
+          cards.map(c=>c.dataset.workmode), v=>v.charAt(0).toUpperCase()+v.slice(1));
+        fillSelect(document.getElementById('t2Duration'),
+          cards.map(c=>c.dataset.duration), v=>v.charAt(0).toUpperCase()+v.slice(1));
+
+        const els = {
+          search: document.getElementById('t2Search'),
+          workMode: document.getElementById('t2WorkMode'),
+          duration: document.getElementById('t2Duration'),
+          stipend: document.getElementById('t2Stipend'),
+          freshness: document.getElementById('t2Freshness'),
+        };
+        const countEl = document.getElementById('t2ResultCount');
+        const filterEmptyEl = document.getElementById('t2FilterEmpty');
+        const serverEmptyEl = document.getElementById('t2ServerEmpty');
+
+        function daysSince(dateStr){
+          if (!dateStr) return Infinity;
+          const d = new Date(dateStr.replace(' ', 'T'));
+          if (isNaN(d)) return Infinity;
+          return (Date.now() - d.getTime()) / 86400000;
+        }
+
+        function applyFilters(){
+          const q = els.search.value.trim().toLowerCase();
+          const wm = els.workMode.value;
+          const dur = els.duration.value;
+          const minStipend = parseInt(els.stipend.value, 10) || 0;
+          const maxAgeDays = els.freshness.value ? parseInt(els.freshness.value, 10) : null;
+          let visible = 0;
+          cards.forEach(c=>{
+            let ok = true;
+            if (q && !c.dataset.search.includes(q)) ok = false;
+            if (ok && wm && c.dataset.workmode !== wm) ok = false;
+            if (ok && dur && c.dataset.duration !== dur) ok = false;
+            if (ok && minStipend > 0) {
+              const smax = parseInt(c.dataset.stipendMax, 10) || 0;
+              if (c.dataset.unpaid === '1' || smax < minStipend) ok = false;
+            }
+            if (ok && maxAgeDays !== null && daysSince(c.dataset.published) > maxAgeDays) ok = false;
+            c.style.display = ok ? '' : 'none';
+            if (ok) visible++;
+          });
+          countEl.textContent = visible + ' of ' + cards.length + ' shown';
+          if (serverEmptyEl) serverEmptyEl.style.display = 'none';
+          filterEmptyEl.style.display = (visible === 0) ? '' : 'none';
+        }
+
+        Object.values(els).forEach(el=>{
+          el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', applyFilters);
+        });
+        document.getElementById('t2Clear').addEventListener('click', function(){
+          els.search.value=''; els.workMode.value=''; els.duration.value='';
+          els.stipend.value='0'; els.freshness.value='';
+          applyFilters();
+        });
+        applyFilters();
+      })();
+    </script>
+
+    <div class="cert-cta">
+      <i class="fas fa-certificate"></i> Want an edge? Our DBERT-reviewed courses come with a dual-verified certificate. <a href="/program">Explore the Paid Program →</a>
+    </div>
+  </main>
+
+  <footer class="public-foot">
+    <div class="fl">
+      <a href="/jobs">Jobs</a>
+      <a href="/internships">Internships</a>
+      <a href="/">Home</a>
+      <a href="/#signin">Sign in</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="wa" href="https://wa.me/917060372107" rel="noopener" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+      <span>© DBERT</span>
+    </div>
+  </footer>
+</body>
+</html>

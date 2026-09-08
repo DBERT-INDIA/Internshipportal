@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Company Dashboard · DBERT Jobs" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="pg-company-dashboard">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i class="fas fa-briefcase"></i></div>
+        <div><h2>{{ company.name }}</h2><p>Company Portal</p></div>
+      </div>
+      <button class="nav-item active" data-tab="posts" data-act-click="showTab" data-arg-click='["posts"]'><i class="fas fa-rectangle-list"></i> Posts</button>
+      <button class="nav-item" data-tab="courses" data-act-click="showTab" data-arg-click='["courses"]'><i class="fas fa-graduation-cap"></i> Upload Course</button>
+      <a class="nav-item" href="/company/earnings"><i class="fas fa-coins"></i> Sales & Earnings</a>
+      <a class="nav-item" href="/company/cohorts"><i class="fas fa-users-rectangle"></i> Cohorts</a>
+      <button class="nav-item" data-tab="account" data-act-click="showTab" data-arg-click='["account"]'><i class="fas fa-user-gear"></i> Account</button>
+      <div class="sidebar-foot">
+        <button class="nav-item" data-act-click="logout"><i class="fas fa-arrow-right-from-bracket"></i> Log out</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      {% if not company.is_approved %}
+      <div class="banner warn"><i class="fas fa-hourglass-half"></i> Your account is pending admin approval. You can draft posts now, but publishing is locked until you're approved.</div>
+      {% else %}
+      <div class="banner ok"><i class="fas fa-circle-check"></i> Approved — you can publish up to 3 live posts at a time.</div>
+      {% endif %}
+
+      <!-- POSTS -->
+      <section class="panel active" id="panel-posts">
+        <div class="pagehead">
+          <div>
+            <h1>Your posts</h1>
+            <div class="who">{{ company.email }}</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="counter">{{ live_count }} / 3 live</span>
+            <a class="btn" href="/company/posts/new"><i class="fas fa-plus"></i> Create post</a>
+          </div>
+        </div>
+        <div class="card">
+          <table>
+            <tr><th>Title</th><th>Type</th><th>Domain</th><th>Status</th><th></th></tr>
+            {% for p in posts %}
+            <tr>
+              <td style="color:#fff;font-weight:600;">{{ p.title }}</td>
+              <td style="text-transform:capitalize;">{{ p.post_type }}</td>
+              <td>{{ p.domain }}</td>
+              <td>
+                {% if p.status == 'published' %}<span class="badge b-live">live</span>
+                {% elif p.status == 'expired' %}<span class="badge b-exp">expired</span>
+                {% else %}<span class="badge b-draft">{{ p.status }}</span>{% endif %}
+              </td>
+              <td style="white-space:nowrap;">
+                <a href="/company/posts/{{ p.id }}">manage</a>
+                &nbsp;·&nbsp;
+                <a href="/company/posts/{{ p.id }}/applicants">applicants</a>
+                &nbsp;·&nbsp;
+                <a href="#" data-act-click="quickDelete" data-arg-click='[{{ p.id|tojson }}]' data-prevent-click style="color:var(--red);">delete</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty">No posts yet — create your first job or internship.</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+      </section>
+
+      <!-- COURSES (Authoring & Upload) -->
+      <section class="panel" id="panel-courses">
+        <div class="pagehead">
+          <div>
+            <h1>Author & Upload New Course</h1>
+            <div class="who">Publish flagship learning tracks to the DBERT catalog and earn 85% on course sales.</div>
+          </div>
+          <a class="btn ghost" href="/company/earnings"><i class="fas fa-coins"></i> View Earnings Ledger</a>
+        </div>
+        <div class="acct-card" style="max-width:560px;">
+          <h3>Course Authoring Form</h3>
+          <p class="hint">Submitted courses are reviewed by DBERT staff before appearing live in the student catalog.</p>
+          
+          <form id="courseForm" data-act-submit="submitCourse" data-arg-submit='["$event"]'>
+            <label class="field-label">Course Title</label>
+            <input type="text" id="c_title" class="field-input" placeholder="e.g. Master Python AI Automation" required>
+            
+            <label class="field-label">Domain</label>
+            <select id="c_domain" class="field-input">
+              <option value="AI Agent Development">AI Agent Development</option>
+              <option value="Data Analyst">Data Analyst</option>
+              <option value="Full Stack Development">Full Stack Development</option>
+              <option value="Python Automation">Python Automation</option>
+            </select>
+            
+            <label class="field-label">Pricing Type</label>
+            <select id="c_is_paid" class="field-input" data-act-change="togglePrice" data-arg-change='["$value"]'>
+              <option value="0">Free Access</option>
+              <option value="1">Paid Course Track (₹)</option>
+            </select>
+            
+            <div id="priceWrap" style="display:none;">
+              <label class="field-label">Price (INR ₹)</label>
+              <input type="number" id="c_price" class="field-input" placeholder="e.g. 1999" min="99" value="1999">
+              <p class="hint" style="margin-top:4px;">You receive 85% (₹1,699) per sale after DBERT 15% platform fee.</p>
+            </div>
+            
+            <button type="submit" class="btn" style="margin-top:16px; width:100%; justify-content:center;"><i class="fas fa-paper-plane"></i> Submit Course for Review</button>
+            <div id="courseMsg" class="msg"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ACCOUNT -->
+      <section class="panel" id="panel-account">
+        <div class="pagehead"><div><h1>Account</h1><div class="who">{{ company.email }}</div></div></div>
+        <div class="acct-card">
+          <h3>Change password</h3>
+          <p class="hint">Use at least 8 characters.</p>
+          <form id="pwf" data-prevent-submit>
+            <label class="field-label">Current password</label>
+            <input class="field-input" type="password" name="current_password" required>
+            <label class="field-label">New password</label>
+            <input class="field-input" type="password" name="new_password" required>
+            <label class="field-label">Confirm new password</label>
+            <input class="field-input" type="password" name="confirm_password" required>
+            <button class="btn" type="submit" style="margin-top:16px;"><i class="fas fa-key"></i> Update password</button>
+            <div class="msg" id="pwmsg"></div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    function showTab(name){
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='panel-'+name); });
+      document.querySelectorAll('.nav-item[data-tab]').forEach(function(b){ b.classList.toggle('active', b.dataset.tab===name); });
+    }
+    async function submitCourse(e) {
+      e.preventDefault();
+      const title = document.getElementById('c_title').value;
+      const domain = document.getElementById('c_domain').value;
+      const is_paid = parseInt(document.getElementById('c_is_paid').value) === 1;
+      const price_inr = is_paid ? parseInt(document.getElementById('c_price').value) : 0;
+      const msg = document.getElementById('courseMsg');
+      msg.className = 'msg'; msg.textContent = 'Submitting course...';
+
+      try {
+        const res = await fetch('/company/courses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, domain, is_paid, price_inr })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          msg.className = 'msg ok';
+          msg.textContent = 'Course submitted successfully to DBERT review queue!';
+          document.getElementById('courseForm').reset();
+        } else {
+          msg.className = 'msg err';
+          msg.textContent = data.message || 'Error creating course.';
+        }
+      } catch(err) {
+        msg.className = 'msg err';
+        msg.textContent = 'Network error.';
+      }
+    }
+    function togglePrice(val) {
+      document.getElementById('priceWrap').style.display = val === '1' ? 'block' : 'none';
+    }
+    function logout(){
+      fetch('/company/logout',{method:'POST'}).then(function(){ location.href='/company/login'; });
+    }
+    function quickDelete(postId){
+      if(!confirm('Delete this post? Existing applicants will be kept, but the post will stop appearing anywhere on the board. This cannot be undone from here.')) return;
+      fetch('/company/posts/'+postId+'/delete', {method:'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){ if(d.status==='success') location.reload(); else alert(d.message||'Error'); })
+        .catch(function(){ alert('Network error'); });
+    }
+    document.getElementById('pwf').addEventListener('submit', function(){
+      var fd=new FormData(this), body={}; fd.forEach(function(v,k){ body[k]=v; });
+      var msg=document.getElementById('pwmsg'); msg.className='msg'; msg.textContent='…';
+      fetch('/company/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){ msg.className='msg ok'; msg.textContent=d.message; document.getElementById('pwf').reset(); }
+          else { msg.className='msg err'; msg.textContent=d.message||'Error'; }
+        }).catch(function(){ msg.className='msg err'; msg.textContent='Network error'; });
+    });
+  </script>
+</body>
+</html>

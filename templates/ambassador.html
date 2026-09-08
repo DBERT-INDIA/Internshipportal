@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "College Ambassador" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'ambassador' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content">
+
+    <div class="page-head">
+      <div class="eyebrow">Earn · New</div>
+      <h1>College Ambassador</h1>
+      <p>Share your link. When someone you refer enrols, you earn 10% of their fee as
+         real cash — withdrawable to your bank.</p>
+    </div>
+
+    <div id="ambErr" class="alert alert-err" style="display:none"></div>
+
+    <!-- Referral link + funnel -->
+    <div class="ref-hero">
+      <h2>Your referral link</h2>
+      <p>Send this to friends and classmates. Every click, signup and conversion is
+         tracked automatically.</p>
+      <div class="ref-link-box">
+        <code id="refLink">Loading…</code>
+        <button class="btn btn-primary btn-sm" id="copyBtn" data-act-click="copyRefLink">
+          <i class="fa-solid fa-copy"></i> Copy
+        </button>
+      </div>
+      <div class="ref-funnel">
+        <div class="funnel-step"><b id="fClicks">0</b><span>Clicks</span></div>
+        <div class="funnel-step"><b id="fSignups">0</b><span>Signed up</span></div>
+        <div class="funnel-step"><b id="fConverted">0</b><span>Converted</span></div>
+      </div>
+    </div>
+
+    <div class="hero-row">
+      <!-- Balance + withdraw -->
+      <div class="card">
+        <div class="card-head"><i class="fa-solid fa-wallet"></i><h3>Commission balance</h3></div>
+        <b style="font-family:var(--f-display);font-size:36px;color:var(--tx-head);display:block">
+          ₹<span id="refBalance">0</span></b>
+        <small class="t-muted t-sm" id="refBalanceSub">From 0 converted referrals</small>
+
+        <div id="pendingRow" class="alert alert-warn mt-16" style="display:none">
+          <i class="fa-solid fa-hourglass-half"></i>
+          <div>₹<span id="pendingAmt">0</span> already requested and awaiting review.</div>
+        </div>
+
+        <div class="field mt-16">
+          <label for="wdAmount">Amount to withdraw</label>
+          <input type="number" id="wdAmount" min="1" placeholder="e.g. 500">
+          <div class="hint">Available: ₹<span id="availAmt">0</span></div>
+        </div>
+        <button class="btn btn-primary btn-block" id="wdBtn" data-act-click="requestWithdrawal" disabled>
+          Request withdrawal
+        </button>
+        <div class="msg" id="wdMsg"></div>
+      </div>
+
+      <!-- Payout details -->
+      <div class="card">
+        <div class="card-head"><i class="fa-solid fa-building-columns"></i><h3>Payout details</h3></div>
+        <div class="field">
+          <label for="upiInput">Your UPI ID</label>
+          <input type="text" id="upiInput" placeholder="name@bank" autocomplete="off">
+          <div class="hint">
+            <i class="fa-solid fa-lock" style="color:var(--green)"></i>
+            Stored encrypted. Only shown to an admin when they process your payout.
+          </div>
+        </div>
+        <div class="t-sm t-muted mb-16" id="upiCurrent" style="display:none">
+          On file: <b class="t-mono t-head" id="upiMasked"></b>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-act-click="saveUpi">Save UPI ID</button>
+        <div class="msg" id="upiMsg"></div>
+      </div>
+    </div>
+
+    <!-- Referrals -->
+    <div class="card mb-24">
+      <div class="card-head"><i class="fa-solid fa-users"></i><h3>Your referrals</h3></div>
+      <div id="refList"><p class="t-sm t-muted">Loading…</p></div>
+    </div>
+
+    <!-- Withdrawal history -->
+    <div class="card">
+      <div class="card-head"><i class="fa-solid fa-receipt"></i><h3>Withdrawal history</h3></div>
+      <div id="wdList"><p class="t-sm t-muted">Loading…</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  var AMB = null;
+
+  function esc(s){ return (s===null||s===undefined?'':s).toString()
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  function showErr(m){ var e=document.getElementById('ambErr');
+    e.textContent=m; e.style.display='flex'; }
+
+  async function loadAmbassador(){
+    try {
+      const r = await fetch('/intern/ambassador', {credentials:'include'});
+      const d = await r.json();
+      if (d.status !== 'success') { showErr(d.message || 'Could not load your ambassador data.'); return; }
+      AMB = d;
+
+      document.getElementById('refLink').textContent = d.link;
+      document.getElementById('fClicks').textContent    = d.funnel.clicked   || 0;
+      document.getElementById('fSignups').textContent   = d.funnel.signed_up || 0;
+      document.getElementById('fConverted').textContent = d.funnel.converted || 0;
+
+      document.getElementById('refBalance').textContent = d.referral_balance;
+      document.getElementById('refBalanceSub').textContent =
+        'From ' + (d.funnel.converted || 0) + ' converted referral' +
+        ((d.funnel.converted === 1) ? '' : 's');
+      document.getElementById('availAmt').textContent = d.available;
+
+      if (d.pending_withdrawal > 0) {
+        document.getElementById('pendingAmt').textContent = d.pending_withdrawal;
+        document.getElementById('pendingRow').style.display = 'flex';
+      }
+
+      if (d.has_upi) {
+        document.getElementById('upiMasked').textContent = d.upi_masked;
+        document.getElementById('upiCurrent').style.display = 'block';
+      }
+      /* §6.6 — withdrawal stays disabled until a UPI id is on file */
+      document.getElementById('wdBtn').disabled = !(d.has_upi && d.available > 0);
+
+      renderReferrals(d.referrals || []);
+      renderWithdrawals(d.withdrawals || []);
+    } catch (e) {
+      showErr('Network error while loading your ambassador data.');
+    }
+  }
+
+  function renderReferrals(rows){
+    var box = document.getElementById('refList');
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty"><i class="fa-solid fa-user-plus"></i>' +
+        '<h4>No referrals yet</h4><p>Share your link to get started.</p></div>';
+      return;
+    }
+    box.innerHTML = rows.map(function(r){
+      var badge = r.status === 'converted'
+        ? '<span class="badge b-green">Converted</span>'
+        : '<span class="badge b-amber">Signed up</span>';
+      var flag = r.flagged
+        ? ' <span class="badge b-muted" title="Under review">flagged</span>' : '';
+      return '<div class="ledger-row"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i>' +
+        esc(r.referred_name || 'A student') +
+        '<span class="lr-amt">' + badge + flag + '</span></div>';
+    }).join('');
+  }
+
+  function renderWithdrawals(rows){
+    var box = document.getElementById('wdList');
+    if (!rows.length) {
+      box.innerHTML = '<p class="t-sm t-muted">No withdrawals requested yet.</p>';
+      return;
+    }
+    var cls = {pending:'b-amber', approved:'b-blue', paid:'b-green', rejected:'b-red'};
+    box.innerHTML = rows.map(function(w){
+      return '<div class="ledger-row"><i class="fa-solid fa-indian-rupee-sign"></i>' +
+        '₹' + esc(w.amount) +
+        '<span class="t-muted t-sm" style="margin-left:10px">' + esc(w.requested_at || '') + '</span>' +
+        '<span class="lr-amt"><span class="badge ' + (cls[w.status] || 'b-muted') + '">' +
+        esc(w.status) + '</span></span></div>' +
+        (w.admin_note ? '<div class="t-sm t-muted" style="margin:-6px 0 10px 26px">' +
+          esc(w.admin_note) + '</div>' : '');
+    }).join('');
+  }
+
+  function copyRefLink(){
+    var link = AMB && AMB.link; if (!link) return;
+    var btn = document.getElementById('copyBtn');
+    var done = function(){
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+      setTimeout(function(){ btn.innerHTML = orig; }, 1400);
+      dbertGA('referral_link_copied', {code: AMB.code});      /* §8 */
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(link).then(done).catch(done);
+    else done();
+  }
+
+  async function saveUpi(){
+    var msg = document.getElementById('upiMsg');
+    var upi = document.getElementById('upiInput').value.trim();
+    msg.className = 'msg'; msg.textContent = 'Saving…';
+    try {
+      const r = await fetch('/intern/ambassador/upi', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({upi_id: upi})
+      });
+      const d = await r.json();
+      if (d.status === 'success') {
+        msg.className = 'msg ok'; msg.textContent = d.message;
+        document.getElementById('upiInput').value = '';
+        document.getElementById('upiMasked').textContent = d.upi_masked;
+        document.getElementById('upiCurrent').style.display = 'block';
+        loadAmbassador();
+      } else {
+        msg.className = 'msg err'; msg.textContent = d.message || 'Could not save.';
+      }
+    } catch (e) { msg.className = 'msg err'; msg.textContent = 'Network error.'; }
+  }
+
+  async function requestWithdrawal(){
+    var msg = document.getElementById('wdMsg');
+    var amt = parseInt(document.getElementById('wdAmount').value, 10);
+    if (!amt || amt <= 0) { msg.className='msg err'; msg.textContent='Enter an amount.'; return; }
+    msg.className = 'msg'; msg.textContent = 'Requesting…';
+    try {
+      const r = await fetch('/intern/ambassador/withdraw', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({amount: amt})
+      });
+      const d = await r.json();
+      if (d.status === 'success') {
+        msg.className = 'msg ok'; msg.textContent = d.message;
+        document.getElementById('wdAmount').value = '';
+        dbertGA('withdrawal_requested', {amount: amt});        /* §8 */
+        loadAmbassador();
+      } else {
+        msg.className = 'msg err'; msg.textContent = d.message || 'Could not request.';
+      }
+    } catch (e) { msg.className = 'msg err'; msg.textContent = 'Network error.'; }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadAmbassador);
+</script>
+</body>
+</html>

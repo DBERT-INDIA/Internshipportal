@@ -1,0 +1,31 @@
+{# Intern nav config → _app_shell.html.  Build phase: 1
+   Was a 125-line standalone sidebar with its own :root palette; now a config.
+   All 8 hrefs and every active_page value are carried over unchanged.
+   Grouping follows the mockup (Learn / Earn / Account) — no link added or removed.
+   The College Ambassador item lands here in Phase 7, once its route exists. #}
+
+{% set brand = {'mark': 'D', 'title': 'DBERT', 'sub': 'Intern Portal'} %}
+
+{% set nav_groups = [
+  {'label': 'Learn', 'items': [
+    {'href': '/portal',            'icon': 'fa-solid fa-gauge',          'label': 'Dashboard',      'match': ['dashboard', 'portal']},
+    {'href': '/courses',           'icon': 'fa-solid fa-graduation-cap', 'label': 'Course Catalog', 'match': ['courses']},
+    {'href': '/mentors/slots',     'icon': 'fa-solid fa-calendar-check', 'label': '1:1 Sessions',   'match': ['sessions']}
+  ]},
+  {'label': 'Earn', 'items': [
+    {'href': '/tasks',             'icon': 'fa-solid fa-list-check',     'label': 'Tasks & Earn',   'match': ['tasks']},
+    {'href': '/account/coins',     'icon': 'fa-solid fa-coins',          'label': 'Coins Ledger',   'match': ['coins']},
+    {'href': '/ambassador',        'icon': 'fa-solid fa-gift',           'label': 'College Ambassador', 'match': ['ambassador'], 'badge': 'NEW'}
+  ]},
+  {'label': 'Account', 'items': [
+    {'href': '/account/gemini-key','icon': 'fa-solid fa-key',            'label': 'Gemini API Key', 'match': ['gemini_key']},
+    {'href': '/intern/messages',   'icon': 'fa-solid fa-comments',       'label': 'Messages',       'match': ['messages']},
+    {'href': '/profile',           'icon': 'fa-solid fa-user',           'label': 'My Profile',     'match': ['profile']}
+  ]}
+] %}
+
+{# /logout is POST-only (app.py:8954). The old <a href="/logout"> returned 405 —
+   intern logout was dead. Rendered as a POST form now. #}
+{% set logout = {'href': '/logout', 'label': 'Logout', 'method': 'post'} %}
+
+{% include '_app_shell.html' %}

@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "DBERT — Admin Panel" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex,nofollow"/>
+</head>
+<body class="pg-admin">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>&#9881; DBERT</h2>
+      <p>Admin Panel &mdash; 2026</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-tab="enrollments" data-act-click="switchTab" data-arg-click='["enrollments"]'><i class="fas fa-credit-card"></i> Enrollments</div>
+      <div class="nav-item" data-tab="applications" data-act-click="switchTab" data-arg-click='["applications"]'><i class="fas fa-file-alt"></i> Applications</div>
+      <div class="nav-item" data-tab="attendance" data-act-click="switchTab" data-arg-click='["attendance"]'><i class="fas fa-clock"></i> Attendance <span class="nav-badge hidden" id="attBadge">0</span></div>
+      <div class="nav-item" data-tab="mentors" data-act-click="switchTab" data-arg-click='["mentors"]'><i class="fas fa-user-tie"></i> Mentors</div>
+      <div class="nav-item" data-tab="users" data-act-click="switchTab" data-arg-click='["users"]'><i class="fas fa-users"></i> Users</div>
+      <div class="nav-item" data-tab="devices" data-act-click="switchTab" data-arg-click='["devices"]'><i class="fas fa-desktop"></i> Devices</div>
+      <div class="nav-item" data-tab="security" data-act-click="switchTab" data-arg-click='["security"]'><i class="fas fa-shield-halved"></i> Security</div>
+      <div class="nav-item" data-tab="addapp" data-act-click="switchTab" data-arg-click='["addapp"]'><i class="fas fa-plus-circle"></i> Add Application</div>
+      <div class="nav-item" data-tab="upload" data-act-click="switchTab" data-arg-click='["upload"]'><i class="fas fa-upload"></i> CSV Import</div>
+      <!-- Track 2 §8: link the separate admin pages (§1 companies, Track 1 §6 ledger) — real anchors, not tabs. -->
+      <a class="nav-item" href="/admin/job-applications" style="text-decoration:none;"><i class="fas fa-briefcase"></i> Job Applications</a>
+      <a class="nav-item" href="/admin/post-hire-deposits" style="text-decoration:none;"><i class="fas fa-money-check-dollar"></i> Job-Hire Deposits</a>
+      <a class="nav-item" href="/admin/companies" style="text-decoration:none;"><i class="fas fa-building"></i> Companies</a>
+      <a class="nav-item" href="/admin/course-payments" style="text-decoration:none;"><i class="fas fa-indian-rupee-sign"></i> Course Payments</a>
+      <a class="nav-item" href="/admin/cohorts" style="text-decoration:none;"><i class="fas fa-users-rectangle"></i> Cohorts</a>
+      <a class="nav-item" href="/admin/ledger" style="text-decoration:none;"><i class="fas fa-coins"></i> Coin Ledger</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout-sb" data-act-click="doLogout"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+      <p style="margin-top:6px;">&#169; 2026 DBERT</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <h1 id="section-title">Enrollments</h1>
+      <p id="section-sub">Manage payment verification</p>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card gold"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">Total Applications</div></div>
+      <div class="stat-card blue"><div class="stat-val" id="statCandidates">—</div><div class="stat-lbl">Total Candidates</div></div>
+      <div class="stat-card amber"><div class="stat-val" id="statPending">—</div><div class="stat-lbl">Pending Payments</div></div>
+      <div class="stat-card green"><div class="stat-val" id="statAccepted">—</div><div class="stat-lbl">Accepted</div></div>
+      <div class="stat-card red"><div class="stat-val" id="statBelow">—</div><div class="stat-lbl">Below 10h This Week</div></div>
+    </div>
+
+    <!-- ENROLLMENTS -->
+    <div class="section-panel active" id="panel-enrollments">
+      <div class="filter-bar">
+        <input class="filter-input" id="enrSearch" placeholder="&#128269; Search name, email, domain..." data-act-input="onSearch" data-arg-input='["enr", "$value"]'/>
+        <select class="filter-select" id="enrStatusFilter" data-act-change="loadEnrollments">
+          <option value="all">All Payments</option>
+          <option value="pending">Pending Verification</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select class="filter-select sm" id="enrDomain" data-act-change="applyEnrFilters" title="Domain">
+          <option value="all">All Domains</option>
+          <option>AI Agent Development</option><option>Data Analyst</option>
+          <option>Full Stack Development</option><option>Python Automation</option>
+        </select>
+        <select class="filter-select sm" id="enrProduct" data-act-change="applyEnrFilters" title="Product">
+          <option value="all">All Products</option>
+          <option value="free_deposit">Free (&#8377;499)</option>
+          <option value="paid_program">Paid (&#8377;1,599)</option>
+        </select>
+        <span class="filter-lbl">Joining</span>
+        <input type="date" class="filter-input filter-date" id="enrFrom" data-act-change="applyEnrFilters" title="Joining from"/>
+        <input type="date" class="filter-input filter-date" id="enrTo" data-act-change="applyEnrFilters" title="Joining to"/>
+        <button class="btn-sm ghost" data-act-click="clearEnrFilters" title="Clear filters"><i class="fas fa-filter-circle-xmark"></i></button>
+        <button class="btn-sm gold" data-act-click="bulkAction" data-arg-click='["accept"]'><i class="fas fa-check"></i> Bulk Accept</button>
+        <button class="btn-sm red" data-act-click="bulkAction" data-arg-click='["reject"]'><i class="fas fa-times"></i> Bulk Reject</button>
+        <button class="btn-sm red" id="enrDelBtn" data-act-click="bulkDelete" data-arg-click='["enr"]'><i class="fas fa-trash"></i> Delete Selected (<span id="enrDelN">0</span>)</button>
+        <button class="btn-sm ghost" data-act-click="loadEnrollments"><i class="fas fa-sync"></i></button>
+      </div>
+      <div class="table-wrap scrolly">
+        <table>
+          <thead><tr><th><input type="checkbox" id="enrAll" data-act-change="toggleAll" data-arg-change='["enrAll", "enr-row"]'/></th><th>#</th><th>Name</th><th>Email</th><th>Domain</th><th>Product</th><th>Joining Date</th><th>Batch</th><th>Course %</th><th>Payment</th><th>Screenshot</th><th>Actions</th></tr></thead>
+          <tbody id="enrBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="enrPg"></div>
+    </div>
+
+    <!-- APPLICATIONS -->
+    <div class="section-panel" id="panel-applications">
+      <div class="filter-bar">
+        <input class="filter-input" id="appSearch" placeholder="&#128269; Search name, email, domain..." data-act-input="onSearch" data-arg-input='["app", "$value"]'/>
+        <select class="filter-select" id="appStatusFilter" data-act-change="loadApplications">
+          <option value="all">All Statuses</option>
+          <option value="Under Review">Under Review</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Selected">Selected</option>
+          <option value="Enrolled">Enrolled</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+        <select class="filter-select sm" id="appDomain" data-act-change="applyAppFilters" title="Domain">
+          <option value="all">All Domains</option>
+          <option>AI Agent Development</option><option>Data Analyst</option>
+          <option>Full Stack Development</option><option>Python Automation</option>
+        </select>
+        <span class="filter-lbl">Applied</span>
+        <input type="date" class="filter-input filter-date" id="appFrom" data-act-change="applyAppFilters" title="Applied from"/>
+        <input type="date" class="filter-input filter-date" id="appTo" data-act-change="applyAppFilters" title="Applied to"/>
+        <button class="btn-sm ghost" data-act-click="clearAppFilters" title="Clear filters"><i class="fas fa-filter-circle-xmark"></i></button>
+        <button class="btn-sm ghost" data-act-click="loadApplications"><i class="fas fa-sync"></i></button>
+        <a class="btn-sm ghost" href="/admin/csv/applications" target="_blank"><i class="fas fa-download"></i> CSV</a>
+        <span class="filter-sep"></span>
+        <select class="filter-select sm" id="appBulkStatus" title="Bulk status change">
+          <option value="">Set status to…</option>
+          <option value="Under Review">Under Review</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Selected">Selected</option>
+          <option value="Enrollment Pending">Enrollment Pending</option>
+          <option value="Enrolled">Enrolled</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+        <button class="btn-sm gold" id="appBulkStatusBtn" data-act-click="bulkUpdateStatus" disabled><i class="fas fa-check-double"></i> Apply to Selected (<span id="appBulkN">0</span>)</button>
+        <button class="btn-sm red" id="appDelBtn" data-act-click="bulkDelete" data-arg-click='["app"]'><i class="fas fa-trash"></i> Delete Selected (<span id="appDelN">0</span>)</button>
+      </div>
+      <div class="table-wrap scrolly">
+        <table>
+          <thead><tr><th><input type="checkbox" id="appAll" data-act-change="toggleAll" data-arg-change='["appAll", "app-row"]'/></th><th>#</th><th>Name</th><th>Email</th><th>Domain</th><th>College</th><th>Status</th><th>Applied</th><th>Actions</th></tr></thead>
+          <tbody id="appBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="appPg"></div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section-panel" id="panel-attendance">
+      <div class="filter-bar">
+        <input class="filter-input" id="attSearch" placeholder="&#128269; Search intern name or email..." data-act-input="onSearch" data-arg-input='["att", "$value"]'/>
+        <span class="filter-sep"></span>
+        <select class="filter-select sm" id="attStatus" data-act-change="applyAttFilters" title="Attendance status">
+          <option value="all">All Attendance</option>
+          <option value="met">&#10003; Met (&#8805;10h)</option>
+          <option value="below">&#9888; Below 10h</option>
+        </select>
+        <select class="filter-select sm" id="attDomain" data-act-change="applyAttFilters" title="Domain">
+          <option value="all">All Domains</option>
+          <option>AI Agent Development</option><option>Data Analyst</option>
+          <option>Full Stack Development</option><option>Python Automation</option>
+        </select>
+        <button class="btn-sm ghost" data-act-click="clearAttFilters" title="Clear filters"><i class="fas fa-filter-circle-xmark"></i></button>
+        <button class="btn-sm ghost" data-act-click="loadAttendance"><i class="fas fa-sync"></i></button>
+        <a class="btn-sm gold" href="/admin/csv/attendance" target="_blank"><i class="fas fa-file-csv"></i> Export CSV</a>
+      </div>
+      <div class="att-summary-bar hidden" id="attBelowBanner">
+        <i class="fas fa-exclamation-triangle"></i><span id="attBelowText">0 interns below 10h this week.</span>
+      </div>
+      <div class="table-wrap scrolly">
+        <table>
+          <thead><tr><th>Name</th><th>Domain</th><th>Batch</th><th>This Week</th><th>Progress</th><th>Status</th><th>Weeks Below (All Time)</th></tr></thead>
+          <tbody id="attBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="attPg"></div>
+    </div>
+
+    <!-- MENTORS -->
+    <div class="section-panel" id="panel-mentors">
+      <div class="glass-card" style="margin-bottom:16px;">
+        <h3 style="color:#fff;font-size:15px;font-weight:800;margin-bottom:16px;"><i class="fas fa-plus" style="color:var(--gold);margin-right:8px;"></i>Add / Update Mentor</h3>
+        <div class="form-grid">
+          <div class="form-group"><label class="field-label" for="m_name">Name *</label><input type="text" id="m_name" class="field-input" placeholder="Mentor name"/></div>
+          <div class="form-group"><label class="field-label" for="m_email">Email *</label><input type="email" id="m_email" class="field-input" placeholder="mentor@email.com"/></div>
+          <div class="form-group"><label class="field-label" for="m_domain">Domain *</label>
+            <select id="m_domain" class="field-select"><option value="">-- Select --</option><option>AI Agent Development</option><option>Data Analyst</option><option>Full Stack Development</option><option>Python Automation</option></select></div>
+          <div class="form-group"><label class="field-label" for="m_password">Password (blank = auto-generate)</label><input type="text" id="m_password" class="field-input" placeholder="Auto-generated if blank"/></div>
+        </div>
+        <button class="btn-sm gold" style="margin-top:12px;" data-act-click="addMentor"><i class="fas fa-save"></i> Save Mentor</button>
+        <span id="mentorMsg" style="font-size:12px;color:var(--tx-muted);margin-left:12px;"></span>
+      </div>
+      <div class="filter-bar">
+        <button class="btn-sm ghost" data-act-click="loadMentors"><i class="fas fa-sync"></i> Refresh</button>
+        <button class="btn-sm red" id="mntDelBtn" data-act-click="bulkDelete" data-arg-click='["mnt"]'><i class="fas fa-trash"></i> Delete Selected (<span id="mntDelN">0</span>)</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><input type="checkbox" id="mntAll" data-act-change="toggleAll" data-arg-change='["mntAll", "mnt-row"]'/></th><th>#</th><th>Name</th><th>Email</th><th>Domain</th><th>Added</th><th>Actions</th></tr></thead>
+          <tbody id="mentorBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="section-panel" id="panel-users">
+      <div class="filter-bar">
+        <input class="filter-input" id="userSearch" placeholder="&#128269; Search..." data-act-input="onSearch" data-arg-input='["users", "$value"]'/>
+        <span class="filter-sep"></span>
+        <select class="filter-select sm" id="uIntent" data-act-change="applyUsersFilters" title="Minimum intent score">
+          <option value="0">Intent: Any</option>
+          <option value="30">Intent &#8805; 30 (Warm)</option>
+          <option value="60">Intent &#8805; 60 (Hot)</option>
+        </select>
+        <select class="filter-select sm" id="uStatus" data-act-change="applyUsersFilters" title="Furthest status">
+          <option value="all">Any status</option>
+          <option>Under Review</option><option>On Hold</option><option>Selected</option>
+          <option>Enrolled</option><option>Accepted</option><option>Rejected</option><option>Paid-Enrolled</option>
+        </select>
+        <span class="filter-lbl">Joined</span>
+        <input type="date" class="filter-input filter-date" id="uFrom" data-act-change="applyUsersFilters" title="Joined from"/>
+        <input type="date" class="filter-input filter-date" id="uTo" data-act-change="applyUsersFilters" title="Joined to"/>
+        <button class="btn-sm ghost" data-act-click="clearUsersFilters" title="Clear filters"><i class="fas fa-filter-circle-xmark"></i></button>
+        <button class="btn-sm ghost" data-act-click="loadUsers"><i class="fas fa-sync"></i></button>
+        <a class="btn-sm ghost" href="/admin/csv/incomplete-signups" target="_blank" title="Everyone who abandoned signup mid-way, or signed up but never applied to anything"><i class="fas fa-download"></i> Incomplete Signups CSV</a>
+        <button class="btn-sm red" id="usrDelBtn" data-act-click="bulkDelete" data-arg-click='["usr"]'><i class="fas fa-trash"></i> Delete Selected (<span id="usrDelN">0</span>)</button>
+        <button class="btn-sm ghost" id="usrIvResetBtn" data-act-click="bulkResetInterviews"><i class="fas fa-rotate-left"></i> Reset Interview (Selected)</button>
+      </div>
+      <div class="table-wrap scrolly">
+        <table>
+          <thead><tr><th><input type="checkbox" id="usrAll" data-act-change="toggleAll" data-arg-change='["usrAll", "usr-row"]'/></th><th>Name</th><th>Email</th><th>Phone</th><th>College</th><th>Apps</th><th>Domains &amp; Status</th><th>Furthest</th><th>Account</th><th>Intent</th><th>Joined</th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="usersPg"></div>
+    </div>
+
+    <!-- DEVICES -->
+    <div class="section-panel" id="panel-devices">
+      <div class="filter-bar">
+        <input class="filter-input" id="devSearch" placeholder="&#128269; Search..." data-act-input="onSearch" data-arg-input='["dev", "$value"]'/>
+        <span class="filter-sep"></span>
+        <select class="filter-select sm" id="dIntent" data-act-change="applyDevFilters" title="Minimum intent score">
+          <option value="0">Intent: Any</option>
+          <option value="30">Intent &#8805; 30</option>
+          <option value="60">Intent &#8805; 60</option>
+        </select>
+        <select class="filter-select sm" id="dVisits" data-act-change="applyDevFilters" title="Minimum visits">
+          <option value="0">Visits: Any</option>
+          <option value="2">&#8805; 2 visits</option>
+          <option value="5">&#8805; 5 visits</option>
+        </select>
+        <span class="filter-lbl">Last seen</span>
+        <input type="date" class="filter-input filter-date" id="dFrom" data-act-change="applyDevFilters" title="Last seen from"/>
+        <input type="date" class="filter-input filter-date" id="dTo" data-act-change="applyDevFilters" title="Last seen to"/>
+        <button class="btn-sm ghost" data-act-click="clearDevFilters" title="Clear filters"><i class="fas fa-filter-circle-xmark"></i></button>
+        <button class="btn-sm ghost" data-act-click="loadDevices"><i class="fas fa-sync"></i></button>
+        <a class="btn-sm gold" href="/admin/csv/devices" target="_blank"><i class="fas fa-file-csv"></i> Export CSV</a>
+        <button class="btn-sm red" id="devDelBtn" data-act-click="bulkDelete" data-arg-click='["dev"]'><i class="fas fa-trash"></i> Delete Selected (<span id="devDelN">0</span>)</button>
+      </div>
+      <div class="table-wrap scrolly">
+        <table>
+          <thead><tr><th><input type="checkbox" id="devAll" data-act-change="toggleAll" data-arg-change='["devAll", "dev-row"]'/></th><th>#</th><th>Visitor ID</th><th>Email</th><th>Device</th><th>Timezone</th><th>Intent</th><th>Visits</th><th>Last Seen</th></tr></thead>
+          <tbody id="devBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="devPg"></div>
+    </div>
+
+    <!-- SECURITY (read-only abuse log) -->
+    <div class="section-panel" id="panel-security">
+      <div class="filter-bar">
+        <input class="filter-input" id="secSearch" placeholder="&#128269; Search ip, route, reason, email..." data-act-input="onSearch" data-arg-input='["sec", "$value"]'/>
+        <button class="btn-sm ghost" data-act-click="loadSecurity"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Time</th><th>IP</th><th>Route</th><th>Reason</th><th>Bucket</th><th>Email</th></tr></thead>
+          <tbody id="secBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="secPg"></div>
+    </div>
+
+    <!-- ADD APPLICATION -->
+    <div class="section-panel" id="panel-addapp">
+      <div class="glass-card">
+        <h3 style="color:#fff;font-size:15px;font-weight:800;margin-bottom:20px;"><i class="fas fa-plus-circle" style="color:var(--gold);margin-right:8px;"></i>Add Application Manually</h3>
+        <div class="form-grid">
+          <div class="form-group"><label class="field-label" for="aa_name">Full Name *</label><input type="text" id="aa_name" class="field-input" placeholder="Full name"/></div>
+          <div class="form-group"><label class="field-label" for="aa_email">Email *</label><input type="email" id="aa_email" class="field-input" placeholder="email@domain.com"/></div>
+          <div class="form-group"><label class="field-label" for="aa_phone">Phone *</label><input type="tel" id="aa_phone" class="field-input" placeholder="10-digit mobile" maxlength="10"/></div>
+          <div class="form-group"><label class="field-label" for="aa_city">City *</label><input type="text" id="aa_city" class="field-input" placeholder="City"/></div>
+          <div class="form-group"><label class="field-label" for="aa_college">College *</label><input type="text" id="aa_college" class="field-input" placeholder="College name"/></div>
+          <div class="form-group"><label class="field-label" for="aa_course">Course *</label>
+            <select id="aa_course" class="field-select"><option value="">-- Select --</option><option>B.Tech</option><option>B.E.</option><option>BCA</option><option>B.Sc</option><option>BBA</option><option>B.Com</option><option>M.Tech</option><option>MCA</option><option>M.Sc</option><option>MBA</option><option>Diploma</option><option>Other</option></select></div>
+          <div class="form-group"><label class="field-label" for="aa_semester">Semester *</label>
+            <select id="aa_semester" class="field-select"><option value="">-- Select --</option><option>1st Semester</option><option>2nd Semester</option><option>3rd Semester</option><option>4th Semester</option><option>5th Semester</option><option>6th Semester</option><option>7th Semester</option><option>8th Semester</option><option>Graduate</option></select></div>
+          <div class="form-group"><label class="field-label" for="aa_year">Year of Passing *</label>
+            <select id="aa_year" class="field-select"><option value="">-- Select --</option><option>2024</option><option>2025</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option><option>2031</option><option>2032</option></select></div>
+          <div class="form-group"><label class="field-label" for="aa_domain">Domain *</label>
+            <select id="aa_domain" class="field-select"><option value="">-- Select --</option><option>AI Agent Development</option><option>Data Analyst</option><option>Full Stack Development</option><option>Python Automation</option></select></div>
+          <div class="form-group"><label class="field-label" for="aa_status">Initial Status</label>
+            <select id="aa_status" class="field-select"><option value="Under Review">Under Review</option><option value="Selected">Selected</option><option value="Accepted">Accepted</option></select></div>
+          <div class="form-group full"><label class="field-label" for="aa_why">Why Join</label><textarea id="aa_why" class="field-textarea" placeholder="Optional..."></textarea></div>
+          <div class="form-group full"><label class="field-label" for="aa_portfolio">Portfolio URL</label><input type="url" id="aa_portfolio" class="field-input" placeholder="https://..."/></div>
+        </div>
+        <div id="addAppMsg" style="font-size:13px;color:var(--tx-muted);margin:12px 0;"></div>
+        <button class="btn-sm gold" data-act-click="addApplication"><i class="fas fa-paper-plane"></i> Add Application</button>
+      </div>
+    </div>
+
+    <!-- CSV UPLOAD -->
+    <div class="section-panel" id="panel-upload">
+      <div class="glass-card">
+        <div class="csv-section">
+          <h3><i class="fas fa-upload" style="margin-right:6px;"></i>Import via CSV</h3>
+          <p style="color:var(--tx-muted);font-size:12px;margin-bottom:14px;line-height:1.7;">Columns: Name, Email Address, WhatsApp number, Select Internship, College Name, City, Course, Semester, Year of Passing, Why Join, Portfolio.</p>
+          <input type="file" id="csvFile" accept=".csv" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;color:#fff;font-size:13px;font-family:inherit;width:100%;margin-bottom:12px;"/>
+          <button class="btn-sm gold" data-act-click="uploadCSV"><i class="fas fa-cloud-upload-alt"></i> Upload &amp; Import</button>
+          <div id="csvMsg" style="margin-top:12px;font-size:13px;color:var(--tx-muted);"></div>
+        </div>
+        <div class="csv-section">
+          <h3><i class="fas fa-download" style="margin-right:6px;"></i>Export Data</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a class="btn-sm gold" href="/admin/csv/applications" target="_blank"><i class="fas fa-file-csv"></i> Applications CSV</a>
+            <a class="btn-sm ghost" href="/admin/csv/enrollments" target="_blank"><i class="fas fa-file-csv"></i> Enrollments CSV</a>
+            <a class="btn-sm ghost" href="/admin/csv/interviews" target="_blank"><i class="fas fa-file-csv"></i> Interviews CSV</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ENROLLMENT REVIEW MODAL -->
+  <div class="modal-overlay" id="enrModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div><h2 id="enrModalTitle">Review Enrollment</h2><p id="enrModalSub">Verify payment</p></div>
+        <button class="modal-close" data-act-click="closeModal" data-arg-click='["enrModal"]'><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="enrModalDetails"></div>
+        <span class="modal-section-label">Payment Screenshot</span>
+        <div class="screenshot-wrap"><img id="screenshotImg" src="" alt="Screenshot"/></div>
+        <span class="modal-section-label">Admin Note (optional)</span>
+        <textarea id="enrNote" class="field-textarea" rows="2" placeholder="Note for intern on rejection..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn-sm green" style="flex:1;padding:12px;" data-act-click="reviewEnrollment" data-arg-click='["accept"]'><i class="fas fa-check"></i> Accept Payment</button>
+          <button class="btn-sm red" style="flex:1;padding:12px;" data-act-click="reviewEnrollment" data-arg-click='["reject"]'><i class="fas fa-times"></i> Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION UPDATE MODAL -->
+  <div class="modal-overlay" id="appModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div><h2 id="appModalTitle">Update Application</h2><p id="appModalSub"></p></div>
+        <button class="modal-close" data-act-click="closeModal" data-arg-click='["appModal"]'><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <span class="modal-section-label">Lead Signal &amp; Signup Answers</span>
+        <div id="appLeadBox" style="margin-bottom:14px;font-size:13px;color:var(--tx-muted);"></div>
+        <span class="modal-section-label">AI Interview Assessment</span>
+        <div id="appInterviewBox" style="margin-bottom:14px;font-size:13px;color:var(--tx-muted);">Loading…</div>
+        <span class="modal-section-label">Update Status</span>
+        <select id="appNewStatus" class="field-select" style="margin-bottom:12px;">
+          <option value="">-- Keep current --</option>
+          <option value="Under Review">Under Review</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Selected">Selected</option>
+          <option value="Enrollment Pending">Enrollment Pending</option>
+          <option value="Enrolled">Enrolled</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+        <span class="modal-section-label">Reset Password</span>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+          <button class="btn-sm ghost" data-act-click="resetPassword"><i class="fas fa-key"></i> Generate New Password</button>
+          <span id="newPwDisplay" style="font-size:12px;color:var(--gold);font-weight:700;"></span>
+        </div>
+        <span class="modal-section-label">Admin Note (optional)</span>
+        <textarea id="appNote" class="field-textarea" rows="2" placeholder="Message or note..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn-sm gold" style="flex:1;padding:12px;" data-act-click="updateApp"><i class="fas fa-save"></i> Save Changes</button>
+          <button class="btn-sm red" data-act-click="deleteApp"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="_toast"></div>
+
+  <script nonce="{{ csp_nonce() }}">
+  'use strict';
+  const API = p => p;
+  let _currentEnrId = null, _currentAppId = null, _currentAppEmail = '';
+
+  // ── UTILS ─────────────────────────────────────────────────────
+  function escHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(s){ return s ? s.split(' ')[0] : '—'; }
+
+  let _tt = null;
+  function showToast(msg, type='gold'){
+    const el = document.getElementById('_toast'); if(!el) return;
+    el.textContent = msg;
+    el.style.background = type==='red'?'rgba(30,10,10,.95)':type==='green'?'rgba(10,25,15,.95)':'rgba(15,20,30,.95)';
+    el.style.borderColor = type==='red'?'rgba(255,107,107,.3)':type==='green'?'rgba(76,175,80,.3)':'rgba(226,185,111,.25)';
+    el.style.transform = 'translateX(0)'; el.style.opacity = '1';
+    if(_tt) clearTimeout(_tt);
+    _tt = setTimeout(()=>{ el.style.transform='translateX(80px)'; el.style.opacity='0'; }, 3600);
+  }
+
+  function statusBadge(s){
+    const m={'Apply Pending':'badge-muted','Under Review':'badge-blue','On Hold':'badge-amber','Selected':'badge-gold','Enrollment Pending':'badge-amber','Enrolled':'badge-blue','Accepted':'badge-green','Rejected':'badge-red'};
+    return `<span class="badge ${m[s]||'badge-muted'}">${escHtml(s)}</span>`;
+  }
+  function productBadge(r){
+    const paid=(r.product==='paid_program');
+    const amt=r.amount!=null?('&#8377;'+r.amount):(paid?'&#8377;1599':'&#8377;499');
+    const cls=paid?'badge-gold':'badge-muted';
+    const label=paid?'Paid Program':'Free Deposit';
+    return `<span class="badge ${cls}">${label}</span> <span style="color:var(--tx-muted);font-size:11px;">${amt}</span>`;
+  }
+  function payBadge(s){
+    const m={'Accepted':'badge-green','Rejected':'badge-red','Pending Verification':'badge-amber'};
+    return `<span class="badge ${m[s]||'badge-amber'}">${escHtml(s||'Pending')}</span>`;
+  }
+
+  function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+  function openModal(id){ document.getElementById(id).classList.add('active'); }
+  function getCheckedIds(cls){ return Array.from(document.querySelectorAll('.'+cls+':checked')).map(cb=>cb.dataset.id); }
+
+  // ── BULK SELECT + DELETE (5 tabs) ─────────────────────────────
+  const BULK = {
+    enr: {cls:'enr-row', tbody:'enrBody',    master:'enrAll', endpoint:'/admin/enrollments/bulk-delete',  loader:'enrollments',  noun:'enrollment'},
+    app: {cls:'app-row', tbody:'appBody',    master:'appAll', endpoint:'/admin/applications/bulk-delete', loader:'applications', noun:'application'},
+    mnt: {cls:'mnt-row', tbody:'mentorBody', master:'mntAll', endpoint:'/admin/mentors/bulk-delete',      loader:'mentors',      noun:'mentor'},
+    usr: {cls:'usr-row', tbody:'usersBody',  master:'usrAll', endpoint:'/admin/users/bulk-delete',        loader:'users',        noun:'user', cascade:true},
+    dev: {cls:'dev-row', tbody:'devBody',    master:'devAll', endpoint:'/admin/devices/bulk-delete',      loader:'devices',      noun:'device'},
+  };
+  const CLS_KEY = {'enr-row':'enr','app-row':'app','mnt-row':'mnt','usr-row':'usr','dev-row':'dev'};
+
+  function toggleAll(masterId, cls){
+    const m=document.getElementById(masterId);
+    document.querySelectorAll('.'+cls).forEach(cb=>cb.checked=m.checked);
+    if(CLS_KEY[cls]) updateBulkCount(CLS_KEY[cls]);
+  }
+  function updateBulkCount(key){
+    const cfg=BULK[key]; if(!cfg) return;
+    const n=getCheckedIds(cfg.cls).length;
+    const el=document.getElementById(key+'DelN'); if(el) el.textContent=n;
+    const btn=document.getElementById(key+'DelBtn'); if(btn) btn.disabled=(n===0);
+    // Bulk status-change control (applications tab only -- element absent elsewhere, no-op there)
+    const bn=document.getElementById(key+'BulkN'); if(bn) bn.textContent=n;
+    const bbtn=document.getElementById(key+'BulkStatusBtn'); if(bbtn) bbtn.disabled=(n===0);
+  }
+  function resetBulk(key){
+    const cfg=BULK[key]; if(!cfg) return;
+    const m=document.getElementById(cfg.master); if(m) m.checked=false;
+    updateBulkCount(key);
+  }
+  async function bulkDelete(key){
+    const cfg=BULK[key]; if(!cfg) return;
+    const ids=getCheckedIds(cfg.cls).map(Number);
+    if(!ids.length){ showToast('Select at least one row.','red'); return; }
+    let msg=`Delete ${ids.length} ${cfg.noun}${ids.length>1?'s':''}? This is permanent and cannot be undone.`;
+    if(cfg.cascade) msg+='\n\nThis also removes ALL related records (application, account, enrollment, attendance, devices) for each selected user.';
+    if(!confirm(msg)) return;
+    const data=await apiFetch(cfg.endpoint,'POST',{ids});
+    if(data&&data.status==='success'){
+      showToast(`Deleted ${data.deleted} ${cfg.noun}${data.deleted===1?'':'s'}.`,'green');
+      if(TAB_LOADERS[cfg.loader]) TAB_LOADERS[cfg.loader]();
+      loadStats();
+    } else showToast((data&&data.message)||'Error','red');
+  }
+  function initBulkDelete(){
+    Object.keys(BULK).forEach(key=>{
+      const tb=document.getElementById(BULK[key].tbody);
+      if(tb) tb.addEventListener('change', ()=>updateBulkCount(key));
+      updateBulkCount(key);
+    });
+  }
+
+  // ── TAB SWITCHING ─────────────────────────────────────────────
+  const TAB_META = {
+    enrollments: {title:'Enrollments', sub:'Manage payment verification', stats:true},
+    applications: {title:'Applications', sub:'All intern applications', stats:true},
+    attendance:   {title:'Attendance', sub:'Weekly attendance tracking', stats:false},
+    mentors:      {title:'Mentors', sub:'Manage mentor accounts', stats:false},
+    users:        {title:'Users', sub:'All registered users', stats:false},
+    devices:      {title:'Devices', sub:'Visitor device profiles', stats:false},
+    security:     {title:'Security', sub:'Recent blocked / abusive requests', stats:false},
+    addapp:       {title:'Add Application', sub:'Manually add an application', stats:false},
+    upload:       {title:'CSV Import / Export', sub:'Bulk import and data export', stats:false},
+  };
+  const TAB_LOADERS = {
+    enrollments: ()=>loadEnrollments(),
+    applications: ()=>loadApplications(),
+    attendance: ()=>loadAttendance(),
+    mentors: ()=>loadMentors(),
+    users: ()=>loadUsers(),
+    devices: ()=>loadDevices(),
+    security: ()=>loadSecurity(),
+    addapp: ()=>{}, upload: ()=>{},
+  };
+
+  function switchTab(name){
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab===name));
+    document.querySelectorAll('.section-panel').forEach(el => el.classList.remove('active'));
+    const panel = document.getElementById('panel-'+name);
+    if(panel) panel.classList.add('active');
+    const meta = TAB_META[name] || {title:name, sub:'', stats:false};
+    document.getElementById('section-title').textContent = meta.title;
+    document.getElementById('section-sub').textContent = meta.sub;
+    document.getElementById('statsGrid').style.display = meta.stats ? 'grid' : 'none';
+    if(TAB_LOADERS[name]) TAB_LOADERS[name]();
+  }
+
+  // ── API FETCH ─────────────────────────────────────────────────
+  async function apiFetch(path, method='GET', body=null){
+    const opts = {method, credentials:'include', headers:{}};
+    if(body){ opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
+    const res = await fetch(API(path), opts);
+    if(res.status===401){ window.location.href='/admin-login'; return null; }
+    return res.json();
+  }
+
+  // ── STATS ─────────────────────────────────────────────────────
+  async function loadStats(){
+    const data = await apiFetch('/admin/stats'); if(!data||data.status!=='success') return;
+    const s = data.stats;
+    document.getElementById('statTotal').textContent    = s.total_applications;
+    const sc=document.getElementById('statCandidates'); if(sc) sc.textContent = s.total_candidates ?? '—';
+    document.getElementById('statPending').textContent  = s.pending_payments;
+    document.getElementById('statAccepted').textContent = s.accepted;
+    document.getElementById('statBelow').textContent    = s.below_threshold_this_week||0;
+    const b = s.below_threshold_this_week||0;
+    const badge = document.getElementById('attBadge');
+    if(b>0){ badge.textContent=b; badge.classList.remove('hidden'); }
+    else{ badge.classList.add('hidden'); }
+  }
+
+  // ── PAGINATION ENGINE ─────────────────────────────────────────
+  const PG = {}; // state per table key
+  const PAGE_SIZE = 20;
+
+  function pgState(k){ if(!PG[k]) PG[k]={all:[],filtered:[],page:1,query:'',adv:null}; return PG[k]; }
+
+  function pgSet(k, rows){
+    const s = pgState(k);
+    s.all = rows; s.page = 1;
+    pgCompute(k);                       // preserve both search query and any advanced filter
+  }
+
+  // Recompute the filtered set from BOTH the free-text search and the structured (advanced) filter.
+  function pgCompute(k){
+    const s = pgState(k);
+    const q = (s.query||'').toLowerCase();
+    let rows = s.all;
+    if(q) rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(q));
+    if(typeof s.adv === 'function') rows = rows.filter(s.adv);
+    s.filtered = rows;
+    s.page = 1;
+    pgRender(k);
+  }
+
+  function pgFilter(k, query){ const s = pgState(k); s.query = query||''; pgCompute(k); }
+
+  // Set/replace the structured filter predicate for a table (null = no advanced filter).
+  function pgSetAdv(k, fn){ const s = pgState(k); s.adv = fn; pgCompute(k); }
+
+  // ── ADVANCED FILTER HELPERS ───────────────────────────────────
+  function _fv(id){ const e=document.getElementById(id); return e ? e.value : ''; }
+  function _resetIds(ids){ ids.forEach(id=>{ const e=document.getElementById(id); if(!e) return; if(e.tagName==='SELECT') e.selectedIndex=0; else e.value=''; }); }
+  function _dateOnly(v){ if(!v) return ''; const m=String(v).match(/\d{4}-\d{2}-\d{2}/); return m?m[0]:''; }
+  function _inDateRange(v, from, to){
+    if(!from && !to) return true;
+    const d=_dateOnly(v); if(!d) return false;     // no date on row but a range is set -> exclude
+    if(from && d<from) return false;
+    if(to && d>to) return false;
+    return true;
+  }
+
+  // Per-section filter builders (each reads its controls and installs a predicate).
+  function applyUsersFilters(){
+    const minI=+(_fv('uIntent')||0), st=_fv('uStatus'), from=_fv('uFrom'), to=_fv('uTo');
+    pgSetAdv('users', r => (r.intent_score||0)>=minI
+      && (st==='all' || (r.furthest_status||'')===st)
+      && _inDateRange(r.created_at, from, to));
+  }
+  function clearUsersFilters(){ _resetIds(['userSearch','uIntent','uStatus','uFrom','uTo']); pgState('users').query=''; applyUsersFilters(); }
+
+  function applyAppFilters(){
+    const dom=_fv('appDomain'), from=_fv('appFrom'), to=_fv('appTo');
+    pgSetAdv('app', r => (dom==='all' || (r.domain||'')===dom) && _inDateRange(r.created_at, from, to));
+  }
+  function clearAppFilters(){ _resetIds(['appSearch','appDomain','appFrom','appTo']); pgState('app').query=''; applyAppFilters(); }
+
+  function applyEnrFilters(){
+    const dom=_fv('enrDomain'), prod=_fv('enrProduct'), from=_fv('enrFrom'), to=_fv('enrTo');
+    pgSetAdv('enr', r => (dom==='all' || (r.domain||'')===dom)
+      && (prod==='all' || (r.product||'free_deposit')===prod)
+      && _inDateRange(r.joining_date, from, to));
+  }
+  function clearEnrFilters(){ _resetIds(['enrSearch','enrDomain','enrProduct','enrFrom','enrTo']); pgState('enr').query=''; applyEnrFilters(); }
+
+  function applyDevFilters(){
+    const minI=+(_fv('dIntent')||0), minV=+(_fv('dVisits')||0), from=_fv('dFrom'), to=_fv('dTo');
+    pgSetAdv('dev', r => (r.intent_score||0)>=minI && (r.visit_count||1)>=minV && _inDateRange(r.last_seen||r.created_at, from, to));
+  }
+  function clearDevFilters(){ _resetIds(['devSearch','dIntent','dVisits','dFrom','dTo']); pgState('dev').query=''; applyDevFilters(); }
+
+  function applyAttFilters(){
+    const st=_fv('attStatus'), dom=_fv('attDomain');
+    pgSetAdv('att', r => (st==='all' || (st==='met' ? !!r.met_threshold : !r.met_threshold))
+      && (dom==='all' || (r.domain||'')===dom));
+  }
+  function clearAttFilters(){ _resetIds(['attSearch','attStatus','attDomain']); pgState('att').query=''; applyAttFilters(); }
+
+  function pgGo(k, page){
+    const s = pgState(k);
+    s.page = Math.max(1, Math.min(page, Math.ceil(s.filtered.length/PAGE_SIZE)||1));
+    pgRender(k);
+    document.getElementById(PG_TBODY[k])?.closest('.table-wrap')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  function pgRender(k){
+    const s = pgState(k);
+    const total = s.filtered.length;
+    const pages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+    const page  = Math.min(s.page, pages);
+    s.page = page;
+    const start = (page-1)*PAGE_SIZE;
+    const slice = s.filtered.slice(start, start+PAGE_SIZE);
+
+    // Render rows
+    const tbody = document.getElementById(PG_TBODY[k]);
+    if(tbody){
+      tbody.innerHTML = slice.length
+        ? slice.map(PG_RENDER[k]).join('')
+        : '<tr><td colspan="20" style="text-align:center;color:var(--tx-muted);padding:24px;">No records found.</td></tr>';
+    }
+    const _pgBulk={enr:'enr',app:'app',users:'usr',dev:'dev'};
+    if(_pgBulk[k]) resetBulk(_pgBulk[k]);
+
+    // Render pagination bar
+    const pgEl = document.getElementById(PG_BAR[k]);
+    if(!pgEl) return;
+    if(total===0){ pgEl.innerHTML=''; return; }
+
+    let html = '';
+    html += `<button class="pg-btn" ${actAttr('click','pgGo',[k,page-1])} ${page<=1?'disabled':''}>&#8592; Prev</button>`;
+
+    const range = pgRange(page, pages);
+    range.forEach(p => {
+      if(p==='...') html += `<span class="pg-info">&hellip;</span>`;
+      else html += `<button class="pg-btn ${p===page?'active':''}" ${actAttr('click','pgGo',[k,p])}>${p}</button>`;
+    });
+
+    html += `<button class="pg-btn" ${actAttr('click','pgGo',[k,page+1])} ${page>=pages?'disabled':''}>Next &#8594;</button>`;
+    html += `<span class="pg-info">| ${start+1}–${Math.min(start+PAGE_SIZE,total)} of ${total}</span>`;
+    pgEl.innerHTML = html;
+  }
+
+  function pgRange(cur, total){
+    if(total<=7) return Array.from({length:total},(_,i)=>i+1);
+    const r=[1];
+    if(cur>3) r.push('...');
+    for(let i=Math.max(2,cur-1); i<=Math.min(total-1,cur+1); i++) r.push(i);
+    if(cur<total-2) r.push('...');
+    r.push(total);
+    return r;
+  }
+
+  function onSearch(k, q){ pgFilter(k, q); }
+
+  // Table key maps
+  const PG_TBODY = { enr:'enrBody', app:'appBody', att:'attBody', users:'usersBody', dev:'devBody', sec:'secBody' };
+  const PG_BAR   = { enr:'enrPg',   app:'appPg',   att:'attPg',   users:'usersPg',   dev:'devPg',   sec:'secPg'   };
+
+  // Row renderers
+  const PG_RENDER = {
+    enr: r => `<tr>
+      <td><input type="checkbox" class="enr-row" data-id="${r.id}"/></td>
+      <td style="color:var(--tx-muted);font-size:11px;">${r.id}</td>
+      <td><strong>${escHtml(r.name)}</strong></td>
+      <td style="color:var(--tx-muted);font-size:12px;">${escHtml(r.email)}</td>
+      <td style="font-size:12px;">${escHtml(r.domain)}</td>
+      <td style="font-size:12px;">${productBadge(r)}</td>
+      <td style="color:var(--gold);font-size:12px;">${escHtml(r.joining_date||'—')}</td>
+      <td style="font-size:12px;">${escHtml(r.batch_label||'—')}</td>
+      <td>${r.tutor_completion_pct>0?`<span style="color:#8b5cf6;font-weight:700;font-size:12px;">${Math.round(r.tutor_completion_pct)}%</span>`:'<span style="color:var(--tx-muted);font-size:12px;">—</span>'}</td>
+      <td>${payBadge(r.payment_status)}</td>
+      <td>${r.payment_screenshot?`<button class="btn-sm ghost" ${actAttr('click','viewScreenshot',[r.payment_screenshot,r.name])}><i class="fas fa-image"></i></button>`:'—'}</td>
+      <td><button class="btn-sm gold" ${actAttr('click','openEnrModal',[r.id])}><i class="fas fa-eye"></i> Review</button></td>
+    </tr>`,
+
+    app: r => `<tr>
+      <td><input type="checkbox" class="app-row" data-id="${r.id}"/></td>
+      <td style="color:var(--tx-muted);font-size:11px;">${r.id}</td>
+      <td><strong>${escHtml(r.name)}</strong>${r.sibling_count>0?` <span class="badge badge-gold" title="This person has ${r.sibling_count} other application(s)">+${r.sibling_count} more</span>`:''}</td>
+      <td style="color:var(--tx-muted);font-size:12px;">${escHtml(r.email)}</td>
+      <td style="font-size:12px;">${escHtml(r.domain)}</td>
+      <td style="font-size:12px;">${escHtml(r.college||'')}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td style="color:var(--tx-muted);font-size:12px;">${fmtDate(r.created_at)}</td>
+      <td><button class="btn-sm ghost" ${actAttr('click','openAppModal',[r.id,r.name,r.status,r.email])}><i class="fas fa-edit"></i></button></td>
+    </tr>`,
+
+    att: r => {
+      const pct = Math.min(100, Math.round((r.current_week_minutes/600)*100));
+      const bc  = r.current_week_minutes>=600?'#4caf50':r.current_week_minutes>=360?'#ffb020':'#ff6b6b';
+      const pill= r.met_threshold
+        ? '<span class="badge badge-green">&#10003; Met</span>'
+        : '<span class="badge badge-red">&#9888; Below</span>';
+      return `<tr>
+        <td><strong>${escHtml(r.name)}</strong><br/><span style="color:var(--tx-muted);font-size:11px;">${escHtml(r.email)}</span></td>
+        <td style="font-size:12px;">${escHtml(r.domain)}</td>
+        <td style="font-size:12px;color:var(--tx-muted);">${escHtml(r.batch_label||'—')}</td>
+        <td><strong>${r.current_week_hours}h ${r.current_week_mins_rem}m</strong></td>
+        <td><div class="progress-mini"><div class="progress-mini-fill" style="width:${pct}%;background:${bc};"></div></div><span style="font-size:10px;color:var(--tx-muted);">${pct}%</span></td>
+        <td>${pill}</td>
+        <td style="color:${r.weeks_below_total>0?'var(--amber)':'var(--tx-muted)'};">${r.weeks_below_total}</td>
+      </tr>`;
+    },
+
+    users: r => {
+      const apps = r.applications||[];
+      const chips = apps.length
+        ? apps.map(a=>`<div style="margin:2px 0;white-space:nowrap;">${statusBadge(a.status)} <span style="font-size:11px;color:var(--tx-muted);">${escHtml(a.domain)}</span></div>`).join('')
+        : '<span style="color:var(--tx-muted);font-size:12px;">No applications</span>';
+      const appsCell = (r.application_count||0)>1
+        ? `<span class="badge badge-gold">${r.application_count} apps</span>`
+        : `<span style="color:var(--tx-muted);">${r.application_count||0}</span>`;
+      const acct = `${r.is_active?'<span class="badge badge-green">Active</span>':'<span class="badge badge-muted">Inactive</span>'}${r.password_set?'':' <span class="badge badge-amber">No pw</span>'}`;
+      return `<tr>
+        <td><input type="checkbox" class="usr-row" data-id="${r.id}"/></td>
+        <td><strong>${escHtml(r.name)}</strong></td>
+        <td style="color:var(--tx-muted);font-size:12px;">${escHtml(r.email)}</td>
+        <td style="font-size:12px;">${escHtml(r.phone||'')}</td>
+        <td style="font-size:12px;">${escHtml(r.college||'')}</td>
+        <td>${appsCell}</td>
+        <td>${chips}</td>
+        <td>${r.furthest_status?statusBadge(r.furthest_status):'<span style="color:var(--tx-muted);">—</span>'}</td>
+        <td style="font-size:11px;">${acct}</td>
+        <td><span style="color:${r.intent_score>=60?'var(--green)':r.intent_score>=30?'var(--amber)':'var(--tx-muted)'};">${r.intent_score||0}</span></td>
+        <td style="color:var(--tx-muted);font-size:11px;">${fmtDate(r.created_at)}</td>
+      </tr>`;
+    },
+
+    dev: r => `<tr>
+      <td><input type="checkbox" class="dev-row" data-id="${r.id}"/></td>
+      <td style="color:var(--tx-muted);font-size:11px;">${r.id}</td>
+      <td style="font-size:11px;color:var(--tx-muted);">${escHtml((r.visitor_id||'').substr(0,12))}</td>
+      <td style="font-size:12px;">${escHtml(r.email||'—')}</td>
+      <td style="font-size:12px;">${escHtml(r.device_type||'')}</td>
+      <td style="font-size:12px;">${escHtml(r.timezone||'')}</td>
+      <td><span style="color:${r.intent_score>=60?'var(--green)':r.intent_score>=30?'var(--amber)':'var(--tx-muted)'};">${r.intent_score||0}</span></td>
+      <td>${r.visit_count||1}</td>
+      <td style="color:var(--tx-muted);font-size:11px;">${fmtDate(r.last_seen||r.created_at)}</td>
+    </tr>`,
+
+    sec: r => {
+      const rc = {rate_limit:'badge-amber', login_lockout:'badge-red', honeypot:'badge-red',
+                  timing:'badge-red', bad_magic:'badge-red', forgot_email_throttle:'badge-amber',
+                  turnstile:'badge-red'};
+      const cls = rc[r.reason] || 'badge-muted';
+      return `<tr>
+        <td style="color:var(--tx-muted);font-size:11px;">${r.id}</td>
+        <td style="color:var(--tx-muted);font-size:12px;">${escHtml(r.timestamp||'')}</td>
+        <td style="font-size:12px;">${escHtml(r.ip||'—')}</td>
+        <td style="font-size:12px;">${escHtml(r.route||'')}</td>
+        <td><span class="badge ${cls}">${escHtml(r.reason||'')}</span></td>
+        <td style="font-size:11px;color:var(--tx-muted);">${escHtml(r.bucket||'')}</td>
+        <td style="font-size:12px;color:var(--tx-muted);">${escHtml(r.email||'—')}</td>
+      </tr>`;
+    },
+  };
+
+  // ── LOAD FUNCTIONS ────────────────────────────────────────────
+  async function loadEnrollments(){
+    const sf = document.getElementById('enrStatusFilter')?.value||'all';
+    const data = await apiFetch('/admin/enrollments?status='+sf);
+    if(!data||data.status!=='success') return;
+    pgSet('enr', data.enrollments||[]);
+  }
+
+  async function loadApplications(){
+    const sf = document.getElementById('appStatusFilter')?.value||'all';
+    const data = await apiFetch('/admin/applications');
+    if(!data||data.status!=='success') return;
+    let rows = data.applications||[];
+    window.__appById = {}; rows.forEach(a => { window.__appById[a.id] = a; });
+    if(sf!=='all') rows = rows.filter(r=>r.status===sf);
+    pgSet('app', rows);
+  }
+
+  async function loadAttendance(){
+    const data = await apiFetch('/admin/attendance');
+    if(!data||data.status!=='success') return;
+    const below = data.below_threshold_count||0;
+    const banner = document.getElementById('attBelowBanner');
+    if(below>0){ banner.classList.remove('hidden'); document.getElementById('attBelowText').textContent=below+' intern(s) below 10h threshold this week.'; }
+    else{ banner.classList.add('hidden'); }
+    pgSet('att', data.interns||[]);
+  }
+
+  async function loadUsers(){
+    const data = await apiFetch('/admin/users');
+    if(!data||data.status!=='success') return;
+    pgSet('users', data.users||[]);
+  }
+
+  async function loadDevices(){
+    const data = await apiFetch('/admin/devices');
+    if(!data||data.status!=='success') return;
+    pgSet('dev', data.devices||[]);
+  }
+
+  async function loadSecurity(){
+    const data = await apiFetch('/admin/abuse-log');
+    if(!data||data.status!=='success') return;
+    pgSet('sec', data.events||[]);
+  }
+
+  async function loadMentors(){
+    const data = await apiFetch('/admin/mentors');
+    if(!data||data.status!=='success') return;
+    const rows = data.mentors||[];
+    document.getElementById('mentorBody').innerHTML = rows.length
+      ? rows.map(r=>`<tr>
+          <td><input type="checkbox" class="mnt-row" data-id="${r.id}"/></td>
+          <td style="color:var(--tx-muted);font-size:11px;">${r.id}</td>
+          <td><strong>${escHtml(r.name)}</strong></td>
+          <td style="color:var(--tx-muted);font-size:12px;">${escHtml(r.email)}</td>
+          <td>${escHtml(r.domain)}</td>
+          <td style="color:var(--tx-muted);font-size:12px;">${fmtDate(r.created_at)}</td>
+          <td><button class="btn-sm red" ${actAttr('click','deleteMentor',[r.id])}><i class="fas fa-trash"></i> Remove</button></td>
+        </tr>`).join('')
+      : '<tr><td colspan="7" style="text-align:center;color:var(--tx-muted);padding:24px;">No mentors found.</td></tr>';
+    resetBulk('mnt');
+  }
+
+  // ── ENROLLMENT ACTIONS ────────────────────────────────────────
+  async function openEnrModal(id){
+    _currentEnrId = id;
+    document.getElementById('enrNote').value = '';
+    document.getElementById('enrModalDetails').innerHTML = '<p style="color:var(--tx-muted);font-size:13px;">Loading...</p>';
+    document.getElementById('screenshotImg').src = '';
+    openModal('enrModal');
+    const data = await apiFetch('/admin/enrollments?status=all');
+    if(!data||!data.enrollments) return;
+    const r = data.enrollments.find(e=>e.id==id); if(!r) return;
+    document.getElementById('enrModalTitle').textContent = 'Review: '+r.name;
+    document.getElementById('enrModalSub').textContent   = r.domain+' · '+r.email;
+    document.getElementById('screenshotImg').src = API('/admin/screenshot/'+r.payment_screenshot);
+    document.getElementById('enrModalDetails').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:12px;">
+        <div style="color:var(--tx-muted);">Product</div><div>${productBadge(r)}</div>
+        <div style="color:var(--tx-muted);">Joining Date</div><div style="color:var(--gold);font-weight:700;">${escHtml(r.joining_date||'TBD')}</div>
+        <div style="color:var(--tx-muted);">Batch</div><div style="font-weight:600;">${escHtml(r.batch_label||'—')}</div>
+        <div style="color:var(--tx-muted);">Payment</div><div>${payBadge(r.payment_status)}</div>
+        <div style="color:var(--tx-muted);">Submitted</div><div style="font-size:12px;">${fmtDate(r.created_at)}</div>
+      </div>`;
+  }
+
+  function viewScreenshot(filename, name){
+    document.getElementById('enrModalTitle').textContent = 'Screenshot: '+name;
+    document.getElementById('enrModalSub').textContent   = 'Payment proof';
+    document.getElementById('enrModalDetails').innerHTML = '';
+    document.getElementById('screenshotImg').src = API('/admin/screenshot/'+filename);
+    openModal('enrModal');
+  }
+
+  async function reviewEnrollment(action){
+    if(!_currentEnrId) return;
+    const note = document.getElementById('enrNote').value.trim();
+    const data = await apiFetch('/admin/enrollment/review','POST',{enrollment_id:_currentEnrId,action,note});
+    if(data&&data.status==='success'){ showToast('Enrollment '+action+'ed.','green'); closeModal('enrModal'); loadEnrollments(); loadStats(); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  async function bulkAction(action){
+    const ids = getCheckedIds('enr-row');
+    if(!ids.length){ showToast('Select at least one enrollment.','red'); return; }
+    const note = action==='reject'?(prompt('Rejection note (optional):','')||''):'';
+    const data = await apiFetch('/admin/enrollment/bulk-review','POST',{ids:ids.map(Number),action,note});
+    if(data&&data.status==='success'){ showToast(`${data.processed} enrollment(s) ${action}ed.`,'green'); loadEnrollments(); loadStats(); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  // Bulk status change (Applications tab) -- reuses the existing single-application
+  // status-update endpoint once per selected row (same workflow/permissions/emails as
+  // updating one at a time, including the auto-assign-joining-date-on-Accept behaviour;
+  // no new backend endpoint).
+  async function bulkUpdateStatus(){
+    const ids=getCheckedIds('app-row').map(Number);
+    if(!ids.length){ showToast('Select at least one application.','red'); return; }
+    const status=document.getElementById('appBulkStatus').value;
+    if(!status){ showToast('Choose a status to apply.','red'); return; }
+    let msg=`Set status to "${status}" for ${ids.length} application${ids.length>1?'s':''}? This follows the same workflow as updating one at a time (including status-update emails).`;
+    if(status==='Accepted') msg+='\n\nAnyone without an existing enrollment will be auto-enrolled for the next upcoming Monday.';
+    if(!confirm(msg)) return;
+    const btn=document.getElementById('appBulkStatusBtn'); btn.disabled=true;
+    let ok=0, fail=0;
+    for(const id of ids){
+      const data=await apiFetch('/admin/update-application-status','POST',{id,status});
+      if(data&&data.status==='success') ok++; else fail++;
+    }
+    showToast(`Updated ${ok} application${ok===1?'':'s'}${fail?`, ${fail} failed`:'.'}`, fail?'red':'green');
+    loadApplications(); loadStats();
+  }
+
+  // ── APPLICATION ACTIONS ───────────────────────────────────────
+  // Sales lead temperature from the signup intent answers (Phase 13).
+  function _leadTemp(ia){
+    let s=0;
+    if((ia.start_timeline||'').toLowerCase().includes('as soon')) s++;
+    const lm=(ia.learning_mode||'').toLowerCase();
+    if(lm.includes('mentor')||lm.includes('paid')) s++;
+    if((ia.priority||'').toLowerCase().includes('guaranteed')) s++;
+    if(s>=3) return {label:'🔥 Hot lead', color:'#ff6b6b'};
+    if(s===2) return {label:'🟠 Warm lead', color:'#ffb020'};
+    return {label:'Cool lead', color:'#94A3B8'};
+  }
+  function renderSignupIntent(app){
+    const box=document.getElementById('appLeadBox'); if(!box) return;
+    let ia={}; try{ ia = app && app.intent_answers ? JSON.parse(app.intent_answers) : {}; }catch(e){ ia={}; }
+    const has = ia && (ia.start_timeline||ia.learning_mode||ia.priority);
+    const t=_leadTemp(ia||{});
+    const row=(k,v)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--tx-muted);">${k}</span><strong style="color:#cfd8e6;text-align:right;">${escHtml(v||'—')}</strong></div>`;
+    let html='';
+    if(has){
+      html+=`<div style="margin-bottom:8px;"><span class="badge" style="background:${t.color}22;border:1px solid ${t.color}66;color:${t.color};font-weight:800;">${t.label}</span></div>`;
+      html+=row('Wants to start', ia.start_timeline);
+      html+=row('Currently learning via', ia.learning_mode);
+      html+=row('Most values', ia.priority);
+    } else {
+      html+='<span style="color:var(--tx-muted);">No signup-intent captured (legacy / single-step application).</span>';
+    }
+    const meta=[];
+    if(app && app.phone)     meta.push('📞 '+escHtml(app.phone));
+    if(app && app.portfolio) meta.push(`<a href="${escHtml(app.portfolio)}" target="_blank" rel="noopener" style="color:var(--gold);">Portfolio</a>`);
+    if(meta.length) html+=`<div style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#cfd8e6;">${meta.join('')}</div>`;
+    if(app && app.why_join) html+=`<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--gold);font-size:12px;">Why they want to join</summary><p style="color:#cfd8e6;margin-top:4px;white-space:pre-wrap;font-size:12.5px;line-height:1.6;">${escHtml(app.why_join)}</p></details>`;
+    box.innerHTML=html;
+  }
+
+  function openAppModal(id, name, status, email){
+    _currentAppId = id; _currentAppEmail = email;
+    document.getElementById('appModalTitle').textContent = name;
+    document.getElementById('appModalSub').textContent   = 'ID: '+id+' · '+email;
+    document.getElementById('appNewStatus').value = '';
+    document.getElementById('appNote').value = '';
+    document.getElementById('newPwDisplay').textContent = '';
+    renderSignupIntent((window.__appById||{})[id]);
+    loadAppInterview(email);
+    openModal('appModal');
+  }
+
+  // ── PHASE 11.8 — interview assessment (admin view + reset) ─────
+  function _ivReadinessBadge(r){
+    const m={low:'badge-red',medium:'badge-amber',high:'badge-green',unknown:'badge-muted'};
+    const cls=m[(r||'unknown').toLowerCase()]||'badge-muted';
+    return '<span class="badge '+cls+'" style="text-transform:capitalize;">'+escHtml(r||'unknown')+'</span>';
+  }
+  function renderInterviewDossier(box, data, opts){
+    opts=opts||{};
+    if(!data||data.status!=='success'){ box.innerHTML='<span style="color:var(--tx-muted);">No interview on record.</span>'; return; }
+    const acct=data.account||{}, attempts=data.attempts||[];
+    if(!attempts.length){
+      box.innerHTML='<span style="color:var(--tx-muted);">Candidate has not taken the interview yet.</span>'
+        + (opts.canReset?'<div style="margin-top:10px;">'+_ivResetBtn(acct.email)+'</div>':'');
+      return;
+    }
+    const latest=attempts.find(a=>a.status==='completed')||attempts[0];
+    const ma=latest.mentor_assessment||{};
+    const sig=ma.intent_signals||{};
+    const fitColor=f=>({high:'#66bb6a',medium:'#ffb020',low:'#ff6b6b'}[(f||'unknown').toLowerCase()]||'var(--tx-muted)');
+    const list=arr=>(Array.isArray(arr)&&arr.length)?'<ul style="margin:4px 0 8px 18px;color:#cfd8e6;">'+arr.map(x=>'<li>'+escHtml(x)+'</li>').join('')+'</ul>':'<span style="color:var(--tx-muted);">—</span>';
+    const qa=(latest.questions||[]).map(q=>{
+      const ans=(latest.answers||{})[q.id]||(latest.answers||{})[String(q.id)]||'';
+      return '<div style="margin:8px 0;padding:8px 10px;background:rgba(11,15,23,.5);border:1px solid var(--border);border-radius:8px;"><div style="color:#fff;font-weight:600;">Q'+escHtml(q.id)+'. '+escHtml(q.text)+'</div><div style="color:#cfd8e6;margin-top:4px;white-space:pre-wrap;">'+(escHtml(ans)||'<em style="color:var(--tx-muted);">no answer</em>')+'</div></div>';
+    }).join('');
+    box.innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
+      +'<strong style="color:#fff;">Readiness:</strong> '+_ivReadinessBadge(ma.readiness)
+      +'<span style="color:var(--tx-muted);">· attempt '+escHtml(latest.attempt_no||1)+' · '+escHtml(latest.status)+'</span></div>'
+      +'<div style="color:#cfd8e6;margin-bottom:8px;">'+escHtml(ma.summary||'—')+'</div>'
+      +'<div style="margin:6px 0 10px;padding:8px 10px;background:rgba(226,185,111,.06);border:1px solid rgba(226,185,111,.2);border-radius:8px;">'
+        +'<div style="margin-bottom:4px;"><strong style="color:#fff;">Paid-program fit:</strong> <span style="color:'+fitColor(ma.paid_program_fit)+';font-weight:800;text-transform:capitalize;">'+escHtml(ma.paid_program_fit||'unknown')+'</span> <span style="color:var(--tx-muted);font-size:11px;">(internal — never shown to candidate)</span></div>'
+        +((sig.willingness||sig.capability_gap||sig.need)?'<div style="color:#cfd8e6;font-size:12.5px;line-height:1.5;"><strong>Willingness:</strong> '+escHtml(sig.willingness||'—')+' · <strong>Capability gap:</strong> '+escHtml(sig.capability_gap||'—')+' · <strong>Need:</strong> '+escHtml(sig.need||'—')+'</div>':'')
+        +(ma.paid_pitch_angle?'<div style="color:#cfd8e6;font-size:12.5px;margin-top:4px;"><strong style="color:var(--gold);">Pitch angle:</strong> '+escHtml(ma.paid_pitch_angle)+'</div>':'')
+      +'</div>'
+      +'<strong style="color:var(--green);">Strengths</strong>'+list(ma.strengths)
+      +'<strong style="color:var(--amber);">Gaps</strong>'+list(ma.gaps)
+      +'<strong style="color:var(--gold);">Recommended training</strong>'+list(ma.recommended_training)
+      +'<strong style="color:var(--gold);">Recommended skills</strong>'+list(ma.recommended_skills)
+      +(ma.notes_for_mentor?'<div style="margin:6px 0;"><strong style="color:#fff;">Notes for mentor:</strong> <span style="color:#cfd8e6;">'+escHtml(ma.notes_for_mentor)+'</span></div>':'')
+      +(latest.github_summary?'<div style="margin:6px 0;color:var(--tx-muted);"><strong>GitHub:</strong> '+escHtml(latest.github_summary)+'</div>':'')
+      +'<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--gold);">Questions &amp; answers ('+(latest.questions||[]).length+')</summary>'+qa+'</details>'
+      +'<div style="color:var(--tx-muted);margin-top:8px;">Attempts used: '+escHtml(acct.interview_attempts)+' · locked: '+(acct.locked_effective?'yes':'no')
+      + (acct.cooling_until&&!acct.cooling_passed?(' · cooling until '+escHtml(acct.cooling_until)):'')+'</div>'
+      +(opts.canReset?'<div style="margin-top:10px;">'+_ivResetBtn(acct.email)+'</div>':'');
+  }
+  function _ivResetBtn(email){
+    return '<button class="btn-sm ghost" '+actAttr('click','resetInterview',[email])+'><i class="fas fa-rotate-left"></i> Reset Interview</button>'
+      +'<span style="font-size:11px;color:var(--tx-muted);margin-left:8px;">Clears lock + attempts (24h cooling still applies).</span>';
+  }
+  async function loadAppInterview(email){
+    const box=document.getElementById('appInterviewBox'); if(!box) return;
+    box.innerHTML='Loading…';
+    const data=await apiFetch('/admin/interview/'+encodeURIComponent(email));
+    renderInterviewDossier(box, data, {canReset:true});
+  }
+  async function resetInterview(email){
+    if(!confirm('Reset this candidate\'s interview? Lock + attempt count are cleared, but the 24h cooling since their last attempt still applies.')) return;
+    const data=await apiFetch('/admin/interview/reset','POST',{email});
+    if(data&&data.status==='success'){ showToast('Interview reset.','green'); loadAppInterview(email); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+  async function bulkResetInterviews(){
+    const ids=getCheckedIds('usr-row');
+    if(!ids.length){ showToast('Select at least one user.','red'); return; }
+    if(!confirm('Reset interviews for '+ids.length+' user(s)? Locks + attempt counts are cleared; 24h cooling still applies.')) return;
+    const data=await apiFetch('/admin/interview/bulk-reset','POST',{ids:ids.map(Number)});
+    if(data&&data.status==='success'){ showToast(data.reset+' interview(s) reset.','green'); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  async function updateApp(){
+    const status = document.getElementById('appNewStatus').value;
+    const note   = document.getElementById('appNote').value.trim();
+    if(!status&&!note){ showToast('Select a status or add a note.','red'); return; }
+    const payload = {id:_currentAppId};
+    if(status) payload.status = status;
+    if(note)   payload.note   = note;
+    const data = await apiFetch('/admin/update-application-status','POST',payload);
+    if(data&&data.status==='success'){ showToast('Updated.','green'); closeModal('appModal'); loadApplications(); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  async function deleteApp(){
+    if(!confirm('Delete this application? Cannot be undone.')) return;
+    const data = await apiFetch('/admin/delete-application','POST',{id:_currentAppId});
+    if(data&&data.status==='success'){ showToast('Deleted.','green'); closeModal('appModal'); loadApplications(); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  async function resetPassword(){
+    if(!_currentAppEmail) return;
+    const data = await apiFetch('/admin/reset-intern-password','POST',{email:_currentAppEmail});
+    if(data&&data.status==='success'){ document.getElementById('newPwDisplay').textContent='New PW: '+data.new_password; showToast('Password reset.','green'); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  // ── MENTOR ACTIONS ────────────────────────────────────────────
+  async function addMentor(){
+    const name=document.getElementById('m_name').value.trim(), email=document.getElementById('m_email').value.trim().toLowerCase(),
+          domain=document.getElementById('m_domain').value, password=document.getElementById('m_password').value.trim();
+    if(!name||!email||!domain){ showToast('Name, email and domain required.','red'); return; }
+    const data = await apiFetch('/admin/add-mentor','POST',{name,email,domain,password});
+    const msg  = document.getElementById('mentorMsg');
+    if(data&&data.status==='success'){ msg.textContent=data.generated_password?'Saved. Password: '+data.generated_password:'Mentor saved.'; msg.style.color='var(--green)'; loadMentors(); }
+    else{ msg.textContent=(data&&data.message)||'Error'; msg.style.color='var(--red)'; }
+  }
+
+  async function deleteMentor(id){
+    if(!confirm('Remove this mentor?')) return;
+    const data = await apiFetch('/admin/delete-mentor','POST',{id});
+    if(data&&data.status==='success'){ showToast('Mentor removed.','green'); loadMentors(); }
+    else showToast((data&&data.message)||'Error','red');
+  }
+
+  // ── ADD APPLICATION ───────────────────────────────────────────
+  async function addApplication(){
+    const fields = {name:'aa_name',email:'aa_email',phone:'aa_phone',city:'aa_city',college:'aa_college',course:'aa_course',semester:'aa_semester',year_of_passing:'aa_year',domain:'aa_domain',initial_status:'aa_status',why_join:'aa_why',portfolio:'aa_portfolio'};
+    const body = {};
+    Object.entries(fields).forEach(([k,id])=>{ body[k]=document.getElementById(id)?.value?.trim()||''; });
+    const data = await apiFetch('/admin/add-application','POST',body);
+    const msg  = document.getElementById('addAppMsg');
+    if(data&&data.status==='success'){ msg.textContent='Application added. ID: '+data.application_id; msg.style.color='var(--green)'; }
+    else{ msg.textContent=(data&&data.message)||'Error'; msg.style.color='var(--red)'; }
+  }
+
+  // ── CSV ───────────────────────────────────────────────────────
+  async function uploadCSV(){
+    const file = document.getElementById('csvFile').files[0];
+    if(!file){ showToast('Please select a CSV file.','red'); return; }
+    const fd = new FormData(); fd.append('csv_file',file);
+    const msg = document.getElementById('csvMsg'); msg.textContent='Uploading...'; msg.style.color='var(--tx-muted)';
+    try{
+      const res  = await fetch(API('/admin/upload-csv'),{method:'POST',credentials:'include',body:fd});
+      const data = await res.json();
+      if(data&&data.status==='success'){ msg.textContent=data.message; msg.style.color='var(--green)'; }
+      else{ msg.textContent=(data&&data.message)||'Error'; msg.style.color='var(--red)'; }
+    }catch(e){ msg.textContent='Network error.'; msg.style.color='var(--red)'; }
+  }
+
+  // ── AUTH ──────────────────────────────────────────────────────
+  async function doLogout(){
+    try{ await fetch(API('/admin/logout'),{method:'POST',credentials:'include'}); }catch(e){}
+    window.location.href='/admin-login';
+  }
+
+  // Close modals on overlay click or ESC
+  document.addEventListener('click', e=>{ if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.active').forEach(m=>m.classList.remove('active')); });
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    initBulkDelete();
+    loadStats();
+    loadEnrollments();
+    setInterval(loadStats, 60000);
+  });
+  </script>
+</body>
+</html>

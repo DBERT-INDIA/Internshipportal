@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Ambassador Payouts" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body class="has-staff-sidebar">
+{% set active_page = 'admin_payouts' %}
+{% include '_staff_sidebar.html' %}
+
+<div class="main">
+  <div class="content content-wide">
+
+    <div class="page-head">
+      <div class="eyebrow">Administration</div>
+      <h1>Ambassador payouts</h1>
+      <p>Review withdrawal requests, reveal the UPI id once, transfer manually, then mark it paid.</p>
+    </div>
+
+    {% if not fernet_ready %}
+    <div class="alert alert-err">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div><b>FERNET_KEY is not set.</b> UPI ids cannot be decrypted, so payouts cannot be
+      processed. Set it in <code>.env</code> and restart.</div>
+    </div>
+    {% endif %}
+
+    <div class="card card-flush">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th><th>Ambassador</th><th class="num">Amount</th>
+              <th>Status</th><th>Requested</th><th>UPI</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr id="row-{{ r.id }}">
+              <td class="t-mono">{{ r.id }}</td>
+              <td>
+                <b>{{ r.intern_name }}</b>
+                <div class="t-sm t-muted">{{ r.intern_email }}</div>
+              </td>
+              <td class="num">₹{{ r.amount }}</td>
+              <td>
+                {% if r.status == 'pending' %}<span class="badge b-amber">pending</span>
+                {% elif r.status == 'approved' %}<span class="badge b-blue">approved</span>
+                {% elif r.status == 'paid' %}<span class="badge b-green">paid</span>
+                {% else %}<span class="badge b-red">rejected</span>{% endif %}
+                {% if r.admin_note %}<div class="t-sm t-muted">{{ r.admin_note }}</div>{% endif %}
+              </td>
+              <td class="t-sm t-muted">{{ r.requested_at }}</td>
+              <td>
+                {# §5.4 — the UPI is never rendered into this list. It is fetched
+                   on demand, and every reveal is logged with who and when. #}
+                <span class="t-mono t-head" id="upi-{{ r.id }}">•••••••</span>
+                {% if r.status in ('pending', 'approved') %}
+                <button class="btn btn-ghost btn-sm" data-act-click="revealUpi" data-arg-click='[{{ r.id|tojson }}]'>Reveal</button>
+                {% endif %}
+                {% if r.upi_viewed_by %}
+                <div class="t-sm t-muted">seen by {{ r.upi_viewed_by }} · {{ r.upi_viewed_at }}</div>
+                {% endif %}
+              </td>
+              <td style="white-space:nowrap">
+                {% if r.status in ('pending', 'approved') %}
+                <button class="btn btn-primary btn-sm" data-act-click="decide" data-arg-click='[{{ r.id|tojson }}, "paid"]'>Mark paid</button>
+                <button class="btn btn-danger btn-sm" data-act-click="decide" data-arg-click='[{{ r.id|tojson }}, "rejected"]'>Reject</button>
+                {% else %}
+                <span class="t-sm t-muted">closed</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7">
+              <div class="empty">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                <h4>No payout requests</h4>
+                <p>Ambassador withdrawal requests will appear here.</p>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="msg" id="payMsg"></div>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  async function revealUpi(id){
+    var el = document.getElementById('upi-' + id);
+    el.textContent = 'revealing…';
+    try {
+      const r = await fetch('/admin/ambassador-payouts/' + id + '/upi',
+                            {method:'POST', credentials:'include'});
+      const d = await r.json();
+      el.textContent = (d.status === 'success') ? d.upi_id : (d.message || 'unavailable');
+    } catch (e) { el.textContent = 'network error'; }
+  }
+
+  async function decide(id, decision){
+    var msg = document.getElementById('payMsg');
+    var note = '';
+    if (decision === 'rejected') {
+      note = prompt('Reason for rejection (shown to the ambassador):') || '';
+      if (!note) return;
+    } else if (!confirm('Confirm you have transferred this amount by UPI. ' +
+                        'This debits their referral balance.')) {
+      return;
+    }
+    msg.className = 'msg'; msg.textContent = 'Saving…';
+    try {
+      const r = await fetch('/admin/ambassador-payouts/' + id + '/decision', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({decision: decision, note: note})
+      });
+      const d = await r.json();
+      if (d.status === 'success') {
+        msg.className = 'msg ok'; msg.textContent = d.message;
+        setTimeout(function(){ location.reload(); }, 800);
+      } else {
+        msg.className = 'msg err'; msg.textContent = d.message || 'Could not update.';
+      }
+    } catch (e) { msg.className = 'msg err'; msg.textContent = 'Network error.'; }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Coins" %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'coins' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content">
+
+    <div class="row-between mb-24" style="align-items:flex-end">
+      <div class="page-head" style="margin-bottom:0">
+        <div class="eyebrow">Earn</div>
+        <h1>DBERT Coins</h1>
+        <p>Two separate balances. Task coins are spent here; referral coins are paid out.</p>
+      </div>
+      <a href="/tasks" class="back-link" style="white-space:nowrap">
+        Earn more coins <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+
+    {# Spec §4 — two independent ledgers, never summed into one number. #}
+    <div class="coin-cards">
+      <div class="coin-card">
+        <div class="cc-label"><i class="fa-solid fa-coins" style="color:var(--gold)"></i> Task coins · spendable</div>
+        <b>{{ task_balance }}</b>
+        <small>Up to 50% off a paid course · {{ task_earned }} earned, {{ task_spent }} redeemed</small>
+      </div>
+      <div class="coin-card">
+        <div class="cc-label"><i class="fa-solid fa-gift" style="color:var(--violet)"></i> Referral coins · withdrawable</div>
+        <b>{{ referral_balance }}</b>
+        <small>Cash, paid to your bank · {{ referral_earned }} earned, {{ referral_withdrawn }} withdrawn</small>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <i class="fa-solid fa-clock-rotate-left"></i><h3>Transaction history</h3>
+      </div>
+
+      {% if transactions %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date &amp; time</th>
+              <th>Ledger</th>
+              <th>Description</th>
+              <th class="num">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tx in transactions %}
+            <tr>
+              <td class="t-muted">{{ tx.event_ts or "—" }}</td>
+              <td>
+                {% if tx.ledger_kind == 'task' %}<span class="badge b-gold">task</span>
+                {% elif tx.ledger_kind == 'spent' %}<span class="badge b-muted">redeemed</span>
+                {% elif tx.ledger_kind == 'referral' %}<span class="badge b-violet">referral</span>
+                {% elif tx.ledger_kind == 'withdrawal' %}<span class="badge b-muted">withdrawal</span>
+                {% else %}<span class="badge b-muted">{{ tx.ledger_kind }}</span>{% endif %}
+              </td>
+              <td class="t-head">{{ tx.reason or "—" }}</td>
+              <td class="num {{ 'lr-plus' if tx.delta > 0 else 'lr-minus' }}">
+                {{ '+' if tx.delta > 0 else '' }}{{ tx.delta }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {# "Balance After" column removed: on historical rows it is a running total
+         across every ledger_kind, so it would contradict the two cards above. #}
+      {% else %}
+      <div class="empty">
+        <i class="fa-solid fa-coins"></i>
+        <h4>No coin activity yet</h4>
+        <p>Complete an open task to earn your first reward coins.</p>
+        <a href="/tasks" class="btn btn-primary btn-sm">Browse tasks</a>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

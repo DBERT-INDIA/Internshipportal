@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set _desc = (summary or headline or (intern.name ~ ' — CV on DBERT')) %}
+{% set _desc = _desc[:155] %}
+{% set page_title = intern.name ~ (' — ' ~ headline if headline else '') %}
+{% set page_desc = _desc %}
+{% set page_canonical = 'https://internship.dbert.online/cv/' ~ slug %}
+{% include "_head.html" %}
+
+  <!-- Open Graph / Twitter (UAT #32) — kept verbatim; _head.html covers only
+       title/description/canonical, and these drive link previews. -->
+  <meta property="og:type" content="profile">
+  <meta property="og:title" content="{{ intern.name }}{% if headline %} — {{ headline }}{% endif %}">
+  <meta property="og:description" content="{{ _desc }}">
+  <meta property="og:url" content="https://internship.dbert.online/cv/{{ slug }}">
+  <meta property="og:site_name" content="DBERT">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ intern.name }}{% if headline %} — {{ headline }}{% endif %}">
+  <meta name="twitter:description" content="{{ _desc }}">
+</head>
+<body class="doc">
+  <div class="sheet">
+    <header class="cv-head">
+      <div>
+        <h1>{{ intern.name }}</h1>
+        {% if headline %}<p class="head-sub">{{ headline }}</p>{% endif %}
+      </div>
+    </header>
+
+    <div class="cols">
+      <aside class="side">
+        <section>
+          <h2>Contact</h2>
+          <p>{{ intern.email }}</p>
+          {% if intern.phone %}<p>{{ intern.phone }}</p>{% endif %}
+          {% if intern.city %}<p>{{ intern.city }}</p>{% endif %}
+          {% if intern.domain %}<p>{{ intern.domain }}</p>{% endif %}
+        </section>
+        {% if skills %}<section><h2>Skills</h2><div class="chips">{% for s in skills %}<span>{{ s }}</span>{% endfor %}</div></section>{% endif %}
+        {% if certs %}<section><h2>Certifications</h2>{% for c in certs %}<div class="cert">{{ c.course_title or c.cert_id }}<em>{{ (c.issued_at or "")[:10] }}</em></div>{% endfor %}</section>{% endif %}
+        {% if links %}<section><h2>Links</h2>{% for l in links %}<p><a href="{{ l }}">{{ l }}</a></p>{% endfor %}</section>{% endif %}
+      </aside>
+
+      <main class="doc-main">
+        {% if summary %}<section><h2>Summary</h2><p>{{ summary }}</p></section>{% endif %}
+        {% if experience %}<section><h2>Experience</h2>
+          {% for e in experience %}<div class="entry">
+            <div class="entry-top"><strong>{{ e.title }}</strong>{% if e.dates %}<span class="dates">{{ e.dates }}</span>{% endif %}</div>
+            {% if e.org %}<div class="org">{{ e.org }}</div>{% endif %}
+            {% if e.bullets %}<ul>{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+          </div>{% endfor %}
+        </section>{% endif %}
+        {% if education %}<section><h2>Education</h2>
+          {% for e in education %}<div class="entry">
+            <div class="entry-top"><strong>{{ e.title }}</strong>{% if e.dates %}<span class="dates">{{ e.dates }}</span>{% endif %}</div>
+            {% if e.org %}<div class="org">{{ e.org }}</div>{% endif %}
+            {% if e.bullets %}<ul>{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+          </div>{% endfor %}
+        </section>{% endif %}
+        {% if projects %}<section><h2>Projects</h2><ul>{% for p in projects %}<li>{{ p }}</li>{% endfor %}</ul></section>{% endif %}
+      </main>
+    </div>
+
+    <p class="pdf-link"><a href="/cv/{{ slug }}.pdf">Download PDF →</a></p>
+    <footer class="cv-foot">CV built on <a href="https://internship.dbert.online">DBERT</a> · internship.dbert.online — internships, jobs &amp; industry certifications for students in India.</footer>
+  </div>
+
+  <!-- UAT #32: Person / ProfilePage structured data -->
+  <script nonce="{{ csp_nonce() }}" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "mainEntity": {
+      "@type": "Person",
+      "name": {{ intern.name|tojson }},
+      {% if headline %}"jobTitle": {{ headline|tojson }},{% endif %}
+      {% if skills %}"knowsAbout": {{ skills|tojson }},{% endif %}
+      "alumniOf": {"@type": "Organization", "name": "DBERT", "url": "https://dbert.online"},
+      "url": "https://internship.dbert.online/cv/{{ slug }}"
+    }
+  }
+  </script>
+</body>
+</html>

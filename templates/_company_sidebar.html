@@ -1,0 +1,23 @@
+{# Company nav config → _app_shell.html.  Build phase: 1
+   All 4 hrefs and active_page values carried over unchanged.
+   The old blue accent (#3B82F6) is gone — per spec §2 gold is the only brand
+   accent, so every role's shell now looks like one product. #}
+
+{% set brand = {'mark': 'C', 'title': 'DBERT', 'sub': 'Company Portal'} %}
+
+{# Job Listings points at /company, not /company/posts: the latter is POST-only
+   (app.py:6782) so the old nav link returned 405. /company (app.py:6746) is the
+   handler that actually lists a company's posts. #}
+{% set nav_groups = [
+  {'items': [
+    {'href': '/company',          'icon': 'fa-solid fa-briefcase', 'label': 'Job Listings',       'match': ['company_posts', 'company_dashboard']},
+    {'href': '/company/cohorts',  'icon': 'fa-solid fa-users',     'label': 'Hiring Cohorts',     'match': ['company_cohorts']},
+    {'href': '/company/earnings', 'icon': 'fa-solid fa-wallet',    'label': 'Earnings & Payouts', 'match': ['company_earnings']},
+    {'href': '/company/profile',  'icon': 'fa-solid fa-building',  'label': 'Company Profile',    'match': ['company_profile']}
+  ]}
+] %}
+
+{# /company/logout is POST-only (app.py:6682) — the old <a href> returned 405. #}
+{% set logout = {'href': '/company/logout', 'label': 'Logout', 'method': 'post'} %}
+
+{% include '_app_shell.html' %}

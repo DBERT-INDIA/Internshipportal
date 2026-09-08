@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title = "Certificate Verification" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone">
+  {% if cert %}
+  <div class="card auth-card verify-ok" style="max-width:480px">
+    <div class="brand-eyebrow"><i class="fa-solid fa-graduation-cap"></i> DBERT</div>
+    <div class="verify-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <h1>Valid certificate</h1>
+    <p class="sub">This certificate is authentic and was issued by DBERT.</p>
+
+    <div class="verify-row"><span>Recipient</span><b>{{ cert.name }}</b></div>
+    <div class="verify-row"><span>Programme</span><b>{{ cert.course_title }}</b></div>
+    <div class="verify-row"><span>Issued</span><b>{{ (cert.issued_at or '')[:10] }}</b></div>
+    <div class="verify-row"><span>Certificate ID</span><b class="t-mono">{{ cert.cert_id }}</b></div>
+  </div>
+  {% else %}
+  <div class="card auth-card verify-bad" style="max-width:480px">
+    <div class="brand-eyebrow"><i class="fa-solid fa-graduation-cap"></i> DBERT</div>
+    <div class="verify-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+    <h1>Could not verify</h1>
+    <p class="sub">We couldn't find a certificate with ID <b class="t-mono t-head">{{ cert_id }}</b>.
+       Please check the ID or QR code.</p>
+    <p class="t-sm t-muted mt-24">
+      Need help? <a href="https://wa.me/917060372107" target="_blank" rel="noopener" class="t-gold">Contact DBERT</a>
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+</body>
+</html>

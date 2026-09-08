@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Task Review Queue — Staff Portal" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-staff-task-queue has-staff-sidebar">
+{% set active_page = 'staff_tasks' %}
+{% include '_staff_sidebar.html' %}
+
+    <div class="queue-container">
+        <header class="header-bar">
+            <div>
+                <h1>Open Task Review Queue</h1>
+                <div style="font-size: 0.875rem; color: var(--tx-muted);">Staff: {{ staff.name }}</div>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button data-act-click="openCreateModal" class="btn-approve" style="background: linear-gradient(135deg, #7c3aed, #3b82f6); border: none; padding: 0.65rem 1.25rem;">+ Create New Task</button>
+                <a href="/staff/dashboard" style="color: var(--tx-muted); text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+            </div>
+        </header>
+
+        <div class="filter-tabs">
+            <a href="/staff/tasks?status=pending" class="tab-btn {% if current_status == 'pending' %}active{% endif %}">Pending Review</a>
+            <a href="/staff/tasks?status=approved" class="tab-btn {% if current_status == 'approved' %}active{% endif %}">Approved</a>
+            <a href="/staff/tasks?status=rejected" class="tab-btn {% if current_status == 'rejected' %}active{% endif %}">Rejected</a>
+        </div>
+
+        {% if submissions %}
+            {% for sub in submissions %}
+            <div class="card submission-card" id="subCard_{{ sub.id }}">
+                <div class="sub-header">
+                    <div>
+                        <h3 class="sub-title">{{ sub.task_title }}</h3>
+                        <div style="margin-top: 4px; margin-bottom: 6px;">
+                            {% if sub.task_type == 'domain_specific' %}
+                            <span class="badge-type badge-domain">🎯 Domain: {{ sub.target_domain or 'Specific' }}</span>
+                            {% else %}
+                            <span class="badge-type badge-general">🌐 General</span>
+                            {% endif %}
+                            
+                            {% if sub.payment_type == 'unpaid' %}
+                            <span class="badge-type badge-unpaid">🌱 Unpaid Practice</span>
+                            {% else %}
+                            <span class="badge-type badge-paid">🪙 Paid Bounty</span>
+                            {% endif %}
+                            
+                            <span class="badge-type" style="background: rgba(255,255,255,0.06); color: var(--tx-muted);">Format: {{ sub.submission_type or 'url' }}</span>
+                        </div>
+                        <div class="meta-line">
+                            Intern: <strong>{{ sub.intern_name }}</strong> ({{ sub.intern_email }}) • Submitted: {{ sub.created_at }}
+                        </div>
+                    </div>
+                    {% if sub.payment_type == 'unpaid' %}
+                    <span class="coin-bounty" style="background: rgba(156,163,175,0.15); border-color: #9CA3AF; color: #9CA3AF;">🌱 0 Coins</span>
+                    {% else %}
+                    <span class="coin-bounty">🪙 +{{ sub.coin_reward }} Coins</span>
+                    {% endif %}
+                </div>
+
+                <div class="content-box">
+                    {{ sub.submission_content }}
+                    {% if sub.submission_file %}
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);">
+                        📁 <strong>Uploaded File Attachment:</strong> 
+                        <a href="{{ sub.submission_file }}" target="_blank" style="color: #60A5FA; text-decoration: underline; margin-left: 6px;">Download / View File →</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if sub.status == 'pending' %}
+                <div class="actions-bar">
+                    <button class="btn-reject" data-act-click="makeTaskDecision" data-arg-click='[{{ sub.id|tojson }}, "rejected"]'>Reject Work</button>
+                    <button class="btn-approve" data-act-click="makeTaskDecision" data-arg-click='[{{ sub.id|tojson }}, "approved"]'>
+                        ✓ Approve {% if sub.payment_type != 'unpaid' %}&amp; Credit +{{ sub.coin_reward }} Coins{% endif %}
+                    </button>
+                </div>
+                {% else %}
+                <div style="font-size: 0.85rem; color: var(--tx-muted); text-align: right;">
+                    Status: <strong style="text-transform: uppercase;">{{ sub.status }}</strong> 
+                    {% if sub.coins_awarded > 0 %}(+{{ sub.coins_awarded }} Coins Credited){% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="padding: 2.5rem; text-align: center;">
+                <p style="color: var(--tx-muted); margin: 0;">No task submissions found for status '{{ current_status }}'.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Create Task Modal -->
+    <div class="modal-overlay" id="createTaskModal">
+        <div class="modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-family: var(--f-display); color: var(--tx-head); font-size: 1.3rem;">Create New Task / Bounty</h2>
+                <button data-act-click="closeCreateModal" style="background: none; border: none; color: var(--tx-muted); font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+
+            <form id="createTaskForm" data-act-submit="submitCreateTask" data-arg-submit='["$event"]'>
+                <div class="form-group">
+                    <label>Task Title *</label>
+                    <input type="text" id="createTitle" class="form-control" placeholder="e.g. Build a Responsive Landing Page" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Short Description *</label>
+                    <textarea id="createDesc" class="form-control" rows="2" placeholder="Brief summary of the task objective..." required></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Task Scope / Audience *</label>
+                        <select id="createTaskType" class="form-control" data-act-change="toggleDomainField">
+                            <option value="general">🌐 General (Open to All Interns)</option>
+                            <option value="domain_specific">🎯 Domain-Specific</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="domainGroup" style="display: none;">
+                        <label>Target Domain *</label>
+                        <select id="createTargetDomain" class="form-control">
+                            {% for d in valid_domains %}
+                            <option value="{{ d }}">{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Payment / Reward Type *</label>
+                        <select id="createPaymentType" class="form-control" data-act-change="toggleCoinField">
+                            <option value="paid">🪙 Paid Bounty (Rewards Coins)</option>
+                            <option value="unpaid">🌱 Unpaid Practice (0 Coins)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="coinGroup">
+                        <label>Coin Bounty Reward *</label>
+                        <input type="number" id="createCoinReward" class="form-control" value="50" min="1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Required Submission Format *</label>
+                    <select id="createSubmissionType" class="form-control">
+                        <option value="url">🔗 URL Link (GitHub / Web App Link)</option>
+                        <option value="file">📁 File Upload (PDF, Zip, Image, Document)</option>
+                        <option value="text">📝 Text Response / Code Snippet</option>
+                        <option value="any">🔀 Any Format (URL, File, or Text)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Detailed Instructions</label>
+                    <textarea id="createInstructions" class="form-control" rows="3" placeholder="Detailed step-by-step instructions for interns..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Evaluation Rubric</label>
+                    <textarea id="createRubric" class="form-control" rows="2" placeholder="Criteria for staff approval (e.g. Clean code, working demo)..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="button" data-act-click="closeCreateModal" class="tab-btn">Cancel</button>
+                    <button type="submit" class="btn-approve" style="background: linear-gradient(135deg, #7c3aed, #3b82f6); border: none; padding: 0.65rem 1.5rem;">Create Task →</button>
+                </div>
+            </form>
+            <div id="createMsg" style="margin-top: 1rem; font-size: 0.9rem; display: none;"></div>
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce() }}">
+        function openCreateModal() {
+            document.getElementById('createTaskModal').style.display = 'flex';
+        }
+        function closeCreateModal() {
+            document.getElementById('createTaskModal').style.display = 'none';
+        }
+        function toggleDomainField() {
+            const val = document.getElementById('createTaskType').value;
+            document.getElementById('domainGroup').style.display = (val === 'domain_specific') ? 'block' : 'none';
+        }
+        function toggleCoinField() {
+            const val = document.getElementById('createPaymentType').value;
+            document.getElementById('coinGroup').style.display = (val === 'unpaid') ? 'none' : 'block';
+        }
+
+        function submitCreateTask(e) {
+            e.preventDefault();
+            const msg = document.getElementById('createMsg');
+            msg.style.display = 'block';
+            msg.style.color = 'var(--tx-muted)';
+            msg.textContent = 'Creating task...';
+
+            const payload = {
+                title: document.getElementById('createTitle').value,
+                description: document.getElementById('createDesc').value,
+                task_type: document.getElementById('createTaskType').value,
+                target_domain: document.getElementById('createTargetDomain').value,
+                payment_type: document.getElementById('createPaymentType').value,
+                coin_reward: document.getElementById('createCoinReward').value,
+                submission_type: document.getElementById('createSubmissionType').value,
+                instructions: document.getElementById('createInstructions').value,
+                rubric: document.getElementById('createRubric').value,
+            };
+
+            fetch('/staff/tasks/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    msg.style.color = '#10B981';
+                    msg.textContent = data.message;
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    msg.style.color = '#F43F5E';
+                    msg.textContent = data.message || 'Failed to create task.';
+                }
+            })
+            .catch(() => {
+                msg.style.color = '#F43F5E';
+                msg.textContent = 'Server error during task creation.';
+            });
+        }
+
+        function makeTaskDecision(subId, decision) {
+            if (!confirm(`Are you sure you want to mark task submission #${subId} as ${decision}?`)) return;
+
+            fetch(`/staff/tasks/${subId}/decision`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ decision: decision })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById(`subCard_${subId}`).remove();
+                } else {
+                    alert(data.message || 'Error executing decision');
+                }
+            })
+            .catch(() => alert('Server error during decision submission.'));
+        }
+    </script>
+</body>
+</html>

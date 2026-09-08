@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title = "CV Builder" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone" style="align-items:flex-start">
+  <div class="standalone-inner" style="max-width:760px">
+
+    <a href="/portal" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to portal</a>
+
+    <div class="page-head mt-16">
+      <div class="eyebrow">Profile</div>
+      <h1>Your CV</h1>
+      <p>Build a public CV to share with companies. Certificates are added automatically.</p>
+    </div>
+
+    <div class="card">
+      <p class="t-sm t-muted mb-16">
+        Prefilled from your profile: <b class="t-head">{{ intern.name }}</b> · {{ intern.email }}{% if intern.city %} · {{ intern.city }}{% endif %}{% if intern.college %} · {{ intern.college }}{% endif %}
+      </p>
+
+      <form id="f" data-prevent-submit>
+        <div class="field">
+          <label for="cvHeadline">Headline</label>
+          <input id="cvHeadline" name="headline" value="{{ form.headline }}"
+                 placeholder="Full Stack Developer · React + Flask">
+        </div>
+
+        <div class="field">
+          <label for="cvSummary">Summary</label>
+          <textarea id="cvSummary" name="summary" rows="3"
+                    placeholder="A short professional summary.">{{ form.summary }}</textarea>
+        </div>
+
+        <div class="field">
+          <label for="cvSkills">Skills</label>
+          <textarea id="cvSkills" name="skills" rows="2"
+                    placeholder="Python, Flask, React, SQL">{{ form.skills }}</textarea>
+          <div class="hint">Comma or newline separated.</div>
+        </div>
+
+        <div class="sec-title">Experience</div>
+        <div class="hint mb-16">Add roles with title, organization, dates and bullet points (one bullet per line).</div>
+        <div id="expList"></div>
+        <button type="button" class="addbtn" data-act-click="addEntry" data-arg-click='["expList"]'>
+          <i class="fa-solid fa-plus"></i> Add experience
+        </button>
+
+        <div class="sec-title">Education</div>
+        <div id="eduList"></div>
+        <button type="button" class="addbtn" data-act-click="addEntry" data-arg-click='["eduList"]'>
+          <i class="fa-solid fa-plus"></i> Add education
+        </button>
+
+        <div class="field mt-24">
+          <label for="cvProjects">Projects</label>
+          <textarea id="cvProjects" name="projects" rows="3" placeholder="One per line">{{ form.projects }}</textarea>
+          <div class="hint">One per line.</div>
+        </div>
+
+        <div class="field">
+          <label for="cvLinks">Links</label>
+          <textarea id="cvLinks" name="links" rows="2" placeholder="https://github.com/you">{{ form.links }}</textarea>
+          <div class="hint">One per line.</div>
+        </div>
+
+        <div class="chk">
+          <input type="checkbox" name="is_public" id="pub" {% if form.is_public %}checked{% endif %}>
+          <label for="pub">Public (visible at your CV link)</label>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save CV</button>
+          <button type="button" class="btn btn-ghost" data-act-click="saveThen" data-arg-click='["pdf"]'><i class="fa-solid fa-download"></i> Save &amp; download PDF</button>
+          <button type="button" class="btn btn-ghost" data-act-click="saveThen" data-arg-click='["preview"]'><i class="fa-solid fa-eye"></i> Save &amp; preview</button>
+        </div>
+
+        <div class="msg" id="msg"></div>
+        <p id="linkRow" class="t-sm mt-16" {% if not form.slug %}style="display:none"{% endif %}>
+          Public link:
+          <a id="pubLink" class="t-gold" href="/cv/{{ form.slug }}" target="_blank" rel="noopener">/cv/{{ form.slug }}</a>
+          · <a id="pdfLink" class="t-gold" href="/cv/{{ form.slug }}.pdf" target="_blank" rel="noopener">PDF</a>
+        </p>
+      </form>
+    </div>
+
+    <p class="t-center t-muted mt-24" style="font-size:11px">
+      CV built on <a href="https://internship.dbert.online" class="t-gold">DBERT</a> ·
+      internship.dbert.online — internships, jobs &amp; industry certifications for students in India.
+    </p>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    var EXP = {{ form.experience|tojson }};
+    var EDU = {{ form.education|tojson }};
+
+    function entryRow(e){
+      e = e || {title:'',org:'',dates:'',bullets:[]};
+      var div = document.createElement('div'); div.className='entry';
+      div.innerHTML =
+        '<div class="row">'
+        + '<div><label>Title / Role</label><input class="e-title" value=""></div>'
+        + '<div><label>Organization</label><input class="e-org" value=""></div>'
+        + '<div><label>Dates</label><input class="e-dates" placeholder="Jun 2025 - Aug 2025" value=""></div>'
+        + '</div>'
+        + '<label>Highlights (one per line)</label><textarea class="e-bullets" rows="2"></textarea>'
+        + '<button type="button" class="rm" data-act-click="$removeParent"><i class="fas fa-trash"></i> Remove</button>';
+      div.querySelector('.e-title').value = e.title||'';
+      div.querySelector('.e-org').value = e.org||'';
+      div.querySelector('.e-dates').value = e.dates||'';
+      div.querySelector('.e-bullets').value = (e.bullets||[]).join('\n');
+      return div;
+    }
+    function addEntry(listId, e){ document.getElementById(listId).appendChild(entryRow(e)); }
+    function collectEntries(listId){
+      var out = [];
+      document.querySelectorAll('#'+listId+' .entry').forEach(function(d){
+        var t=d.querySelector('.e-title').value.trim(), o=d.querySelector('.e-org').value.trim(),
+            dt=d.querySelector('.e-dates').value.trim(),
+            b=d.querySelector('.e-bullets').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
+        if(t||o||b.length) out.push({title:t, org:o, dates:dt, bullets:b});
+      });
+      return out;
+    }
+    // seed existing entries (at least one empty row each so the form isn't bare)
+    (EXP.length?EXP:[null]).forEach(function(e){ addEntry('expList', e); });
+    (EDU.length?EDU:[null]).forEach(function(e){ addEntry('eduList', e); });
+
+    function body(){
+      var f=document.getElementById('f');
+      return {
+        headline:f.headline.value, summary:f.summary.value, skills:f.skills.value,
+        projects:f.projects.value, links:f.links.value, is_public:f.is_public.checked,
+        experience:collectEntries('expList'), education:collectEntries('eduList')
+      };
+    }
+    function doSave(){
+      var msg=document.getElementById('msg'); msg.className='msg'; msg.textContent='Saving…';
+      return fetch('/portal/cv', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body())})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==='success'){
+            msg.className='msg ok'; msg.textContent='Saved.';
+            document.getElementById('linkRow').style.display='';
+            document.getElementById('pubLink').href='/cv/'+d.slug; document.getElementById('pubLink').textContent='/cv/'+d.slug;
+            document.getElementById('pdfLink').href='/cv/'+d.slug+'.pdf';
+            return d;
+          }
+          msg.className='msg err'; msg.textContent=d.message||'Error'; return null;
+        }).catch(function(){ msg.className='msg err'; msg.textContent='Network error'; return null; });
+    }
+    document.getElementById('f').addEventListener('submit', doSave);
+    // UAT #30: save first, then open the latest PDF / preview so the export is never stale.
+    function saveThen(what){
+      doSave().then(function(d){ if(d){ window.open(what==='pdf' ? '/cv/'+d.slug+'.pdf' : '/cv/'+d.slug, '_blank'); } });
+    }
+</script>
+</body>
+</html>

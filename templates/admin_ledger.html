@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full = "Coin Ledger (admin) · DBERT" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-admin-ledger has-staff-sidebar">
+{% set active_page = 'admin_ledger' %}
+{% include '_staff_sidebar.html' %}
+
+  <div class="wrap">
+    <h1>Coin ledger — all interns</h1>
+    <p class="sub">Read-only mirror of AI-Tutor coin + certificate events. The tutor owns crediting/withdrawals.</p>
+
+    <div class="filters">
+      <a href="/admin/ledger" class="{{ 'active' if not kind else '' }}">All</a>
+      <a href="/admin/ledger?kind=task" class="{{ 'active' if kind == 'task' else '' }}">Task</a>
+      <a href="/admin/ledger?kind=ad" class="{{ 'active' if kind == 'ad' else '' }}">Ad</a>
+      <form method="get" action="/admin/ledger">
+        {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+        <input name="intern_id" placeholder="intern id" value="{{ intern_filter or '' }}">
+        <button type="submit">Filter</button>
+      </form>
+    </div>
+
+    <div class="table-wrap">
+    <table>
+      <tr><th>When</th><th>Intern</th><th>Type</th><th>Change</th><th>Balance</th><th>Reason</th></tr>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.event_ts or "—" }}</td>
+        <td>{{ r.intern_name or r.intern_email or ("#" ~ r.intern_id) }}</td>
+        <td>{% if r.ledger_kind == 'task' %}<span class="badge-blue">task</span>{% else %}<span class="badge-gold">ad</span>{% endif %}</td>
+        <td class="{{ 'pos' if r.delta >= 0 else 'neg' }}">{{ '+' if r.delta >= 0 else '' }}{{ r.delta }}</td>
+        <td>{{ r.balance_after if r.balance_after is not none else "—" }}</td>
+        <td>{{ r.reason or "—" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">No coin events.</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+
+    <div class="section-title">Certificates</div>
+    <div class="table-wrap">
+    <table>
+      <tr><th>Intern</th><th>Course</th><th>Certificate ID</th><th>Issued</th></tr>
+      {% for c in certs %}
+      <tr>
+        <td>{{ c.intern_name or ("#" ~ c.intern_id) }}</td>
+        <td>{{ c.course_title or "—" }}</td>
+        <td>{{ c.cert_id }}</td>
+        <td>{{ (c.issued_at or "")[:10] or "—" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="empty">No certificates.</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+
+    <p class="note">This view is strictly read-only — no credit/debit/withdrawal actions on the portal.</p>
+    <p style="margin-top:18px;"><a href="/admin">← Back to admin</a></p>
+  </div>
+</body>
+</html>

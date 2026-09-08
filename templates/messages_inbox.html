@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full = "Messages · DBERT" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-messages-inbox has-sidebar">
+{% set active_page = 'messages' %}
+{% include '_intern_sidebar.html' %}
+
+  <header class="topbar">
+    <a class="brand" href="/portal"><span class="brand-icon"><i class="fas fa-graduation-cap"></i></span><b>DBERT</b></a>
+    <a class="back" href="/portal"><i class="fas fa-arrow-left"></i> Back to portal</a>
+  </header>
+  <div class="wrap">
+    <h1>Messages</h1>
+    <p class="sub">Signed in as {{ actor.name }} ({{ actor.role }}).</p>
+
+    {% if start_targets %}
+    <div class="starts">
+      {% for t in start_targets %}
+      <button data-act-click="startThread" data-arg-click='[{{ t.type|tojson }}, {{ t.id|tojson }}]'><i class="fas fa-pen"></i> Message {{ t.label }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="glass-card">
+      {% for c in conversations %}
+      <a class="thread" href="/messages/{{ c.id }}">
+        <div>
+          <div class="who"><i class="fas fa-comments"></i> {{ c.label }}</div>
+          <div class="last">{{ c.last or 'No messages yet' }}</div>
+        </div>
+        {% if c.unread %}<span class="badge">{{ c.unread }}</span>{% endif %}
+      </a>
+      {% else %}
+      <div class="empty"><i class="fas fa-inbox" style="font-size:1.6rem;display:block;margin-bottom:10px;opacity:.55;"></i>No conversations yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    async function startThread(type, id){
+      try{
+        var r = await fetch('/messages/start', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({counterparty_type: type, counterparty_id: id})
+        });
+        var d = await r.json();
+        if(d.status === 'success'){ window.location = '/messages/' + d.conversation_id; }
+        else { alert(d.message || 'Could not start the conversation.'); }
+      }catch(e){ alert('Network error.'); }
+    }
+  </script>
+</body>
+</html>

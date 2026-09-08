@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+{% set page_title_full = "Cv Pdf" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-cv-pdf">
+  <div class="head">
+    <h1>{{ intern.name }}</h1>
+    {% if headline %}<div class="sub">{{ headline }}</div>{% endif %}
+  </div>
+
+  <table class="layout" cellspacing="0" cellpadding="0" repeat="0">
+    <tr>
+      <td class="side">
+        <h2>Contact</h2>
+        <p>{{ intern.email }}</p>
+        {% if intern.phone %}<p>{{ intern.phone }}</p>{% endif %}
+        {% if intern.city %}<p>{{ intern.city }}</p>{% endif %}
+        {% if intern.domain %}<p>{{ intern.domain }}</p>{% endif %}
+        {% if skills %}<h2>Skills</h2><div>{% for s in skills %}<span class="chip">{{ s }}</span>&nbsp; {% endfor %}</div>{% endif %}
+        {% if certs %}<h2>Certifications</h2>{% for c in certs %}<div class="cert">{{ c.course_title or c.cert_id }}<br><em>{{ (c.issued_at or "")[:10] }}</em></div>{% endfor %}{% endif %}
+        {% if links %}<h2>Links</h2>{% for l in links %}<p>{{ l }}</p>{% endfor %}{% endif %}
+      </td>
+      <td class="main">
+        {% if summary %}<h2>Summary</h2><div>{{ summary }}</div>{% endif %}
+        {% if experience %}<h2>Experience</h2>
+          {% for e in experience %}<div class="entry">
+            <span class="t">{{ e.title }}</span>{% if e.dates %} <span class="dates">— {{ e.dates }}</span>{% endif %}
+            {% if e.org %}<div class="org">{{ e.org }}</div>{% endif %}
+            {% if e.bullets %}<ul>{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+          </div>{% endfor %}
+        {% endif %}
+        {% if education %}<h2>Education</h2>
+          {% for e in education %}<div class="entry">
+            <span class="t">{{ e.title }}</span>{% if e.dates %} <span class="dates">— {{ e.dates }}</span>{% endif %}
+            {% if e.org %}<div class="org">{{ e.org }}</div>{% endif %}
+            {% if e.bullets %}<ul>{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+          </div>{% endfor %}
+        {% endif %}
+        {% if projects %}<h2>Projects</h2><ul>{% for p in projects %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+      </td>
+    </tr>
+  </table>
+
+  <div class="foot">CV built on DBERT &middot; internship.dbert.online &mdash; internships, jobs &amp; industry certifications for students in India.</div>
+</body>
+</html>

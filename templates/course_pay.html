@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title = "Unlock " ~ course.title %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone">
+  <div class="standalone-inner standalone-narrow">
+
+    <a href="/portal" class="back-link mb-16"><i class="fa-solid fa-arrow-left"></i> Back to portal</a>
+
+    <div class="card mt-16">
+      <div class="eyebrow">Course access</div>
+      <h1 style="font-size:20px;margin-bottom:6px">Unlock {{ course.title }}</h1>
+      <div class="price-tag">₹{{ course.price_inr }}</div>
+      <p class="t-sm t-muted mt-16">{{ course.description or 'Pay to unlock this course on the AI Tutor.' }}</p>
+
+      {% if cert_company_name %}
+      <div class="alert alert-warn mt-16" style="display:block">
+        <div class="row" style="gap:8px;margin-bottom:4px">
+          <i class="fa-solid fa-shield-halved"></i>
+          <b>Industrial Certification</b>
+        </div>
+        <div class="t-sm">Co-verified by DBERT + {{ cert_company_name }}, industry-standard.</div>
+        <div class="t-sm t-muted mt-0" style="margin-top:6px">
+          Certificate issuance is handled by our learning partner and is pending integration —
+          you'll be notified once it's live.
+        </div>
+      </div>
+      {% endif %}
+
+      {% if status == 'verified' %}
+        <div class="alert alert-ok mt-16">
+          <i class="fa-solid fa-circle-check"></i>
+          <div>Already unlocked — open it on the
+            <a href="{{ tutor_base }}/courses/{{ course.id }}" class="t-gold" style="font-weight:600">AI Tutor</a>.</div>
+        </div>
+
+      {% elif status == 'pending' %}
+        <div class="alert alert-warn mt-16">
+          <i class="fa-solid fa-hourglass-half"></i>
+          <div>Payment received — verification in progress (within 24 hours).</div>
+        </div>
+
+      {% else %}
+        <img class="qr-code" src="/static/qr.jpg" alt="UPI QR code" data-act-error="$hide">
+        <p class="t-sm t-muted t-center">Scan the QR or pay ₹{{ course.price_inr }} to:</p>
+        <div class="upi-chip">{{ upi_id }}</div>
+
+        <form id="payForm" data-act-submit="submitPay" data-arg-submit='["$event"]' data-ret-submit>
+          <div class="field mt-16">
+            <label for="payFile">Upload your payment screenshot</label>
+            <input type="file" name="payment_screenshot" id="payFile"
+                   accept=".png,.jpg,.jpeg,.pdf" required>
+            <div class="hint">PNG, JPG or PDF.</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            <i class="fa-solid fa-check"></i> I've paid — submit for verification
+          </button>
+        </form>
+        <div id="msg" class="t-sm t-center mt-16"></div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  async function submitPay(e){
+    e.preventDefault();
+    const f=document.getElementById('payFile'); if(!f.files.length)return false;
+    const fd=new FormData(); fd.append('payment_screenshot', f.files[0]);
+    const msg=document.getElementById('msg'); msg.textContent='Uploading…';
+    msg.style.color='var(--tx-muted)';
+    try{
+      const r=await fetch('/courses/{{ course.id }}/pay',{method:'POST',credentials:'include',body:fd});
+      const d=await r.json();
+      if(d.status==='success'){ msg.style.color='var(--green)'; msg.textContent=d.message; setTimeout(()=>location.reload(),1500); }
+      else { msg.style.color='var(--red)'; msg.textContent=d.message||'Could not submit.'; }
+    }catch(err){ msg.style.color='var(--red)'; msg.textContent='Network error.'; }
+    return false;
+  }
+</script>
+</body>
+</html>

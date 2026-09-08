@@ -1,0 +1,35 @@
+{# Phase 12.5/12.6 — shared head include: GA4 + dbertGA() event helper + Organization JSON-LD.
+   Included in the <head> of every page via {% include "_ga4.html" %}. #}
+{% if GA4_ID %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ GA4_ID }}"></script>
+<script nonce="{{ csp_nonce() }}">
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ GA4_ID }}');
+</script>
+{% endif %}
+<script nonce="{{ csp_nonce() }}">
+  // Safe event helper — no-op if GA4 is unset/blocked. Use everywhere: dbertGA('event_name',{...})
+  function dbertGA(name, params){ try{ if(window.gtag){ gtag('event', name, params||{}); } }catch(e){} }
+</script>
+<script nonce="{{ csp_nonce() }}" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": ["Organization", "EducationalOrganization"],
+  "@id": "{{ SITE_ORIGIN }}/#org",
+  "name": "DBERT",
+  {# The acronym is the brand; the expansion is the legal/full name. Declaring
+     both lets search engines connect searches for either form to this entity. #}
+  "legalName": "Digital Blinc Education Research and Technology",
+  "alternateName": "Digital Blinc Education Research and Technology",
+  "url": "{{ SITE_ORIGIN }}/",
+  "email": "careers@dbert.info",
+  "areaServed": "IN",{% if LOGO_URL %}
+  "logo": "{{ LOGO_URL }}",
+  "image": "{{ LOGO_URL }}",{% endif %}
+  "address": {"@type": "PostalAddress", "addressLocality": "Noida", "addressRegion": "Uttar Pradesh", "postalCode": "201301", "addressCountry": "IN"},
+  "description": "DBERT runs remote internships and a paid program with a guaranteed placement opportunity with our hiring partners on completion + certification, across AI Agent Development, Data Analyst, Full Stack Development, and Python Automation.",
+  "sameAs": []
+}
+</script>

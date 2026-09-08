@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title = "Sample Certificate" %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body class="cert-page">
+
+<div class="public-topbar">
+  <div class="public-topbar-inner">
+    <a class="back-link" href="/portal" aria-label="Back to portal">
+      <i class="fa-solid fa-arrow-left"></i> Back to portal
+    </a>
+    <b style="font-family:var(--f-display);font-size:14px;color:var(--tx-head)">Sample Certificate</b>
+  </div>
+</div>
+
+  <div class="doc-wrap" id="certWrap">
+    <p class="t-sm t-muted t-center mb-16">Preview only — this sample is not downloadable. Complete your program to earn the official, verifiable certificate.</p>
+    <div class="cert">
+      <div class="inner">
+        <div class="head">
+          <div class="cert-badge">
+            <div class="disc"><i class="fas fa-graduation-cap"></i></div>
+            <div class="wm">DBERT<small>INTERNSHIP PROGRAMME</small></div>
+          </div>
+          <div class="htitle">
+            <div class="t1">CERTIFICATE OF</div>
+            <div class="t2">INTERNSHIP</div>
+          </div>
+        </div>
+
+        <div class="divider"><span class="rule"></span><span class="gem"></span><span class="rule"></span></div>
+
+        <div class="body">
+          {% set d = (domain or 'internship').replace('_',' ').title() %}
+          <div class="lead">This certificate is proudly awarded to</div>
+          <div class="recipient">{{ name }}</div>
+          <div class="lead">on successful completion of the Internship in</div>
+          <div class="prog">{{ d }}</div>
+          <div class="meta">Covering topics: <em>your course topics appear here</em></div>
+          <div class="meta">Project worked on: <em>your submitted project</em></div>
+          <div class="meta">Duration of internship: <em>N</em> Months</div>
+        </div>
+
+        <div class="ribbon">
+          <span>Completion 100%</span>·<span>Lessons —</span>·<span>Quizzes —</span>·<span>Tasks —</span>·<span>Attendance — wks</span>
+        </div>
+
+        <div class="foot-row">
+          <div class="sig">
+            <img src="/static/signature.png" alt="" data-act-error="$hide">
+            <div class="line"><div class="nm">Sarita Bansal</div><div class="role">Program Head</div></div>
+          </div>
+          <div class="idblock">
+            Intern ID: <em>your ID</em><br><small>{{ d }}</small>
+          </div>
+          <div class="qr">
+            <div class="ph"><i class="fas fa-qrcode fa-2x"></i></div>
+            <small>Scan to verify authenticity</small>
+          </div>
+        </div>
+
+        <div class="cert-foot">Certificate ID: <em>issued on completion</em> &nbsp;·&nbsp; Udyam Number: UDYAM-UP-29-0214455</div>
+      </div>
+      <div class="sample-banner"><span>SAMPLE — PREVIEW ONLY</span></div>
+    </div>
+    <p class="t-sm t-muted t-center mt-24">This is a preview of the certificate you'll earn — finish your internship to unlock the official, downloadable version with your real stats, signature and verification QR.</p>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    var cw=document.getElementById('certWrap');
+    if(cw){ cw.oncontextmenu=function(){return false;}; cw.ondragstart=function(){return false;}; cw.onselectstart=function(){return false;}; }
+  </script>
+</body>
+</html>

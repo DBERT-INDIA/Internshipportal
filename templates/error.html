@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = title %}
+{% set page_robots = "noindex, nofollow" %}
+{% include "_head.html" %}
+</head>
+<body>
+
+<div class="standalone">
+  <div class="standalone-inner standalone-narrow t-center">
+
+    <div class="card auth-card">
+      <div class="verify-icon" style="color:var(--{{ tone|default('amber') }})">
+        <i class="fa-solid {{ icon|default('fa-circle-exclamation') }}"></i>
+      </div>
+      <div class="brand-eyebrow">Error {{ code }}</div>
+      <h1>{{ heading }}</h1>
+      <p class="sub">{{ message }}</p>
+
+      <div class="row" style="gap:10px;justify-content:center;flex-wrap:wrap">
+        <a href="/" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-house"></i> Go to homepage
+        </a>
+        <a href="/portal" class="btn btn-ghost btn-sm">My portal</a>
+      </div>
+    </div>
+
+    <p class="t-sm t-muted mt-24">
+      Still stuck? <a href="mailto:careers@dbert.info" class="t-gold">careers@dbert.info</a>
+    </p>
+
+  </div>
+</div>
+
+</body>
+</html>

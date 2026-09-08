@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Course Catalog" %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'courses' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content content-wide">
+
+    <div class="page-head">
+      <div class="eyebrow">Learning</div>
+      <h1>Guided Learning Courses</h1>
+      <p>Master in-demand skills through interactive AI-guided daily modules, hands-on capstone
+         projects, and certified tracks.</p>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <label for="searchInput" class="sr-only">Search courses</label>
+        <input type="text" id="searchInput" placeholder="Search courses…" data-act-keyup="filterCourses">
+      </div>
+      {# setDomain() reads each button's onclick attribute to decide which chip is
+         active — these strings are a behavioural contract, not just markup. #}
+      <div class="tag-row">
+        <button class="tag-btn active" data-act-click="setDomain" data-arg-click='["all"]'>All Domains</button>
+        <button class="tag-btn" data-act-click="setDomain" data-arg-click='["AI Agent Development"]'>🤖 AI Agent Dev</button>
+        <button class="tag-btn" data-act-click="setDomain" data-arg-click='["Data Analyst"]'>📊 Data Analyst</button>
+        <button class="tag-btn" data-act-click="setDomain" data-arg-click='["Full Stack Development"]'>💻 Full Stack Dev</button>
+        <button class="tag-btn" data-act-click="setDomain" data-arg-click='["Python Automation"]'>🐍 Python Automation</button>
+      </div>
+    </div>
+
+    <div class="catalog-grid" id="catalogGrid">
+      {% if courses %}
+        {% for course in courses %}
+        <div class="card course-card"
+             data-domain="{{ course.domain or 'General' }}"
+             data-title="{{ course.title | lower }}">
+          <div class="card-banner"{% if course.banner_gradient %} style="background: {{ course.banner_gradient }}"{% endif %}>
+            <div class="row" style="gap:8px">
+              <span class="badge">{{ course.level or 'Beginner' }}</span>
+              {% if course.is_paid %}
+                <span class="badge">₹{{ course.price_inr }}</span>
+              {% else %}
+                <span class="badge b-green">Free</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div>
+              <h3 style="font-size:17px;margin-bottom:8px">{{ course.title }}</h3>
+              <div class="course-meta mb-16">
+                <span><i class="fa-regular fa-clock"></i> {{ course.estimated_hours or 10 }} hours</span>
+                <span><i class="fa-regular fa-calendar"></i> {{ course.total_days or 7 }} days</span>
+              </div>
+              <div class="t-sm t-muted">Provided by <b class="t-head">{{ course.author_name }}</b></div>
+            </div>
+
+            <div class="card-foot">
+              <span class="price-tag" style="font-size:17px">
+                {% if course.is_paid %}₹{{ course.price_inr }}{% else %}Free{% endif %}
+              </span>
+              <a href="/courses/{{ course.id }}" class="btn btn-primary btn-sm">
+                View Syllabus <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="card empty" style="grid-column:1 / -1">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <h4>No courses published yet</h4>
+          <p>Check back soon for flagship AI &amp; Automation learning tracks.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    let currentDomain = 'all';
+
+    function setDomain(domain) {
+        currentDomain = domain;
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            const attr = btn.getAttribute('onclick') || '';
+            btn.classList.toggle('active', attr.includes("'" + domain + "'"));
+        });
+        filterCourses();
+    }
+
+    function filterCourses() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const cards = document.querySelectorAll('.course-card');
+
+        cards.forEach(card => {
+            const title = card.getAttribute('data-title');
+            const domain = card.getAttribute('data-domain');
+
+            const matchesSearch = title.includes(search);
+            const matchesDomain = currentDomain === 'all' || domain.toLowerCase().includes(currentDomain.toLowerCase());
+
+            if (matchesSearch && matchesDomain) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+</body>
+</html>

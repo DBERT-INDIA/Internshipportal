@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% set page_title_full = "Cohorts · DBERT Admin" %}
+{% include "_head.html" %}
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body class="pg-admin-cohorts has-staff-sidebar">
+{% set active_page = 'admin_cohorts' %}
+{% include '_staff_sidebar.html' %}
+
+  <div class="wrap">
+    <div class="top-row">
+      <div>
+        <h1>Cohorts</h1>
+        <p class="muted" style="font-size:13px;">Approve a company-hosted cohort to make it live for interns to join.</p>
+      </div>
+      <a class="back" href="/admin"><i class="fas fa-arrow-left"></i> Back to admin</a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card gold"><div class="stat-val">{{ counts.pending }}</div><div class="stat-lbl">Pending</div></div>
+      <div class="stat-card green"><div class="stat-val">{{ counts.published }}</div><div class="stat-lbl">Published</div></div>
+      <div class="stat-card red"><div class="stat-val">{{ counts.rejected }}</div><div class="stat-lbl">Rejected</div></div>
+      <div class="stat-card blue"><div class="stat-val">{{ counts.total }}</div><div class="stat-lbl">Total</div></div>
+    </div>
+
+    <div class="tabs">
+      {% for s in ['pending','published','rejected','all'] %}
+      <a href="/admin/cohorts?status={{ s }}" class="{{ 'active' if active==s else '' }}">{{ s|capitalize }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <tr><th>#</th><th>Company</th><th>Title</th><th>When</th><th>Platform</th><th>Link</th><th>Status</th><th></th></tr>
+        {% for c in cohorts %}
+        <tr id="row-{{ c.id }}">
+          <td>{{ c.id }}</td>
+          <td>{{ c.company_name }}</td>
+          <td>{{ c.title }}{% if c.skills %}<div class="muted" style="font-size:11.5px;">{{ c.skills }}</div>{% endif %}</td>
+          <td>{{ c.starts_at }}</td>
+          <td>{{ c.platform or '—' }}</td>
+          <td>{% if c.meeting_url %}<a class="lnk" href="{{ c.meeting_url }}" target="_blank" rel="noopener"><i class="fas fa-link"></i> open</a>{% else %}—{% endif %}</td>
+          <td><span class="badge b-{{ c.status }}">{{ c.status }}</span></td>
+          <td>{% if c.status=='pending' %}
+            <button class="btn v" data-act-click="review" data-arg-click='[{{ c.id|tojson }}, "approve"]'>Approve</button>
+            <button class="btn r" data-act-click="review" data-arg-click='[{{ c.id|tojson }}, "reject"]'>Reject</button>
+          {% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="muted" style="text-align:center;padding:22px;">No cohorts here.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    async function review(id, decision){
+      if(decision==='reject' && !confirm('Reject this cohort?'))return;
+      try{
+        const r=await fetch('/admin/cohorts/'+id+'/review',{
+          method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({decision:decision})});
+        const d=await r.json();
+        if(d.status==='success'){ location.reload(); }
+        else { alert(d.message||'Could not update.'); }
+      }catch(e){ alert('Network error.'); }
+    }
+  </script>
+</body>
+</html>

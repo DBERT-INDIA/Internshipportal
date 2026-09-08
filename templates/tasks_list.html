@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title = "Open Tasks & Bounties" %}
+{% include "_head.html" %}
+</head>
+<body class="has-sidebar">
+{% set active_page = 'tasks' %}
+{% include '_intern_sidebar.html' %}
+
+<div class="main">
+  <div class="content">
+
+    <div class="row-between mb-24" style="align-items:flex-end">
+      <div class="page-head" style="margin-bottom:0">
+        <div class="eyebrow">Earn</div>
+        <h1>Open Bounty Tasks</h1>
+        <p>Complete real-world micro-tasks to earn DBERT Coins, redeemable for course discounts.</p>
+      </div>
+      <a href="/portal" class="back-link" style="white-space:nowrap">
+        My dashboard <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="catalog-grid">
+      {% if tasks %}
+        {% for task in tasks %}
+        <div class="card choice-card">
+          <div>
+            <div class="row-between mb-16" style="align-items:flex-start">
+              <div>
+                <h3 style="font-size:16px;margin-bottom:8px">{{ task.title }}</h3>
+                <div class="row wrap" style="gap:6px">
+                  {% if task.task_type == 'domain_specific' %}
+                    <span class="badge b-violet">🎯 {{ task.target_domain or 'Domain specific' }}</span>
+                  {% else %}
+                    <span class="badge b-blue">🌐 General</span>
+                  {% endif %}
+
+                  {% if task.submission_type == 'file' %}
+                    <span class="badge b-muted">📁 File upload</span>
+                  {% elif task.submission_type == 'text' %}
+                    <span class="badge b-green">📝 Text response</span>
+                  {% elif task.submission_type == 'any' %}
+                    <span class="badge b-blue">🔀 Any format</span>
+                  {% else %}
+                    <span class="badge b-blue">🔗 URL link</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              {% if task.payment_type == 'unpaid' %}
+                <span class="badge b-muted" style="white-space:nowrap">🌱 Unpaid</span>
+              {% else %}
+                <span class="coin-badge">🪙 +{{ task.coin_reward }}</span>
+              {% endif %}
+            </div>
+            <p class="task-desc">{{ task.description }}</p>
+          </div>
+
+          <div class="card-foot">
+            {% if user_submissions and task.id in user_submissions %}
+              <span class="status-tag {{ user_submissions[task.id] }}">
+                {{ user_submissions[task.id] }}
+              </span>
+              <button disabled class="btn btn-ghost btn-sm">
+                {% if user_submissions[task.id] == 'approved' %}Completed ✓{% else %}Submitted ✓{% endif %}
+              </button>
+            {% else %}
+              <span class="status-tag">Not attempted</span>
+              {# title goes through |tojson: it is HTML-safe and quote-safe, so a
+                 task title containing an apostrophe no longer breaks the handler. #}
+              <button data-act-click="openSubmitModal" data-arg-click='[{{ task.id|tojson }}, {{ task.title|tojson|tojson }}]'
+                      class="btn btn-primary btn-sm">
+                View &amp; submit <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="card empty" style="grid-column:1 / -1">
+          <i class="fa-solid fa-list-check"></i>
+          <h4>No active tasks right now</h4>
+          <p>Nothing matches your profile at the moment. Check back soon.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- Submission modal -->
+<div class="modal" id="taskModal">
+  <div class="modal-box">
+    <h3 id="modalTaskTitle">Submit task</h3>
+    <div id="modalInstructions" class="t-sm t-muted mb-24"
+         style="background:var(--bg-inset);padding:14px;border-radius:var(--r-sm);line-height:1.55">
+      Loading instructions…
+    </div>
+
+    <form id="taskSubmitForm" data-act-submit="submitTask" data-arg-submit='["$event"]' enctype="multipart/form-data">
+      <input type="hidden" id="modalTaskId">
+      <input type="hidden" id="modalSubtype" value="url">
+
+      <div class="field" id="fieldUrlGroup">
+        <label for="submissionUrl">Repository or live web app link *</label>
+        <input type="url" id="submissionUrl" placeholder="https://github.com/your-username/your-repo">
+      </div>
+
+      <div class="field" id="fieldTextGroup" style="display:none">
+        <label for="submissionText">Your detailed response / solution code *</label>
+        <textarea id="submissionText" rows="6"
+                  placeholder="Type your detailed explanation or paste your code solution…"></textarea>
+      </div>
+
+      <div class="field" id="fieldFileGroup" style="display:none">
+        <label for="submissionFile">Upload submission file *</label>
+        <input type="file" id="submissionFile"
+               accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg,.txt,.py,.js,.html">
+        <div class="hint">Allowed: PDF, DOC, DOCX, ZIP, PNG, JPG, TXT, PY, JS, HTML.</div>
+      </div>
+
+      <div class="modal-foot">
+        <button type="button" data-act-click="closeModal" class="btn btn-ghost btn-sm">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          Submit work <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </form>
+
+    <div id="modalMsg" class="t-sm mt-16" style="display:none"></div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    function openSubmitModal(taskId, title) {
+        document.getElementById('modalTaskId').value = taskId;
+        document.getElementById('modalTaskTitle').textContent = `Submit task: ${title}`;
+        document.getElementById('taskModal').style.display = 'flex';
+        document.getElementById('modalInstructions').textContent = 'Loading latest instructions...';
+        document.getElementById('modalMsg').style.display = 'none';
+
+        fetch(`/tasks/${taskId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.version && data.version.instructions) {
+                document.getElementById('modalInstructions').textContent = data.version.instructions;
+            } else if (data.task && data.task.description) {
+                document.getElementById('modalInstructions').textContent = data.task.description;
+            }
+
+            const subType = (data.task && data.task.submission_type) ? data.task.submission_type : 'url';
+            document.getElementById('modalSubtype').value = subType;
+
+            const urlGrp = document.getElementById('fieldUrlGroup');
+            const textGrp = document.getElementById('fieldTextGroup');
+            const fileGrp = document.getElementById('fieldFileGroup');
+
+            urlGrp.style.display = 'none';
+            textGrp.style.display = 'none';
+            fileGrp.style.display = 'none';
+
+            if (subType === 'file') {
+                fileGrp.style.display = 'block';
+            } else if (subType === 'text') {
+                textGrp.style.display = 'block';
+            } else if (subType === 'any') {
+                textGrp.style.display = 'block';
+                fileGrp.style.display = 'block';
+            } else {
+                urlGrp.style.display = 'block';
+            }
+        })
+        .catch(() => {
+            document.getElementById('modalInstructions').textContent = 'Follow standard submission guidelines.';
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('taskModal').style.display = 'none';
+    }
+
+    function submitTask(e) {
+        e.preventDefault();
+        const taskId = document.getElementById('modalTaskId').value;
+        const subType = document.getElementById('modalSubtype').value;
+        const msg = document.getElementById('modalMsg');
+
+        msg.style.display = 'block';
+        msg.style.color = 'var(--tx-muted)';
+        msg.textContent = 'Submitting task work...';
+
+        const formData = new FormData();
+
+        if (subType === 'file') {
+            const fileInput = document.getElementById('submissionFile');
+            if (!fileInput.files || !fileInput.files[0]) {
+                msg.style.color = 'var(--red)';
+                msg.textContent = 'Please select a file to upload.';
+                return;
+            }
+            formData.append('submission_file', fileInput.files[0]);
+        } else if (subType === 'text') {
+            const txt = document.getElementById('submissionText').value.trim();
+            if (!txt) {
+                msg.style.color = 'var(--red)';
+                msg.textContent = 'Please enter your text response.';
+                return;
+            }
+            formData.append('submission_content', txt);
+        } else if (subType === 'any') {
+            const txt = document.getElementById('submissionText').value.trim();
+            const fileInput = document.getElementById('submissionFile');
+            if (txt) formData.append('submission_content', txt);
+            if (fileInput.files && fileInput.files[0]) formData.append('submission_file', fileInput.files[0]);
+            if (!txt && (!fileInput.files || !fileInput.files[0])) {
+                msg.style.color = 'var(--red)';
+                msg.textContent = 'Please provide text response or upload a file.';
+                return;
+            }
+        } else {
+            const url = document.getElementById('submissionUrl').value.trim();
+            if (!url) {
+                msg.style.color = 'var(--red)';
+                msg.textContent = 'Please enter a submission URL.';
+                return;
+            }
+            formData.append('submission_content', url);
+        }
+
+        fetch(`/tasks/${taskId}/submit`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                msg.style.color = 'var(--green)';
+                msg.textContent = data.message;
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                msg.style.color = 'var(--red)';
+                msg.textContent = data.message || 'Submission failed.';
+            }
+        })
+        .catch(() => {
+            msg.style.color = 'var(--red)';
+            msg.textContent = 'Server error during submission.';
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Mentor Availability Management — Staff Portal" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-mentor-availability has-mentor-sidebar">
+{% set active_page = 'mentor_slots' %}
+{% include '_mentor_sidebar.html' %}
+
+
+    <div class="availability-container">
+        <header class="header-bar">
+            <div>
+                <h1>Mentor Availability Slots</h1>
+                <div style="font-size: 0.875rem; color: var(--tx-muted);">Mentor: {{ staff.name }}</div>
+            </div>
+            <a href="/staff/dashboard" style="color: var(--tx-muted); text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+        </header>
+
+        <div class="card form-card">
+            <h3 style="margin: 0 0 1rem 0; font-family: var(--f-display); color: var(--tx-head);">Add Available Slot</h3>
+            <form id="slotForm" data-act-submit="createSlot" data-arg-submit='["$event"]'>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startTime">Start Time (YYYY-MM-DD HH:MM)</label>
+                        <input type="text" id="startTime" placeholder="2026-07-23 15:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endTime">End Time (YYYY-MM-DD HH:MM)</label>
+                        <input type="text" id="endTime" placeholder="2026-07-23 15:30" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem;">
+                            + Add Availability
+                        </button>
+                    </div>
+                </div>
+                <div class="time-hint">⏱ Slots must be scheduled strictly within the 14:00 to 20:15 IST window.</div>
+            </form>
+            <div id="formMsg" style="margin-top: 1rem; font-size: 0.9rem; display: none;"></div>
+        </div>
+
+        <div class="card slots-card">
+            <h3 style="margin: 0 0 1.25rem 0; font-family: var(--f-display); color: var(--tx-head);">Your Scheduled Availability</h3>
+
+            {% if slots %}
+            <table class="slots-table">
+                <thead>
+                    <tr>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Status</th>
+                        <th>Booked Intern</th>
+                        <th>Meeting Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in slots %}
+                    <tr>
+                        <td style="font-family: var(--f-mono); color: var(--tx-head);">{{ slot.start_time }}</td>
+                        <td style="font-family: var(--f-mono); color: var(--tx-head);">{{ slot.end_time }}</td>
+                        <td>
+                            {% if slot.is_booked %}
+                                <span class="status-pill booked">Booked</span>
+                            {% else %}
+                                <span class="status-pill available">Available</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ slot.intern_name or '—' }}</td>
+                        <td>
+                            {% if slot.meeting_link %}
+                                <a href="{{ slot.meeting_link }}" target="_blank" style="color: var(--gold); font-size: 0.85rem;">Join Meeting ↗</a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; color: var(--tx-muted);">
+                No availability slots scheduled yet. Add slots above for interns to book 1-on-1 sessions.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce() }}">
+        function createSlot(e) {
+            e.preventDefault();
+            const start = document.getElementById('startTime').value.trim();
+            const end = document.getElementById('endTime').value.trim();
+            const msg = document.getElementById('formMsg');
+
+            msg.style.display = 'block';
+            msg.style.color = 'var(--tx-muted)';
+            msg.textContent = 'Saving mentor slot...';
+
+            fetch('/staff/mentor-slots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_time: start, end_time: end })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    msg.style.color = '#10B981';
+                    msg.textContent = data.message;
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    msg.style.color = '#F43F5E';
+                    msg.textContent = data.message || 'Error creating slot.';
+                }
+            })
+            .catch(() => {
+                msg.style.color = '#F43F5E';
+                msg.textContent = 'Server error creating slot.';
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full %}{{ company.name }} — hiring on DBERT{% endset %}
+{% include "_head.html" %}
+<meta name="description" content="{{ (company.about or (company.name ~ ' — open roles and cohorts on DBERT.'))[:155] }}">
+  <link rel="canonical" href="https://internship.dbert.online/companies/{{ company.name|lower|replace(' ','-') }}-{{ company.id }}"/>
+  <meta property="og:title" content="{{ company.name }} — hiring on DBERT">
+  <meta property="og:type" content="profile">
+</head>
+<body class="pg-company-profile has-company-sidebar">
+{% set active_page = 'company_profile' %}
+{% include '_company_sidebar.html' %}
+
+  <div class="topbar"><div class="topbar-in">
+    <a href="/internships" style="display:flex;align-items:center;gap:10px;color:inherit;"><span class="brand-icon"><i class="fas fa-briefcase"></i></span></a>
+    <a href="/internships">Internships</a>
+    <a href="/jobs">Jobs</a>
+  </div></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="logo">{{ company.name[0]|upper }}</div>
+      <div style="flex:1;min-width:240px;">
+        <h1>{{ company.name }}</h1>
+        {% if company.about %}<p class="about">{{ company.about }}</p>{% endif %}
+        <p class="meta">
+          {% if company.website %}<a href="{{ company.website }}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> {{ company.website }}</a>{% endif %}
+        </p>
+      </div>
+      {% if viewer %}
+        <div>
+          <button id="followBtn" class="btn {{ 'ghost' if following else '' }}" data-act-click="toggleFollow">
+            <i class="fas {{ 'fa-check' if following else 'fa-bell' }}"></i> <span>{{ 'Following' if following else 'Follow' }}</span>
+          </button>
+          <span id="fmsg"></span>
+        </div>
+      {% endif %}
+    </div>
+
+    <h2>Open roles {% if posts %}<span class="pill">{{ posts|length }}</span>{% endif %}</h2>
+    {% if posts %}
+      {% for p in posts %}
+      <a class="card" href="{{ post_path(p) }}">
+        <div class="c-title">{{ p.title }}</div>
+        <div class="c-meta">{{ p.post_type|capitalize }} · {{ p.domain }}{% if p.location %} · {{ p.location }}{% endif %}{% if p.work_mode %} · {{ p.work_mode }}{% endif %}</div>
+      </a>
+      {% endfor %}
+    {% else %}
+      <p class="empty">No open roles right now.</p>
+    {% endif %}
+
+    <h2>Cohorts {% if cohorts %}<span class="pill">{{ cohorts|length }}</span>{% endif %}</h2>
+    {% if cohorts %}
+      {% for c in cohorts %}
+      <div class="card">
+        <div class="c-title">{{ c.title }}</div>
+        <div class="c-meta">{{ c.platform or 'Virtual' }} · {{ c.starts_at }}{% if c.skills %} · {{ c.skills }}{% endif %}</div>
+      </div>
+      {% endfor %}
+      <p class="empty" style="margin-top:6px;">Sign in to your <a href="/portal#cohorts" style="color:var(--gold);">portal</a> to join a cohort.</p>
+    {% else %}
+      <p class="empty">No cohorts scheduled.</p>
+    {% endif %}
+  </div>
+  <script nonce="{{ csp_nonce() }}">
+    var FOLLOWING = {{ 'true' if following else 'false' }};
+    function toggleFollow(){
+      var verb = FOLLOWING ? 'unfollow' : 'follow';
+      fetch('/intern/'+verb+'/{{ company.id }}',{method:'POST',credentials:'include'})
+        .then(function(r){return r.json();}).then(function(d){
+          if(d.status==='success'){
+            FOLLOWING = d.following;
+            var b=document.getElementById('followBtn'), m=document.getElementById('fmsg');
+            b.className = 'btn ' + (FOLLOWING?'ghost':'');
+            b.querySelector('span').textContent = FOLLOWING?'Following':'Follow';
+            b.querySelector('i').className = 'fas ' + (FOLLOWING?'fa-check':'fa-bell');
+            m.textContent = FOLLOWING ? "You'll get alerts for new roles & cohorts." : '';
+          }
+        }).catch(function(){});
+    }
+  </script>
+</body>
+</html>

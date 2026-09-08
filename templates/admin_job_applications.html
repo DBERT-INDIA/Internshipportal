@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "DBERT Admin &mdash; Job Applications" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-admin-job-applications has-staff-sidebar">
+  {% set active_page = 'admin_main' %}
+  {% include "_staff_sidebar.html" %}
+  <main class="content-container">
+    <h1 class="page-title">Job Applications Management</h1>
+    <p class="page-sub">Review company post applications and track certification gates.</p>
+
+    <div class="stats-row">
+      {% for st, count in status_counts.items() %}
+      <div class="stat-card">
+        <div class="stat-val">{{ count }}</div>
+        <div class="stat-lbl">{{ st }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Applicant Name</th>
+            <th>Email</th>
+            <th>Domain</th>
+            <th>Status</th>
+            <th>Applied At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+          <tr>
+            <td>#{{ app.id }}</td>
+            <td><strong>{{ app.name or 'N/A' }}</strong></td>
+            <td>{{ app.email }}</td>
+            <td>{{ app.domain or 'General' }}</td>
+            <td><span class="badge badge-{{ app.badge_class }}">{{ app.status }}</span></td>
+            <td>{{ app.created_at or 'N/A' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center; padding:32px; color:#A1A1AA;">No job applications found in queue.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% set page_title_full = "Gemini API Key Settings — DBERT Platform" %}
+{% include "_head.html" %}
+</head>
+<body class="pg-account-gemini-key has-sidebar">
+{% set active_page = 'gemini_key' %}
+{% include '_intern_sidebar.html' %}
+
+
+    <div class="settings-container">
+        <div class="header-box">
+            <h1>Gemini API Key Configuration</h1>
+            <p style="color: var(--tx-muted); margin: 0;">Connect your free Google AI Studio key to unlock unlimited AI tutor sessions across all courses.</p>
+        </div>
+
+        {% if not has_key %}
+            {% if fallback_used >= fallback_limit %}
+            <div class="nudge-banner exhausted">
+                <div>
+                    <strong style="color: #F43F5E;">⚠️ Daily Free Fallback Quota Reached ({{ fallback_used }}/{{ fallback_limit }})</strong>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">Please connect your free Gemini API key below to continue learning without daily caps.</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="nudge-banner">
+                <div>
+                    <strong style="color: var(--tx-head);">⚡ Using Free Platform Fallback Quota ({{ fallback_used }}/{{ fallback_limit }} used today)</strong>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">Connect your own free API key for unlimited zero-cap access.</p>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        <div class="card key-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-family: var(--f-display); color: var(--tx-head);">Your API Key Status</h3>
+                {% if has_key %}
+                    <span class="status-pill active">✓ Active Key Connected</span>
+                {% else %}
+                    <span class="status-pill missing">⚠ No Key Configured</span>
+                {% endif %}
+            </div>
+
+            {% if key_info %}
+            <div style="font-size: 0.875rem; color: var(--tx-muted); margin-bottom: 1.5rem; background: var(--bg-app); padding: 0.85rem; border-radius: var(--r-sm);">
+                <div>Validated At: <strong style="color: var(--tx-head);">{{ key_info.validated_at or 'N/A' }}</strong></div>
+                <div>Connected Models: <strong style="color: var(--tx-head);">Gemini 2.5 Flash / 2.0 Flash</strong></div>
+            </div>
+            {% endif %}
+
+            <form id="keyForm" data-act-submit="saveKey" data-arg-submit='["$event"]'>
+                <div class="form-group">
+                    <label for="apiKey">Enter Google Gemini API Key</label>
+                    <input type="password" id="apiKey" name="api_key" placeholder="AIzaSy..." required>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--gold); text-decoration: none; font-size: 0.875rem;">
+                        🔑 Get Free Key from Google AI Studio ↗
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Validate & Save Key →
+                    </button>
+                </div>
+            </form>
+            <div id="formMsg" style="margin-top: 1rem; font-size: 0.9rem; display: none;"></div>
+        </div>
+
+        <div class="guide-box">
+            <h4 style="margin: 0 0 0.5rem 0; color: var(--tx-head); font-family: var(--f-display);">How to get your free key (30 seconds):</h4>
+            <ol style="margin: 0; padding-left: 1.25rem;">
+                <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--gold);">aistudio.google.com/app/apikey</a> and log in with Google.</li>
+                <li>Click <strong>"Create API Key"</strong>.</li>
+                <li>Copy the key starting with <code>AIzaSy...</code> and paste it above.</li>
+            </ol>
+        </div>
+    </div>
+
+    <script nonce="{{ csp_nonce() }}">
+        function saveKey(e) {
+            e.preventDefault();
+            const input = document.getElementById('apiKey');
+            const msg = document.getElementById('formMsg');
+            const key = input.value.trim();
+
+            if (!key) return;
+
+            msg.style.display = 'block';
+            msg.style.color = 'var(--tx-muted)';
+            msg.textContent = 'Verifying key live with Google API...';
+
+            fetch('/account/gemini-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: key })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    msg.style.color = '#10B981';
+                    msg.textContent = data.message;
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    msg.style.color = '#F43F5E';
+                    msg.textContent = data.message || 'Validation failed.';
+                }
+            })
+            .catch(() => {
+                msg.style.color = '#F43F5E';
+                msg.textContent = 'Server error during key validation.';
+            });
+        }
+    </script>
+</body>
+</html>
