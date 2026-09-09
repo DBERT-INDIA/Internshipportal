@@ -2475,10 +2475,10 @@ def assign_mentor_email(domain):
         rows = conn.execute("""
             SELECT m.email,
                    (SELECT COUNT(*) FROM applications a WHERE a.mentor_email=m.email
-                    AND a.status IN (?,?,?,?,?,?,?)) AS cnt
+                    AND a.status IN (?,?,?,?,?,?,?,?)) AS cnt
             FROM mentors m WHERE m.domain=? AND m.is_active=1 ORDER BY cnt ASC, m.id ASC
         """, (STATUS_APPLY_PENDING, STATUS_UNDER_REVIEW, STATUS_ON_HOLD, STATUS_SELECTED,
-              STATUS_ENROLLMENT_PENDING, STATUS_ENROLLED, STATUS_ACCEPTED, domain)).fetchall()
+              STATUS_ENROLLMENT_PENDING, STATUS_ENROLLED, STATUS_ACCEPTED, STATUS_PAID_ENROLLED, domain)).fetchall()
     return rows[0]["email"] if rows else None
 
 
@@ -10807,8 +10807,8 @@ def enroll():
             if not acct:
                 return jsonify({"status": "error", "message": "Account not found."}), 404
             app_row = conn.execute(
-                "SELECT * FROM applications WHERE email=? AND status IN (?,?,?,?) ORDER BY id DESC LIMIT 1",
-                (email, STATUS_SELECTED, STATUS_ENROLLMENT_PENDING, STATUS_ENROLLED, STATUS_ACCEPTED)
+                "SELECT * FROM applications WHERE email=? AND status IN (?,?,?,?,?) ORDER BY id DESC LIMIT 1",
+                (email, STATUS_SELECTED, STATUS_ENROLLMENT_PENDING, STATUS_ENROLLED, STATUS_ACCEPTED, STATUS_PAID_ENROLLED)
             ).fetchone()
             if not app_row:
                 return jsonify({"status": "error", "message": "Not eligible for enrollment yet."}), 400
@@ -13074,11 +13074,14 @@ def forbidden(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    # Details go to the server log ONLY â€” never to the user (spec Â§5.8).
+    # Details go to the server log ONLY - never to the user (spec A 5.8).
     try:
         log_error("500", e)
     except Exception:
         pass
+    wants_json = request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.path.startswith(("/intern/", "/admin/", "/company/", "/mentor/"))
+    if wants_json:
+        return jsonify({"status": "error", "message": "Internal Server Error"}), 500
     return _render_error(
         500, "Something went wrong on our end",
         "We've logged the problem and will look into it. Please try again in a moment.",
