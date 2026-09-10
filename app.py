@@ -54,7 +54,11 @@ app.config["MAX_CONTENT_LENGTH"] = 6 * 1024 * 1024
 app.config["SESSION_COOKIE_NAME"] = "dbert_flask"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "0") == "1"
+
+# SEC-009: Default COOKIE_SECURE to True in production
+is_prod = os.environ.get("FLASK_DEBUG", "false").lower() != "true"
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "1" if is_prod else "0") == "1"
+
 app.config["SESSION_COOKIE_SECURE"] = COOKIE_SECURE
 # Phase 8.0: trust exactly ONE proxy hop (Nginx). Safe only because Nginx overwrites
 # X-Forwarded-For / X-Real-IP with the true client IP (see SECURITY_DEPLOY.md).
@@ -561,7 +565,8 @@ def rate_check(bucket, limit, window_seconds):
         return (True, 0)
     except Exception as e:
         log_error("rate_check", e)
-        return (True, 0)
+        # SEC-010: Fail closed to prevent abuse during DB issues
+        return (False, 60)
 
 
 def too_many(retry_after):
@@ -2439,12 +2444,9 @@ def require_role(role):
 
 
 def is_admin_request():
-    """Legacy key-based check â€” kept only for CSV download routes."""
-    key = request.args.get("key", "").strip() or request.headers.get("X-Admin-Key", "").strip()
-    # Also accept admin session
+    """Legacy key-based check removed for security (SEC-004). Uses session now."""
     user = get_current_user()
-    if user and user.get("role") == "admin": return True
-    return key == ADMIN_KEY
+    return bool(user and user.get("role") == "admin")
 
 
 def require_admin():
@@ -6333,7 +6335,10 @@ RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY", "")
 
 def verify_recaptcha(response_token: str, min_score: float = 0.5) -> bool:
     if not RECAPTCHA_SECRET_KEY:
-        return True
+        import os
+        if os.environ.get("FLASK_DEBUG", "false").lower() == "true":
+            return True
+        return False # Fail closed in prod if key is missing!
     if not response_token:
         return False
     try:
@@ -6348,7 +6353,10 @@ def verify_recaptcha(response_token: str, min_score: float = 0.5) -> bool:
         return False
     except Exception as e:
         log_error("recaptcha_verify", e)
-        return True
+        import os
+        if os.environ.get("FLASK_DEBUG", "false").lower() == "true":
+            return True # Fail open only in development
+        return False # Fail closed in production
 
 
 @app.route("/auth/verify-otp", methods=["POST"])
@@ -10833,8 +10841,10 @@ def enroll():
                       joining_date, batch_label, filename, "Pending Verification", now_str(), now_str()))
 
             old_status = app_row["status"]
+            # SEC-007: Do not advance to STATUS_ENROLLED until payment is verified by admin.
+            # Keep as STATUS_ENROLLMENT_PENDING (or current status if already PA).
             conn.execute("UPDATE applications SET status=?,updated_at=? WHERE id=?",
-                         (STATUS_ENROLLED, now_str(), app_row["id"]))
+                         (STATUS_ENROLLMENT_PENDING, now_str(), app_row["id"]))
             conn.commit()
 
         send_enrollment_confirmation_email(acct["name"], email, app_row["domain"], joining_date)
@@ -11268,8 +11278,17 @@ def track_visit():
 @app.route("/status")
 def check_status():
     try:
+        user = get_current_user()
+        if not user or user.get("role") != "intern":
+            return jsonify({"status": "error", "message": "Authentication required."}), 401
+            
         email = request.args.get("email", "").strip().lower()
         if not email or not is_valid_email(email):
+            email = user.get("email", "")
+            
+        if email != user.get("email"):
+            return jsonify({"status": "error", "message": "You can only check your own status."}), 403
+            
             return jsonify({"status": "error", "message": "Valid email required."}), 400
         with get_db() as conn:
             conn.execute("INSERT INTO check_log (timestamp,email,check_count,ip) VALUES (?,?,?,?)",
@@ -12267,14 +12286,25 @@ def admin_reset_intern_password():
         email = clean_text(data.get("email")).lower()
         if not email:
             return jsonify({"status": "error", "message": "Email required."}), 400
-        new_pw = generate_password(10)
         with get_db() as conn:
-            if not conn.execute("SELECT id FROM intern_accounts WHERE email=? AND is_active=1", (email,)).fetchone():
+            acct = conn.execute("SELECT * FROM intern_accounts WHERE email=? AND is_active=1", (email,)).fetchone()
+            if not acct:
                 return jsonify({"status": "error", "message": "Intern not found."}), 404
-            conn.execute("UPDATE intern_accounts SET password_hash=?,password_set=1,updated_at=? WHERE email=?",
-                         (set_password_hash(new_pw), now_str(), email))
+            
+            # SEC-005 fix: Do not return password. Send reset link instead.
+            conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email,))
+            token = secrets.token_urlsafe(32)
+            expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+            conn.execute(
+                "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
+                (email, token, expires_at)
+            )
             conn.commit()
-        return jsonify({"status": "success", "message": "Password reset.", "new_password": new_pw})
+            
+            reset_url = f"{SITE_ORIGIN}/reset?token={token}"
+            send_password_reset_email(acct["name"], email, reset_url)
+            
+        return jsonify({"status": "success", "message": "Password reset email sent to the intern."})
     except Exception as e:
         log_error("admin-reset-password", e)
         return jsonify({"status": "error", "message": "Error"}), 500
@@ -12792,52 +12822,7 @@ def check_email():
 
 @app.route("/set-password", methods=["POST"])
 def set_password():
-    """
-    Allows legacy interns (password_set=0) to set their password for the first time.
-    Auto-logs them in on success.
-    """
-    try:
-        data = request.get_json(force=True)
-        email    = clean_text(data.get("email")).lower()
-        password = clean_text(data.get("password"))
-        confirm  = clean_text(data.get("confirm_password"))
-        if not email or not password:
-            return jsonify({"status": "error", "message": "Email and password required."}), 400
-        ip = get_client_ip()
-        allowed, ra = rate_check(f"setpw:ip:{ip}", *RL_SETPW_IP)
-        if not allowed:
-            log_abuse(ip, "/set-password", f"setpw:ip:{ip}", "rate_limit", email)
-            return too_many(ra)
-        if len(password) < 8:
-            return jsonify({"status": "error", "message": "Password must be at least 8 characters."}), 400
-        if confirm and password != confirm:
-            return jsonify({"status": "error", "message": "Passwords do not match."}), 400
-        with get_db() as conn:
-            acct = conn.execute(
-                "SELECT * FROM intern_accounts WHERE email=? AND is_active=1", (email,)
-            ).fetchone()
-            if not acct:
-                return jsonify({"status": "error", "message": "Account not found."}), 404
-            if int(acct["password_set"] or 0) == 1:
-                return jsonify({"status": "error", "message": "Password already set. Please log in normally."}), 400
-            conn.execute(
-                "UPDATE intern_accounts SET password_hash=?, password_set=1, updated_at=? WHERE email=?",
-                (set_password_hash(password), now_str(), email)
-            )
-            conn.commit()
-        token = create_session(email, "intern")
-        link_device_to_email(data.get("visitor_id"), email)
-        resp = make_response(jsonify({
-            "status": "success",
-            "message": "Password set successfully.",
-            "redirect": "/profile"
-        }))
-        _set_session_cookie(resp, token)
-        return resp
-    except Exception as e:
-        log_error("set-password", e)
-        return jsonify({"status": "error", "message": "Error"}), 500
-
+    return jsonify({"status": "error", "message": "This endpoint is disabled. Please use /forgot-password."}), 410
 
 @app.route("/forgot-password", methods=["POST"])
 def forgot_password():
@@ -12869,7 +12854,7 @@ def forgot_password():
             acct = conn.execute(
                 "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
             ).fetchone()
-            if acct and int(acct["password_set"] or 0) == 1:
+            if acct:
                 # Invalidate older unused tokens for this email so the inbox can't be
                 # flooded with multiple live reset links.
                 conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email,))
@@ -12882,7 +12867,7 @@ def forgot_password():
                 conn.commit()
                 reset_url = f"{SITE_ORIGIN}/reset?token={token}"
                 send_password_reset_email(acct["name"], email, reset_url)
-            elif not acct or int(acct["password_set"] or 0) != 1:
+            elif not acct:
                 comp = conn.execute(
                     "SELECT * FROM companies WHERE email=? AND is_active=1 LIMIT 1", (email,)
                 ).fetchone()

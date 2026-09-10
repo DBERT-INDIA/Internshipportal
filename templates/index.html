@@ -559,11 +559,8 @@
       _siEmail=email;
       if(data.result==='no_account'){showAuthError('signinError','No account found. Please Sign Up & Apply.');setLoading('siEmailBtn',false);}
       else if(data.result==='no_password'){
-        document.getElementById('siEmailDisplayPw').textContent=email;
-        document.getElementById('siStepEmail').style.display='none';
-        document.getElementById('siStepSetPw').style.display='block';
-        setLoading('siEmailBtn',false);
-        setTimeout(()=>document.getElementById('si_newpw').focus(),100);
+        showAuthError('signinError', 'Account requires migration. Please click "Forgot Password" to set a secure password.');
+        setLoading('siEmailBtn', false);
       } else {
         document.getElementById('siEmailDisplay').textContent=email;
         document.getElementById('siStepEmail').style.display='none';
