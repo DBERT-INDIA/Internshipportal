@@ -2404,6 +2404,11 @@ def _enforce_csrf():
     if request.endpoint in CSRF_EXEMPT_ENDPOINTS:
         return None
 
+    # P0-7: Server-to-server CSRF exemption with strong auth
+    cron_key = request.headers.get("X-Cron-Key") or request.args.get("key", "")
+    if request.path.startswith("/cron/") and CRON_SECRET and cron_key == CRON_SECRET:
+        return None
+
     expected = session.get("_csrf")
     supplied = request.headers.get(CSRF_HEADER) or request.form.get(CSRF_FIELD)
     if not supplied and request.is_json:
@@ -3985,11 +3990,7 @@ def mint_mobile_access_token(acct, joining_date_str):
         "intern_id":   str(acct["id"]),
         "name":        acct.get("name", ""),
         "email":       acct.get("email", ""),
-        "phone":       acct.get("phone", ""),
-        "city":        acct.get("city", ""),
-        "college":     acct.get("college", ""),
-        "course":      acct.get("course", ""),
-        "semester":    acct.get("semester", ""),
+        # P1-6: Removed phone, city, college, course, semester for PII reduction
         "domain":      tutor_domain_slug(acct.get("domain", "")),
         "batch_start": joining_date_str or "",
         "batch_end":   "",
@@ -6310,25 +6311,40 @@ def auth_send_otp():
     if not email or "@" not in email:
         return jsonify({"status": "error", "message": "A valid email address is required."}), 400
 
+    ip = get_client_ip()
+    allowed, ra = rate_check(f"sendotp:ip:{ip}", 5, 3600)
+    if not allowed:
+        return too_many(ra)
+    allowed_email, ra_email = rate_check(f"sendotp:email:{email}", 3, 3600)
+    if not allowed_email:
+        return too_many(ra_email)
+
     otp = "".join([str(secrets.randbelow(10)) for _ in range(6)])
     expires_dt = datetime.now() + timedelta(minutes=10)
     expires_str = expires_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    otp_hash = set_password_hash(otp)
 
     with get_db() as conn:
         conn.execute("UPDATE signup_otps SET is_used = 1 WHERE email = ?", (email,))
         conn.execute(
             "INSERT INTO signup_otps (email, otp, expires_at, is_used) VALUES (?, ?, ?, 0)",
-            (email, otp, expires_str)
+            (email, otp_hash, expires_str)
         )
         conn.commit()
 
-    log_info("send_otp", f"OTP generated for {email}: {otp}")
+    log_info("send_otp", f"OTP generated and hashed for {email}")
+    send_email_async(email, "Your Verification Code", f"<p>Your OTP is <b>{otp}</b>. Valid for 10 minutes.</p>")
 
-    return jsonify({
+    resp = {
         "status": "success",
-        "message": f"Verification code sent to {email}. Valid for 10 minutes.",
-        "dev_otp_hint": otp
-    })
+        "message": f"Verification code sent to {email}. Valid for 10 minutes."
+    }
+    import os
+    if os.environ.get("FLASK_DEBUG", "false").lower() == "true":
+        resp["dev_otp_hint"] = otp
+        
+    return jsonify(resp)
 
 
 RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY", "")
@@ -7328,14 +7344,9 @@ def intern_login():
             user = conn.execute(
                 "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
             ).fetchone()
-        if not user:
+        if not user or int(user["password_set"] or 0) != 1 or not verify_password(user["password_hash"], password):
             record_login_fail(email)
-            return jsonify({"status": "error", "message": "Invalid credentials."}), 401
-        if int(user["password_set"] or 0) != 1:
-            return jsonify({"status": "error", "message": "Please set your password first."}), 400
-        if not verify_password(user["password_hash"], password):
-            record_login_fail(email)
-            return jsonify({"status": "error", "message": "Invalid credentials."}), 401
+            return jsonify({"status": "error", "message": "Invalid credentials. (If you have a legacy account without a password, use Forgot Password)"}), 401
         if is_legacy_hash(user["password_hash"]):
             migrate_password_hash("intern_accounts", email, password)  # P17.0 lazy upgrade
         clear_login_fails(email)
@@ -12292,12 +12303,14 @@ def admin_reset_intern_password():
                 return jsonify({"status": "error", "message": "Intern not found."}), 404
             
             # SEC-005 fix: Do not return password. Send reset link instead.
-            conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email,))
+            email_role = email + "|intern"
+            conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
             token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
             expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
             conn.execute(
                 "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                (email, token, expires_at)
+                (email_role, token_hash, expires_at)
             )
             conn.commit()
             
@@ -12608,9 +12621,9 @@ def admin_csv_applications():
             """).fetchall()
         out = io.StringIO()
         w   = csv.writer(out)
-        w.writerow(["ID","Name","Email","Phone","City","College","Course","Semester",
+        w.writerow([sanitize_csv_value(x) for x in ["ID","Name","Email","Phone","City","College","Course","Semester",
                     "Year of Passing","Domain","Why Join","Portfolio","Status","Mentor Email",
-                    "Mentor Note","Source","Rejected At","Created At","Joining Date"])
+                    "Mentor Note","Source","Rejected At","Created At","Joining Date"]])
         for r in rows:
             w.writerow([r["id"],r["name"],r["email"],r["phone"],r["city"] or "",r["college"],
                         r["course"] or "",r["semester"],r["year_of_passing"] or "",r["domain"],
@@ -12632,9 +12645,9 @@ def admin_csv_enrollments():
             rows = conn.execute("SELECT * FROM enrollments ORDER BY created_at DESC").fetchall()
         out = io.StringIO()
         w   = csv.writer(out)
-        w.writerow(["ID","Name","Email","Phone","City","College","Course","Semester",
+        w.writerow([sanitize_csv_value(x) for x in ["ID","Name","Email","Phone","City","College","Course","Semester",
                     "Year of Passing","Domain","Joining Date","Batch Label","Payment Screenshot",
-                    "Payment Status","Product","Amount","Admin Note","Created At"])
+                    "Payment Status","Product","Amount","Admin Note","Created At"]])
         for r in rows:
             w.writerow([r["id"],r["name"],r["email"],r["phone"] or "",r["city"] or "",
                         r["college"] or "",r["course"] or "",r["semester"] or "",
@@ -12675,8 +12688,8 @@ def admin_csv_incomplete_signups():
             return "Stage 3 - signed up, never applied to anything"
         out = io.StringIO()
         w   = csv.writer(out)
-        w.writerow(["ID","Name","Email","Phone","Status","Domain","City","College",
-                    "Course","Signup Date"])
+        w.writerow([sanitize_csv_value(x) for x in ["ID","Name","Email","Phone","Status","Domain","City","College",
+                    "Course","Signup Date"]])
         for r in rows:
             w.writerow([r["id"],r["name"],r["email"],r["phone"] or "",
                         _status_label(r["signup_stage"], r["app_count"], r["post_app_count"]),
@@ -12702,8 +12715,8 @@ def admin_csv_attendance():
             """).fetchall()
         out = io.StringIO()
         w   = csv.writer(out)
-        w.writerow(["ID","Intern ID","Name","Email","Domain","Week Start","Week End",
-                    "Total Minutes","Hours","Updated At"])
+        w.writerow([sanitize_csv_value(x) for x in ["ID","Intern ID","Name","Email","Domain","Week Start","Week End",
+                    "Total Minutes","Hours","Updated At"]])
         for r in rows:
             w.writerow([r["id"],r["intern_id"],r["name"] or "",r["email"] or "",r["domain"] or "",
                         r["week_start"] or "",r["week_end"] or "",r["total_minutes"],
@@ -12723,9 +12736,9 @@ def admin_csv_devices():
             rows = conn.execute("SELECT * FROM device_profiles ORDER BY last_seen DESC").fetchall()
         out = io.StringIO()
         w   = csv.writer(out)
-        w.writerow(["ID","Visitor ID","Email","IP Address","User Agent","Screen Res","Timezone",
+        w.writerow([sanitize_csv_value(x) for x in ["ID","Visitor ID","Email","IP Address","User Agent","Screen Res","Timezone",
                     "Language","Device Type","Referrer","Is Return Visit","Visit Count",
-                    "Time On Page","Intent Score","Path","Last Seen","Created At"])
+                    "Time On Page","Intent Score","Path","Last Seen","Created At"]])
         for r in rows:
             w.writerow([r["id"],r["visitor_id"] or "",r["email"] or "",r["ip_address"] or "",
                         r["user_agent"] or "",r["screen_res"] or "",r["timezone"] or "",
@@ -12755,8 +12768,8 @@ def admin_csv_interviews():
             """).fetchall()
         out = io.StringIO()
         w   = csv.writer(out)
-        w.writerow(["Email","Name","Domain","Attempt","Status","Started At","Completed At",
-                    "Q No","Section","Question","Answer"])
+        w.writerow([sanitize_csv_value(x) for x in ["Email","Name","Domain","Attempt","Status","Started At","Completed At",
+                    "Q No","Section","Question","Answer"]])
         for r in rows:
             qs  = _safe_json_load(r["questions_json"], []) or []
             ans = _safe_json_load(r["answers_json"], {}) or {}
@@ -12810,10 +12823,7 @@ def check_email():
                 "SELECT password_set, password_hash FROM intern_accounts WHERE email=? AND is_active=1",
                 (email,)
             ).fetchone()
-        if not acct:
-            return jsonify({"status": "success", "result": "no_account"})
-        if not acct["password_hash"] or int(acct["password_set"] or 0) == 0:
-            return jsonify({"status": "success", "result": "no_password"})
+        # P1-3: Stop check-email enumeration. Always proceed to password step.
         return jsonify({"status": "success", "result": "has_password"})
     except Exception as e:
         log_error("check-email", e)
@@ -12855,14 +12865,14 @@ def forgot_password():
                 "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
             ).fetchone()
             if acct:
-                # Invalidate older unused tokens for this email so the inbox can't be
-                # flooded with multiple live reset links.
-                conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email,))
+                email_role = email + "|intern"
+                conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
                 token = secrets.token_urlsafe(32)
+                token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
                 expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
                 conn.execute(
                     "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                    (email, token, expires_at)
+                    (email_role, token_hash, expires_at)
                 )
                 conn.commit()
                 reset_url = f"{SITE_ORIGIN}/reset?token={token}"
@@ -12872,12 +12882,14 @@ def forgot_password():
                     "SELECT * FROM companies WHERE email=? AND is_active=1 LIMIT 1", (email,)
                 ).fetchone()
                 if comp and comp["password_hash"]:
-                    conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email,))
+                    email_role = email + "|company"
+                    conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
                     token = secrets.token_urlsafe(32)
+                    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
                     expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
                     conn.execute(
                         "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                        (email, token, expires_at)
+                        (email_role, token_hash, expires_at)
                     )
                     conn.commit()
                     reset_url = f"{SITE_ORIGIN}/reset?token={token}"
