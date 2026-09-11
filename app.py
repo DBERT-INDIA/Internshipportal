@@ -1,4 +1,4 @@
-﻿# Canonical app â€” promoted from templates/app.py on 2026-06-04
+# Canonical app â€” promoted from templates/app.py on 2026-06-04
 from flask import Flask, render_template, request, jsonify, send_from_directory, Response, make_response, redirect, session, abort, g, has_request_context, flash
 from urllib.parse import quote
 from markupsafe import Markup, escape
@@ -176,6 +176,11 @@ def csp_policy_for(nonce):
 CSP_POLICY = csp_policy_for("")
 CSP_REPORT_ONLY = CSP_POLICY  # kept: referenced elsewhere / by ops tooling
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+# P2-6: Production configuration validation
+if not _is_debug:
+    if len(app.config.get("SECRET_KEY", "")) < 32:
+        print("[WARNING] FLASK_SECRET_KEY is shorter than 32 chars.")
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
@@ -437,6 +442,23 @@ def row_to_dict(row):
 
 
 def log_error(context, e): print(f"[{context}] Error: {e}")
+def log_security_event(event, details=None, severity="INFO"):
+    """P2-4: Structured security event logging for monitoring/SIEM."""
+    from flask import g
+    import json as _json
+    entry = {
+        "ts": now_str(),
+        "event": event,
+        "severity": severity,
+        "ip": get_client_ip() if has_request_context() else "",
+        "path": request.path if has_request_context() else "",
+        "req_id": getattr(g, "request_id", "") if has_request_context() else "",
+    }
+    if details:
+        entry["details"] = details
+    print(f"[SECURITY] {_json.dumps(entry)}")
+
+
 def log_info(context, msg): print(f"[{context}] {msg}")
 def now_str(): return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 def hash_password(p): return hashlib.sha256((p or "").encode()).hexdigest()
@@ -2469,12 +2491,71 @@ def require_admin():
 
 
 def calculate_intent_score(data):
-    score = min(35, int(data.get("visit_count", 1) or 1) * 7)
+    """P2-1: Clamp client-controlled analytics fields to safe bounds."""
+    try:
+        vc = max(0, min(10000, int(data.get("visit_count", 1) or 1)))
+    except (ValueError, TypeError):
+        vc = 1
+    try:
+        top = max(0, min(86400, int(data.get("time_on_page", 0) or 0)))
+    except (ValueError, TypeError):
+        top = 0
+    score = min(35, vc * 7)
     score += 15 if data.get("return_visit") else 0
-    score += min(30, int(data.get("time_on_page", 0) or 0) // 20)
-    score += 5 if clean_text(data.get("referrer")) else 0
-    score += 10 if (data.get("device_type") or "").lower() == "desktop" else 0
+    score += min(30, top // 20)
+    score += 5 if clean_text(str(data.get("referrer") or "")[:500]) else 0
+    score += 10 if str(data.get("device_type") or "")[:20].lower() == "desktop" else 0
     return min(100, score)
+
+
+# -- P1-1: Centralised application state-transition helper --
+VALID_APP_TRANSITIONS = {
+    "Apply Pending":       {"Under Review", "Rejected"},
+    "Under Review":        {"On Hold", "Selected", "Rejected"},
+    "On Hold":             {"Under Review", "Selected", "Rejected"},
+    "Selected":            {"Enrollment Pending", "Rejected"},
+    "Enrollment Pending":  {"Enrolled", "Selected", "Rejected"},
+    "Enrolled":            {"Accepted", "Enrollment Pending", "Rejected"},
+    "Accepted":            {"Enrolled", "Rejected"},
+    "Paid - Enrolled":     {"Accepted", "Rejected"},
+}
+
+def transition_application_status(conn, app_id, new_status, actor="system"):
+    """Enforce valid state transitions. Returns (ok, old_status).
+    Rejects illegal jumps and logs every transition for auditability."""
+    row = conn.execute("SELECT status FROM applications WHERE id=?", (app_id,)).fetchone()
+    if not row:
+        return False, None
+    old = row["status"]
+    allowed = VALID_APP_TRANSITIONS.get(old, set())
+    if new_status not in allowed and old != new_status:
+        log_info("state_transition_denied",
+                 f"app={app_id} {old!r}->{new_status!r} by {actor}")
+        return False, old
+    conn.execute("UPDATE applications SET status=?,updated_at=? WHERE id=?",
+                 (new_status, now_str(), app_id))
+    log_info("state_transition",
+             f"app={app_id} {old!r}->{new_status!r} by {actor}")
+    return True, old
+
+
+# -- P1-2: Centralised payment / entitlement helper --
+def can_access_program(email, feature="tutor"):
+    """Single source of truth: does this intern have verified-payment access?
+    Checks enrollment.payment_status AND application.status == Accepted."""
+    with get_db() as conn:
+        enr = conn.execute(
+            "SELECT payment_status FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1",
+            (email,)
+        ).fetchone()
+        app_row = conn.execute(
+            "SELECT status FROM applications WHERE email=? ORDER BY id DESC LIMIT 1",
+            (email,)
+        ).fetchone()
+    if not enr or not app_row:
+        return False
+    return (enr["payment_status"] in ("Accepted", "Verified")
+            and app_row["status"] in ("Accepted",))
 
 
 def assign_mentor_email(domain):
@@ -11239,7 +11320,7 @@ def link_device_to_email(visitor_id, email):
 def track_visit():
     try:
         data = request.get_json(force=True)
-        visitor_id   = clean_text(data.get("visitor_id")) or secrets.token_hex(8)
+        visitor_id   = clean_text(str(data.get("visitor_id") or "")[:64]) or secrets.token_hex(8)
         intent_score = calculate_intent_score(data)
         with get_db() as conn:
             conn.execute("""
@@ -11273,8 +11354,8 @@ def track_visit():
                 clean_text(data.get("device_type")),
                 clean_text(data.get("referrer")),
                 1 if data.get("return_visit") else 0,
-                int(data.get("visit_count", 1) or 1),
-                int(data.get("time_on_page", 0) or 0),
+                max(0, min(10000, int(data.get("visit_count", 1) or 1))),
+                max(0, min(86400, int(data.get("time_on_page", 0) or 0))),
                 intent_score,
                 clean_text(data.get("path")) or "/",
                 now_str(), now_str(),
@@ -12258,9 +12339,13 @@ def admin_users_bulk_delete():
     try:
         if not require_admin():
             return jsonify({"status": "error", "message": "Unauthorized"}), 401
-        ids = _parse_int_ids(request.get_json(force=True))
+        data = request.get_json(force=True)
+        ids = _parse_int_ids(data)
+        reason = str(data.get("reason") or "admin action")[:500]
         if not ids:
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
+        admin_user = require_admin()
+        actor = admin_user.get("email", "unknown") if isinstance(admin_user, dict) else "admin"
         with get_db() as conn:
             rows = conn.execute(
                 f"SELECT DISTINCT email FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids
@@ -12268,21 +12353,21 @@ def admin_users_bulk_delete():
             emails = [r["email"] for r in rows if r["email"]]
             deleted = 0
             for email in emails:
-                intern_ids = [r["id"] for r in conn.execute(
-                    "SELECT id FROM intern_accounts WHERE LOWER(email)=LOWER(?)", (email,)
-                ).fetchall()]
-                if intern_ids:
-                    conn.execute(
-                        f"DELETE FROM attendance WHERE intern_id IN ({_placeholders(len(intern_ids))})",
-                        intern_ids
-                    )
-                conn.execute("DELETE FROM applications   WHERE LOWER(email)=LOWER(?)", (email,))
-                conn.execute("DELETE FROM intern_accounts WHERE LOWER(email)=LOWER(?)", (email,))
-                conn.execute("DELETE FROM enrollments     WHERE LOWER(email)=LOWER(?)", (email,))
-                conn.execute("DELETE FROM device_profiles WHERE LOWER(email)=LOWER(?)", (email,))
+                # P2-3: Soft-delete: deactivate instead of hard delete
+                conn.execute(
+                    "UPDATE intern_accounts SET is_active=0, updated_at=? WHERE LOWER(email)=LOWER(?)",
+                    (now_str(), email))
+                conn.execute(
+                    "UPDATE applications SET status='Deactivated', updated_at=? WHERE LOWER(email)=LOWER(?)",
+                    (now_str(), email))
+                # Revoke sessions
+                conn.execute("DELETE FROM user_sessions WHERE LOWER(email)=LOWER(?)", (email,))
                 deleted += 1
+                # Audit log
+                log_audit_event("USER_DEACTIVATE", f"intern:{email}", 1)
             conn.commit()
-        return jsonify({"status": "success", "deleted": deleted})
+        return jsonify({"status": "success", "deactivated": deleted,
+                        "message": f"{deleted} account(s) deactivated. Data retained for recovery window."})
     except Exception as e:
         log_error("admin-users-bulk-delete", e)
         return jsonify({"status": "error", "message": "Error"}), 500
@@ -13001,10 +13086,10 @@ def health():
             conn.execute("SELECT 1").fetchone()
         if random.random() < 0.05:
             cleanup_expired_sessions()
-        return jsonify({"status": "ok", "db": "ok"})
+        return jsonify({"status": "ok"})
     except Exception as e:
         log_error("health", e)
-        return jsonify({"status": "error", "db": "down"}), 503
+        return jsonify({"status": "degraded"}), 503
 
 
 @app.route("/internship")

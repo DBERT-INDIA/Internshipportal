@@ -8,3 +8,13 @@ env/
 .vscode/
 uploads/
 scratch/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.db
+
+# Temporary scripts
+fix_*.py
+patch_*.py
