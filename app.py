@@ -988,7 +988,7 @@ def init_db():
                 UNIQUE(email, domain)
             );
             CREATE TABLE IF NOT EXISTS intern_accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, application_id INTEGER,
+                id INTEGER PRIMARY KEY AUTOINCREMENT, application_id INTEGER, intern_id INTEGER,
                 name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT,
                 city TEXT, college TEXT, course TEXT, semester TEXT, year_of_passing TEXT,
                 domain TEXT, password_hash TEXT, password_set INTEGER DEFAULT 0,
@@ -998,7 +998,7 @@ def init_db():
                 FOREIGN KEY(application_id) REFERENCES applications(id)
             );
             CREATE TABLE IF NOT EXISTS enrollments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, application_id INTEGER,
+                id INTEGER PRIMARY KEY AUTOINCREMENT, application_id INTEGER, intern_id INTEGER,
                 timestamp TEXT NOT NULL, name TEXT, email TEXT NOT NULL UNIQUE,
                 phone TEXT, city TEXT, college TEXT, course TEXT, semester TEXT,
                 year_of_passing TEXT, domain TEXT,
@@ -1012,13 +1012,13 @@ def init_db():
                 FOREIGN KEY(application_id) REFERENCES applications(id)
             );
             CREATE TABLE IF NOT EXISTS user_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, email TEXT NOT NULL,
                 role TEXT DEFAULT 'intern', session_token TEXT NOT NULL UNIQUE,
                 expires_at TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now','localtime'))
             );
             CREATE TABLE IF NOT EXISTS device_profiles (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_id TEXT, email TEXT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_id TEXT, intern_id INTEGER, email TEXT,
                 ip_address TEXT, user_agent TEXT, screen_res TEXT, timezone TEXT,
                 language TEXT, device_type TEXT, referrer TEXT,
                 is_return_visit INTEGER DEFAULT 0, visit_count INTEGER DEFAULT 1,
@@ -1067,6 +1067,7 @@ def init_db():
             );
             CREATE TABLE IF NOT EXISTS password_resets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                intern_id INTEGER,
                 email TEXT NOT NULL,
                 token TEXT NOT NULL UNIQUE,
                 expires_at TEXT NOT NULL,
@@ -1091,6 +1092,7 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_abuse_time ON abuse_log(id DESC);
             CREATE TABLE IF NOT EXISTS interviews (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                intern_id INTEGER,
                 email TEXT NOT NULL,
                 application_id INTEGER,
                 domain TEXT,
@@ -1672,6 +1674,7 @@ def init_db():
             -- UP9.1: Email verification OTP storage
             CREATE TABLE IF NOT EXISTS signup_otps (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                intern_id INTEGER,
                 email TEXT NOT NULL,
                 otp TEXT NOT NULL,
                 expires_at TEXT NOT NULL,
