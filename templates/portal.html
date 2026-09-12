@@ -662,6 +662,26 @@
      (.step / .step-dot / .step-label / .step-line, lines ~82-92) were both
      already present; only this function was missing.
      Callers hide the bar first, so building it also reveals it. */
+  const ALL_DOMAINS = [
+    "AI Agent Development",
+    "Data Analyst",
+    "Full Stack Development",
+    "Python Automation",
+    "Artificial Intelligence",
+    "Data Analysis",
+    "Web Development"
+  ];
+
+  const DOMAIN_EMOJIS = {
+    "AI Agent Development": "🤖",
+    "Artificial Intelligence": "🤖",
+    "Data Analyst": "📊",
+    "Data Analysis": "📊",
+    "Full Stack Development": "💻",
+    "Python Automation": "🐍",
+    "Web Development": "🌐"
+  };
+
   const STEP_SEQUENCE = ['Applied', 'Under Review', 'Selected', 'Enrolled', 'Accepted'];
 
   function buildStepBar(elId, currentStep){
@@ -1007,10 +1027,23 @@
 
   /* ════ MAIN PORTAL BOOTSTRAP ════ */
   async function loadPortal(){
+    const loadScr = document.getElementById('loadingScreen');
     try{
       const res  = await fetch('/intern/me',{credentials:'include'});
+      if (res.status === 401) {
+        window.location.href = '/#signin';
+        return;
+      }
       const data = await res.json();
-      if(data.status!=='success'){ showToast('Could not load your profile','red'); return; }
+      if(data.status!=='success'){
+        if (data.message === 'Unauthorized') {
+          window.location.href = '/#signin';
+          return;
+        }
+        if(loadScr) loadScr.classList.add('hidden');
+        showToast('Could not load your profile','red');
+        return;
+      }
 
       _intern  = data.intern || {};
       _apps    = data.applications || [];
@@ -1031,14 +1064,24 @@
 
       if(_intern.email){window.OneSignalDeferred=window.OneSignalDeferred||[];OneSignalDeferred.push(async function(OneSignal){try{await OneSignal.login(_intern.email);}catch(e){}});}
 
-      prefillAccountSettings();
-      populateApplyAnother();
+      try{ prefillAccountSettings(); }catch(err){ console.warn("prefillAccountSettings err:", err); }
+      try{ populateApplyAnother(); }catch(err){ console.warn("populateApplyAnother err:", err); }
 
-      // Determine the canonical status (Accepted on ANY application wins).
-      const acceptedApp=(_apps||[]).find(a=>a.status==='Accepted');
+      // Determine the canonical status (Accepted on ANY application wins, case-insensitive).
+      const acceptedApp=(_apps||[]).find(a=> (a.status||'').toLowerCase()==='accepted');
       const latestApp=_apps[0]||null;
       const latestJobApp=_jobApps[0]||null;
-      _status=acceptedApp?'Accepted':(latestApp?latestApp.status:(latestJobApp?'__JOB_ONLY__':''));
+      let rawStatus = acceptedApp ? 'Accepted' : (latestApp ? latestApp.status : (latestJobApp ? '__JOB_ONLY__' : ''));
+      if(rawStatus && rawStatus.toLowerCase()==='accepted') rawStatus = 'Accepted';
+      else if(rawStatus && rawStatus.toLowerCase()==='rejected') rawStatus = 'Rejected';
+      else if(rawStatus && rawStatus.toLowerCase()==='on hold') rawStatus = 'On Hold';
+      else if(rawStatus && rawStatus.toLowerCase()==='under review') rawStatus = 'Under Review';
+      else if(rawStatus && rawStatus.toLowerCase()==='apply pending') rawStatus = 'Apply Pending';
+      else if(rawStatus && rawStatus.toLowerCase()==='selected') rawStatus = 'Selected';
+      else if(rawStatus && rawStatus.toLowerCase()==='enrollment pending') rawStatus = 'Enrollment Pending';
+      else if(rawStatus && rawStatus.toLowerCase()==='enrolled') rawStatus = 'Enrolled';
+      else if(rawStatus && rawStatus.toLowerCase()==='paid-enrolled') rawStatus = 'Paid-Enrolled';
+      _status = rawStatus;
 
       // Tab visibility
       const navPaid = document.getElementById('navPaid');
@@ -1051,19 +1094,24 @@
       if(navIv) navIv.classList.toggle('hidden',POST_SCREENING.has(_status));
 
       // Reveal portal
-      const loadScr = document.getElementById('loadingScreen');
       if(loadScr) loadScr.classList.add('hidden');
       switchTab('overview');
       const _h=(location.hash||'').replace('#','');
       if(_h && document.getElementById('panel-'+_h)) switchTab(_h);
       refreshNotifDot();
 
-      await loadInterviewStatus();
+      try{ await loadInterviewStatus(); }catch(err){ console.warn("loadInterviewStatus err:", err); }
+      try{ renderOverview(); }catch(err){ console.warn("renderOverview err:", err); }
 
-      renderOverview();
-
-      if(_status==='Accepted'){initAccepted();}
-    }catch(e){showToast('Network error','red');}
+      if(_status==='Accepted'){
+        try{ initAccepted(); }catch(err){ console.warn("initAccepted err:", err); }
+      }
+    }catch(e){
+      console.error("loadPortal failed:", e);
+      if(loadScr) loadScr.classList.add('hidden');
+      switchTab('overview');
+      showToast('Could not load all portal features.','amber');
+    }
   }
 
   async function fetchApplyToken(){
