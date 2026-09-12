@@ -33,8 +33,8 @@ try:
     from dotenv import load_dotenv
     _env_dir = os.path.dirname(__file__)
     # Load legacy/server '_env' first, then '.env' (overrides) so local '.env' wins.
-    load_dotenv(os.path.join(_env_dir, '_env'))
-    load_dotenv(os.path.join(_env_dir, '.env'), override=True)
+    load_dotenv(os.path.join(_env_dir, '_env'), encoding="utf-8-sig")
+    load_dotenv(os.path.join(_env_dir, '.env'), override=True, encoding="utf-8-sig")
 except ImportError:
     pass
 
@@ -57,6 +57,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # SEC-009: Default COOKIE_SECURE to True in production
 is_prod = os.environ.get("FLASK_DEBUG", "false").lower() != "true"
+_is_debug = not is_prod
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "1" if is_prod else "0") == "1"
 
 app.config["SESSION_COOKIE_SECURE"] = COOKIE_SECURE
@@ -2377,6 +2378,10 @@ def _clear_session_cookie(resp):
     """The ONE place auth cookies are cleared. Clears the legacy name too, so a
     user holding a pre-NF1 cookie is genuinely logged out rather than silently
     re-authenticated by the read-fallback in get_session_token_from_request()."""
+    try:
+        session.clear()
+    except Exception:
+        pass
     resp.delete_cookie(AUTH_COOKIE, path="/")
     resp.delete_cookie(LEGACY_AUTH_COOKIE, path="/")
     return resp
@@ -3716,10 +3721,11 @@ def reset_password_page():
 
 @app.route("/portal")
 def portal_page():
-    """Phase 13 â€” unified tabbed portal (merges the old /profile + /dashboard).
-    Intern session; same light client-side auth as profile_page (the client's
-    /intern/me call redirects to sign-in on 401). All status views, account
-    settings, interview, paid program, and learning live here as tabs."""
+    """Phase 13 — unified tabbed portal (merges the old /profile + /dashboard).
+    Intern session required; redirects unauthenticated visitors to /#signin."""
+    user = require_role("intern")
+    if not user:
+        return redirect("/#signin")
     try:
         return render_template("portal.html")
     except Exception as e:
@@ -3865,15 +3871,24 @@ def admin_page():
         return "Server error", 500
 
 
-@app.route("/admin/logout", methods=["POST"])
+@app.route("/admin/logout", methods=["GET", "POST"])
 def admin_logout():
     try:
         invalidate_session(get_session_token_from_request())
-        resp = make_response(jsonify({"status": "success"}))
+        try:
+            session.clear()
+        except Exception:
+            pass
+        if request.method == "GET":
+            resp = make_response(redirect("/admin-login"))
+        else:
+            resp = make_response(jsonify({"status": "success", "redirect": "/admin-login"}))
         _clear_session_cookie(resp)
         return resp
     except Exception as e:
         log_error("admin-logout", e)
+        if request.method == "GET":
+            return redirect("/admin-login")
         return jsonify({"status": "error"}), 500
 
 
@@ -6784,23 +6799,31 @@ def first_run():
 def intern_login():
     try:
         data = request.get_json(force=True)
-        email    = clean_text(data.get("email")).lower()
-        password = clean_text(data.get("password"))
-        if not email or not password:
-            return jsonify({"status": "error", "message": "Email and password required."}), 400
+        input_cred = clean_text(data.get("email")).strip()
+        email      = input_cred.lower()
+        password   = clean_text(data.get("password"))
+        if not input_cred or not password:
+            return jsonify({"status": "error", "message": "Email/Mobile and password required."}), 400
         ip = get_client_ip()
         allowed, ra = rate_check(f"login:intern:ip:{ip}", *RL_LOGIN_IP)
         if not allowed:
             log_abuse(ip, "/intern/login", f"login:intern:ip:{ip}", "rate_limit", email)
             return too_many(ra)
+        with get_db() as conn:
+            if is_valid_phone(input_cred):
+                user = conn.execute(
+                    "SELECT * FROM intern_accounts WHERE phone=? AND is_active=1 LIMIT 1", (input_cred,)
+                ).fetchone()
+                if user:
+                    email = user["email"].lower()
+            else:
+                user = conn.execute(
+                    "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
+                ).fetchone()
         locked, _ = login_locked(email)
         if locked:
             log_abuse(ip, "/intern/login", _login_fail_bucket(email), "login_lockout", email)
             return jsonify({"status": "error", "message": "Invalid credentials."}), 401
-        with get_db() as conn:
-            user = conn.execute(
-                "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
-            ).fetchone()
         if not user or int(user["password_set"] or 0) != 1 or not verify_password(user["password_hash"], password):
             record_login_fail(email)
             return jsonify({"status": "error", "message": "Invalid credentials. (If you have a legacy account without a password, use Forgot Password)"}), 401
@@ -7791,17 +7814,17 @@ def cron_expire_posts():
     return jsonify({"status": "ok", "expired": cur.rowcount})
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# TRACK 2 Â§7 â€” PUBLIC LISTINGS + DETAIL + SEO + SITEMAP + INSTANT INDEXING
+# ═══════════════════════════════════════════════════════════════════════════════
+# TRACK 2 §7 — PUBLIC LISTINGS + DETAIL + SEO + SITEMAP + INSTANT INDEXING
 # Canonical domain for every job/internship URL = internship.dbert.online (SITE_ORIGIN).
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════════════════
 _POSTS_PER_PAGE = 200  # T2: bumped from 20 so client-side filters see the whole
 # live result set (currently 74 published posts total) instead of a partial page;
 # pagination logic stays in place and will kick back in automatically once volume
 # exceeds this.
 _LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime'))"
 
-# T1: homepage's one real metric â€” Î£ openings of all live posts Ã— 0.9. Cached briefly
+# T1: homepage's one real metric — Σ openings of all live posts × 0.9. Cached briefly
 # since the homepage is the highest-traffic page and this is a full-table aggregate.
 _OPENINGS_CACHE = {"at": 0.0, "total": 0}
 _OPENINGS_TTL = 60
@@ -8104,20 +8127,26 @@ def _resolve_city_slug(city_slug):
     return None
 
 
-@app.route("/jobs/<city_slug>")
-def jobs_by_city(city_slug):
-    city = _resolve_city_slug(city_slug)
+@app.route("/jobs/<slug>")
+def jobs_by_city(slug):
+    slug_domains = {s: d for d, s in DOMAIN_SLUGS.items()}
+    if slug in slug_domains:
+        return redirect(f"/jobs?domain={quote(slug_domains[slug])}")
+    city = _resolve_city_slug(slug)
     if not city:
         abort(404)
-    return _render_listings("job", location_page=True, city=city, city_slug=city_slug)
+    return _render_listings("job", location_page=True, city=city, city_slug=slug)
 
 
-@app.route("/internships/<city_slug>")
-def internships_by_city(city_slug):
-    city = _resolve_city_slug(city_slug)
+@app.route("/internships/<slug>")
+def internships_by_city(slug):
+    slug_domains = {s: d for d, s in DOMAIN_SLUGS.items()}
+    if slug in slug_domains:
+        return redirect(f"/internships?domain={quote(slug_domains[slug])}")
+    city = _resolve_city_slug(slug)
     if not city:
         abort(404)
-    return _render_listings("internship", location_page=True, city=city, city_slug=city_slug)
+    return _render_listings("internship", location_page=True, city=city, city_slug=slug)
 
 
 # â”€â”€ public detail (SEO + apply CTA + public comments) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -9223,15 +9252,24 @@ def mentor_login():
         return jsonify({"status": "error", "message": "Error"}), 500
 
 
-@app.route("/logout", methods=["POST"])
+@app.route("/logout", methods=["GET", "POST"])
 def logout():
     try:
         invalidate_session(get_session_token_from_request())
-        resp = make_response(jsonify({"status": "success", "message": "Logged out."}))
+        try:
+            session.clear()
+        except Exception:
+            pass
+        if request.method == "GET":
+            resp = make_response(redirect("/"))
+        else:
+            resp = make_response(jsonify({"status": "success", "message": "Logged out."}))
         _clear_session_cookie(resp)
         return resp
     except Exception as e:
         log_error("logout", e)
+        if request.method == "GET":
+            return redirect("/")
         return jsonify({"status": "error", "message": "Error"}), 500
 
 
@@ -11371,7 +11409,12 @@ def admin_users():
                        ia.tutor_completion_pct, ia.created_at,
                        COALESCE(dp.intent_score, 0) AS intent_score
                 FROM intern_accounts ia
-                LEFT JOIN device_profiles dp ON dp.email = ia.email
+                LEFT JOIN (
+                    SELECT email, MAX(intent_score) AS intent_score
+                    FROM device_profiles
+                    WHERE email IS NOT NULL AND email != ''
+                    GROUP BY email
+                ) dp ON LOWER(dp.email) = LOWER(ia.email)
                 ORDER BY ia.created_at DESC
             """).fetchall()
             apps = conn.execute("SELECT email, domain, status FROM applications").fetchall()
@@ -11669,45 +11712,71 @@ def admin_devices_bulk_delete():
 
 @app.route("/admin/users/bulk-delete", methods=["POST"])
 def admin_users_bulk_delete():
-    """Cascade delete by email. Input = list of intern_accounts IDs (Phase 9: Users-tab
-    rows are now one-per-person account ids, not application ids). Removes every related
-    row across applications, intern_accounts, enrollments, attendance (via intern_id),
-    and device_profiles. Transactional."""
+    """Cascade delete by user accounts. Input = list of intern_accounts IDs.
+    Permanently removes matching intern_accounts and all related records across
+    applications, enrollments, attendance, user_sessions, device_profiles, etc."""
     try:
         if not require_admin():
             return jsonify({"status": "error", "message": "Unauthorized"}), 401
         data = request.get_json(force=True)
         ids = _parse_int_ids(data)
-        reason = str(data.get("reason") or "admin action")[:500]
         if not ids:
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
-        admin_user = require_admin()
-        actor = admin_user.get("email", "unknown") if isinstance(admin_user, dict) else "admin"
+
         with get_db() as conn:
             rows = conn.execute(
-                f"SELECT DISTINCT email FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids  # nosec B608
+                f"SELECT id, email, phone FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids  # nosec B608
             ).fetchall()
-            emails = [r["email"] for r in rows if r["email"]]
+            if not rows:
+                return jsonify({"status": "success", "deleted": 0, "message": "No matching accounts found."})
+
             deleted = 0
-            for email in emails:
-                # P2-3: Soft-delete: deactivate instead of hard delete
-                conn.execute(
-                    "UPDATE intern_accounts SET is_active=0, updated_at=? WHERE LOWER(email)=LOWER(?)",
-                    (now_str(), email))
-                conn.execute(
-                    "UPDATE applications SET status='Deactivated', updated_at=? WHERE LOWER(email)=LOWER(?)",
-                    (now_str(), email))
-                # Revoke sessions
-                conn.execute("DELETE FROM user_sessions WHERE LOWER(email)=LOWER(?)", (email,))
+            for r in rows:
+                acc_id = r["id"]
+                email = (r["email"] or "").strip().lower()
+                phone = (r["phone"] or "").strip()
+
+                # Clean up tables with email column
+                if email:
+                    conn.execute("DELETE FROM applications WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM enrollments WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM user_sessions WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM device_profiles WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM password_resets WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM interviews WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM mobile_refresh_tokens WHERE LOWER(email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM referrals WHERE LOWER(referred_email)=LOWER(?)", (email,))
+                    conn.execute("DELETE FROM signup_otps WHERE LOWER(email)=LOWER(?)", (email,))
+
+                # Clean up tables with intern_id column
+                if acc_id:
+                    conn.execute("DELETE FROM attendance WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM tutor_progress WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM coin_ledger_mirror WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM referrals WHERE referrer_intern_id=? OR referred_intern_id=?", (acc_id, acc_id))
+                    conn.execute("DELETE FROM intern_certificates WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM cvs WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM notifications WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM course_payments WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM course_enrollments WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM project_submissions WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM task_submissions WHERE intern_id=?", (acc_id,))
+                    conn.execute("DELETE FROM mentor_session_bookings WHERE intern_id=?", (acc_id,))
+
+                # Finally delete the intern account itself
+                conn.execute("DELETE FROM intern_accounts WHERE id=?", (acc_id,))
                 deleted += 1
-                # Audit log
-                log_audit_event("USER_DEACTIVATE", f"intern:{email}", 1)
+
             conn.commit()
-        return jsonify({"status": "success", "deactivated": deleted,
-                        "message": f"{deleted} account(s) deactivated. Data retained for recovery window."})
+
+        return jsonify({
+            "status": "success",
+            "deleted": deleted,
+            "message": f"{deleted} user account(s) and all associated records deleted."
+        })
     except Exception as e:
         log_error("admin-users-bulk-delete", e)
-        return jsonify({"status": "error", "message": "Error"}), 500
+        return jsonify({"status": "error", "message": f"Error: {str(e)}"}), 500
 
 
 @app.route("/admin/reset-intern-password", methods=["POST"])
@@ -12232,21 +12301,46 @@ def check_email():
     """
     try:
         data = request.get_json(force=True)
-        email = clean_text(data.get("email")).lower()
-        if not email or not is_valid_email(email):
-            return jsonify({"status": "error", "message": "Valid email required."}), 400
+        raw_val = clean_text(data.get("email")).strip()
+        email   = raw_val.lower()
+        is_phone = is_valid_phone(raw_val)
+        if not is_phone and (not email or not is_valid_email(email)):
+            return jsonify({"status": "error", "message": "Valid email or 10-digit mobile number required."}), 400
         ip = get_client_ip()
         allowed, ra = rate_check(f"checkemail:ip:{ip}", *RL_CHECKEMAIL_IP)
         if not allowed:
             log_abuse(ip, "/check-email", f"checkemail:ip:{ip}", "rate_limit", email)
             return too_many(ra)
         with get_db() as conn:
-            acct = conn.execute(
-                "SELECT password_set, password_hash FROM intern_accounts WHERE email=? AND is_active=1",
-                (email,)
-            ).fetchone()
-        # P1-3: Stop check-email enumeration. Always proceed to password step.
-        return jsonify({"status": "success", "result": "has_password"})
+            if is_phone:
+                acct = conn.execute(
+                    "SELECT email, password_set, password_hash FROM intern_accounts WHERE phone=? AND is_active=1 LIMIT 1",
+                    (raw_val,)
+                ).fetchone()
+                comp = None
+                if acct:
+                    email = acct["email"].lower()
+            else:
+                acct = conn.execute(
+                    "SELECT password_set, password_hash FROM intern_accounts WHERE email=? AND is_active=1",
+                    (email,)
+                ).fetchone()
+                comp = None
+                if not acct:
+                    comp = conn.execute(
+                        "SELECT password_hash FROM companies WHERE email=? AND is_active=1",
+                        (email,)
+                    ).fetchone()
+
+        if not acct and not comp:
+            return jsonify({"status": "success", "result": "no_account"})
+
+        if acct:
+            if not acct["password_set"] or not acct["password_hash"]:
+                return jsonify({"status": "success", "result": "no_password", "email": acct["email"] if is_phone else None})
+            return jsonify({"status": "success", "result": "has_password", "email": acct["email"] if is_phone else None})
+        else:
+            return jsonify({"status": "success", "result": "has_password"})
     except Exception as e:
         log_error("check-email", e)
         return jsonify({"status": "error", "message": "Error"}), 500
@@ -12286,41 +12380,60 @@ def forgot_password():
             acct = conn.execute(
                 "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
             ).fetchone()
+            comp = None
+            if not acct:
+                comp = conn.execute(
+                    "SELECT * FROM companies WHERE email=? AND is_active=1 LIMIT 1", (email,)
+                ).fetchone()
+
+            if not acct and not (comp and comp["password_hash"]):
+                return jsonify({
+                    "status": "error",
+                    "code": "email_not_found",
+                    "message": "No account found with this email in our database. Please check your email or Sign Up."
+                }), 404
+
+            token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+            expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+
             if acct:
                 email_role = email + "|intern"
                 conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
-                token = secrets.token_urlsafe(32)
-                token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-                expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
                 conn.execute(
                     "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
                     (email_role, token_hash, expires_at)
                 )
                 conn.commit()
                 reset_url = f"{SITE_ORIGIN}/reset?token={token}"
-                send_password_reset_email(acct["name"], email, reset_url)
-            elif not acct:
-                comp = conn.execute(
-                    "SELECT * FROM companies WHERE email=? AND is_active=1 LIMIT 1", (email,)
-                ).fetchone()
-                if comp and comp["password_hash"]:
-                    email_role = email + "|company"
-                    conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
-                    token = secrets.token_urlsafe(32)
-                    token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-                    expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-                    conn.execute(
-                        "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                        (email_role, token_hash, expires_at)
-                    )
-                    conn.commit()
-                    reset_url = f"{SITE_ORIGIN}/reset?token={token}"
-                    send_password_reset_email(comp["name"], email, reset_url)
-        return neutral
+                target_name = acct["name"]
+            else:
+                email_role = email + "|company"
+                conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
+                conn.execute(
+                    "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
+                    (email_role, token_hash, expires_at)
+                )
+                conn.commit()
+                reset_url = f"{SITE_ORIGIN}/reset?token={token}"
+                target_name = comp["name"]
+
+            print(f"[FORGOT_PASSWORD] Reset URL for {email}: {reset_url}", flush=True)
+            try:
+                send_password_reset_email(target_name, email, reset_url)
+            except Exception as mail_err:
+                log_error("forgot-password:email", mail_err)
+
+            payload = {
+                "status": "success",
+                "message": f"Password reset link has been sent to {email}."
+            }
+            if app.debug or not SMTP_PASS:
+                payload["reset_url"] = reset_url
+            return jsonify(payload)
     except Exception as e:
         log_error("forgot-password", e)
-        # Still return neutral to avoid leaking failure detail / enumeration.
-        return neutral
+        return jsonify({"status": "error", "message": "Something went wrong. Please try again."}), 500
 
 
 @app.route("/reset-password", methods=["POST"])
