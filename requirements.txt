@@ -8,7 +8,7 @@ PyJWT==2.13.0
 # Required only when EMAIL_PROVIDER=ses (Amazon SES HTTPS API):
 boto3==1.43.56
 # Used only by migrate_legacy_users.py / xlsx import (not required by app.py at runtime):
-pandas==3.0.5
+pandas==2.2.3
 openpyxl==3.1.5
 # HTML-to-PDF for the CV builder. Degrades to HTML if unavailable.
 xhtml2pdf==0.2.17
