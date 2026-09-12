@@ -1,4 +1,4 @@
-﻿.env
+.env
 *.db
 __pycache__/
 *.pyc
@@ -18,3 +18,9 @@ __pycache__/
 # Temporary scripts
 fix_*.py
 patch_*.py
+
+# Recordings and Video Artifacts
+videos/
+artifacts/
+*.webm
+*.mp4
