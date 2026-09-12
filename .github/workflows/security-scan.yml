@@ -45,7 +45,9 @@ jobs:
           pip install -r requirements-dev.txt
           
       - name: Run Pytest Matrix
-        run: pytest tests/
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+          pytest tests/
 
   semgrep:
     name: Semgrep Static Analysis
