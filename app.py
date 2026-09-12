@@ -63,9 +63,6 @@ app.config["SESSION_COOKIE_SECURE"] = COOKIE_SECURE
 # Phase 8.0: trust exactly ONE proxy hop (Nginx). Safe only because Nginx overwrites
 # X-Forwarded-For / X-Real-IP with the true client IP (see SECURITY_DEPLOY.md).
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
-TUTOR_SSO_SECRET = os.environ.get("TUTOR_SSO_SECRET", "")
-
-
 def csp_nonce():
     """The per-response script nonce. Templates call this in every inline
     <script nonce="{{ csp_nonce() }}">.
@@ -93,7 +90,6 @@ def inject_globals():
     return {"GA4_ID": GA4_ID, "SITE_ORIGIN": SITE_ORIGIN,
             "OG_IMAGE_URL": OG_IMAGE_URL, "LOGO_URL": LOGO_URL,
             "csp_nonce": csp_nonce}
-TUTOR_BASE_URL = os.environ.get("TUTOR_BASE_URL", "https://tutor.dbert.online")
 # Guard: crash loudly on startup if a secret is missing/defaulted in production â€”
 # prevents a silent same-value match (SSO forgery) or a forgeable session cookie.
 if os.environ.get("FLASK_DEBUG", "false").lower() != "true":
@@ -178,7 +174,7 @@ CSP_REPORT_ONLY = CSP_POLICY  # kept: referenced elsewhere / by ops tooling
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # P2-6: Production configuration validation
-if not _is_debug:
+if is_prod:
     if len(app.config.get("SECRET_KEY", "")) < 32:
         print("[WARNING] FLASK_SECRET_KEY is shorter than 32 chars.")
 
@@ -3116,7 +3112,7 @@ def send_post_selection_email(name, to_email, post_title, company_name, needed_c
     first = (name or "Candidate").split()[0]
     if needed_certs:
         items = "".join(
-            f"<li style='margin:0 0 6px;'><a href='{TUTOR_BASE_URL}/courses/{c.get('course_id')}' "
+            f"<li style='margin:0 0 6px;'><a href='https://internship.dbert.online/courses/{c.get('course_id')}' "
             f"style='color:#E2B96F;font-weight:700;'>{(c.get('title') or 'Certification')}</a></li>"
             for c in needed_certs
         )
@@ -3902,617 +3898,7 @@ def generate_tutor_token():
     user = get_current_user()
     if not user:
         return jsonify({"status": "error", "message": "Not logged in"}), 401
-    if not TUTOR_SSO_SECRET:
-        return jsonify({"status": "error", "message": "Tutor SSO not configured"}), 503
-    if not _intern_payment_verified(user['email']):
-        return jsonify({"status": "error", "message": "Your enrollment payment hasn't been verified yet."}), 403
-    try:
-        with get_db() as conn:
-            acct = conn.execute(
-                "SELECT * FROM intern_accounts WHERE email=? AND is_active=1",
-                (user['email'],)
-            ).fetchone()
-            enr = conn.execute(
-                "SELECT * FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1",
-                (user['email'],)
-            ).fetchone()
-        if not acct:
-            return jsonify({"status": "error", "message": "Account not found"}), 404
-        acct = row_to_dict(acct)
-        enr  = row_to_dict(enr) if enr else {}
-
-        # Joining date guard â€” cannot launch tutor before joining date at 18:00
-        joining_date_str = enr.get('joining_date', '')
-        if not joining_unlocked(joining_date_str):
-            try:
-                joining_dt = datetime.strptime(joining_date_str, "%Y-%m-%d").date()
-                pretty = joining_dt.strftime('%-d %b %Y')
-            except ValueError:
-                pretty = joining_date_str
-            return jsonify({
-                "status":        "error",
-                "before_joining": True,
-                "joining_date":  joining_date_str,
-                "message":       f"Classes start on {pretty} at 6:00 PM",
-            }), 403
-
-        payload = {
-            "jti":        str(uuid.uuid4()),
-            "iss":        "internship.dbert.online",
-            "iat":        int(time.time()),
-            "exp":        int(time.time()) + 90,
-            "intern_id":  str(acct['id']),
-            "name":       acct.get('name', ''),
-            "email":      acct.get('email', ''),
-            "phone":      acct.get('phone', ''),
-            "city":       acct.get('city', ''),
-            "college":    acct.get('college', ''),
-            "course":     acct.get('course', ''),
-            "semester":   acct.get('semester', ''),
-            "domain": {
-                "Full Stack Development": "full_stack",
-                "AI Agent Development":   "ai_agent",
-                "Data Analyst":           "data_science",
-                "Python Automation":      "python_automation",
-            }.get(acct.get('domain', ''), acct.get('domain', '')),
-            "batch_start": joining_date_str,
-            "batch_end":   '',
-            "is_admin": False,
-            "applications": [],
-        }
-        token = jwt.encode(payload, TUTOR_SSO_SECRET, algorithm="HS256")
-        return jsonify({"status": "success", "redirect_url": f"{TUTOR_BASE_URL}/sso?token={token}"})
-    except Exception as e:
-        log_error("generate-tutor-token", e)
-        return jsonify({"status": "error", "message": "Failed to generate token"}), 500
-
-
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# P17 â€” MOBILE AUTH (parallel path beside generate_tutor_token; that 90s SSO
-# mint and tutor_progress_update are intentionally left untouched). The Flutter
-# app logs in here and receives a long-lived access JWT (same shape/secret the
-# tutor backend already verifies) + a rotating opaque refresh token.
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-# Domain slug map shared with the tutor backend. Mirrors the inline map inside
-# generate_tutor_token exactly; this is the single reusable copy for the mobile path.
-TUTOR_DOMAIN_SLUGS = {
-    "Full Stack Development": "full_stack",
-    "AI Agent Development":   "ai_agent",
-    "Data Analyst":           "data_science",
-    "Python Automation":      "python_automation",
-}
-
-
-def tutor_domain_slug(domain):
-    return TUTOR_DOMAIN_SLUGS.get(domain or "", domain or "")
-
-
-# â”€â”€ Track 1 Â§3 â€” web tutor login fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# An intern who opens the AI Tutor on the web without a session is bounced to
-# the portal login (passwords live only here); on success we mint the same 90s
-# SSO token generate_tutor_token uses and 302 them back. generate_tutor_token
-# itself is left unmodified â€” this is the reusable mint for the login path.
-def mint_tutor_sso_token(acct, joining_date_str):
-    now = int(time.time())
-    payload = {
-        "jti":        str(uuid.uuid4()),
-        "iss":        "internship.dbert.online",
-        "iat":        now,
-        "exp":        now + 90,
-        "intern_id":  str(acct["id"]),
-        "name":       acct.get("name", ""),
-        "email":      acct.get("email", ""),
-        "phone":      acct.get("phone", ""),
-        "city":       acct.get("city", ""),
-        "college":    acct.get("college", ""),
-        "course":     acct.get("course", ""),
-        "semester":   acct.get("semester", ""),
-        "domain":     tutor_domain_slug(acct.get("domain", "")),
-        "batch_start": joining_date_str or "",
-        "batch_end":  "",
-        "is_admin":   False,
-        "applications": [],
-    }
-    return jwt.encode(payload, TUTOR_SSO_SECRET, algorithm="HS256")
-
-
-def _safe_tutor_next(raw):
-    """Open-redirect guard for the tutor deep-link: only a single-slash
-    site-relative path is honored; anything else falls back to the dashboard."""
-    nxt = (raw or "").strip()
-    if not nxt or not nxt.startswith("/") or nxt.startswith("//"):
-        return "/dashboard"
-    return nxt
-
-
-def _joining_pretty(joining_date_str):
-    # Cross-platform (no Linux-only %-d): zero-pad then strip the leading zero.
-    try:
-        return datetime.strptime(joining_date_str, "%Y-%m-%d").date().strftime("%d %b %Y").lstrip("0")
-    except (ValueError, TypeError):
-        return ""
-
-
-@app.route("/login", methods=["GET"])
-def portal_login_entry():
-    """Login entry for external return-flows (Track 1 Â§3). The AI Tutor sends an
-    unauthenticated intern to ``/login?return_to=tutor&next=<relative>``. We
-    allowlist return_to to 'tutor' only, validate next is relative, stash both
-    in the session, then open the sign-in overlay. intern_login() reads them
-    back on success and bounces to the tutor (gate open) or holds on the portal
-    with the 6 PM message (gate closed)."""
-    if (request.args.get("return_to") or "").strip() == "tutor":
-        session["post_login_return_to"] = "tutor"
-        session["post_login_next"] = _safe_tutor_next(request.args.get("next"))
-    else:
-        session.pop("post_login_return_to", None)
-        session.pop("post_login_next", None)
-    return redirect("/#signin")
-
-
-def _hash_refresh_token(raw):
-    """Refresh tokens are high-entropy opaque strings; store only their SHA-256.
-    Never log or persist the plaintext. (Unlike passwords, no salt/KDF needed â€”
-    these are 384-bit random, not user-chosen.)"""
-    return hashlib.sha256((raw or "").encode()).hexdigest()
-
-
-def mint_mobile_access_token(acct, joining_date_str):
-    """HS256 access JWT signed with TUTOR_SSO_SECRET. Claims match what the tutor
-    backend verifies (iss/jti/exp/intern_id + domain slug) so it is accepted on
-    the Bearer path unchanged; token_use marks it as a mobile access token."""
-    now = int(time.time())
-    payload = {
-        "jti":         str(uuid.uuid4()),
-        "iss":         "internship.dbert.online",
-        "iat":         now,
-        "exp":         now + ACCESS_TTL,
-        "intern_id":   str(acct["id"]),
-        "name":        acct.get("name", ""),
-        "email":       acct.get("email", ""),
-        # P1-6: Removed phone, city, college, course, semester for PII reduction
-        "domain":      tutor_domain_slug(acct.get("domain", "")),
-        "batch_start": joining_date_str or "",
-        "batch_end":   "",
-        "is_admin":    False,
-        "applications": [],
-        "token_use":   "mobile_access",
-    }
-    return jwt.encode(payload, TUTOR_SSO_SECRET, algorithm="HS256")
-
-
-def issue_refresh_token(intern_id, email):
-    """Create + persist a new refresh token; return the plaintext ONCE (only the
-    hash is stored). Caller returns it to the client and never logs it."""
-    raw = secrets.token_urlsafe(48)
-    expires_at = (datetime.now() + timedelta(seconds=REFRESH_TTL)).strftime("%Y-%m-%d %H:%M:%S")
-    with get_db() as conn:
-        conn.execute(
-            "INSERT INTO mobile_refresh_tokens "
-            "(token_hash, intern_id, email, issued_at, expires_at, revoked) "
-            "VALUES (?,?,?,?,?,0)",
-            (_hash_refresh_token(raw), str(intern_id), email.lower(), now_str(), expires_at),
-        )
-        conn.commit()
-    return raw
-
-
-@app.route('/api/tutor/mobile/login', methods=['POST'])
-def mobile_login():
-    """Mobile login â€” mirrors the intern_login security flow, then mints an
-    access JWT + refresh token. Adds the joining-date gate."""
-    try:
-        if not TUTOR_SSO_SECRET:
-            return jsonify({"error": "server_misconfigured"}), 503
-        data     = request.get_json(force=True, silent=True) or {}
-        email    = clean_text(data.get("email")).lower()
-        password = clean_text(data.get("password"))
-        if not email or not password:
-            return jsonify({"error": "missing_fields"}), 400
-        ip = get_client_ip()
-        allowed, ra = rate_check(f"login:intern:ip:{ip}", *RL_LOGIN_IP)
-        if not allowed:
-            log_abuse(ip, "/api/tutor/mobile/login", f"login:intern:ip:{ip}", "rate_limit", email)
-            return too_many(ra)
-        locked, _ = login_locked(email)
-        if locked:
-            log_abuse(ip, "/api/tutor/mobile/login", _login_fail_bucket(email), "login_lockout", email)
-            return jsonify({"error": "invalid_credentials"}), 401
-        with get_db() as conn:
-            user = conn.execute(
-                "SELECT * FROM intern_accounts WHERE email=? AND is_active=1 LIMIT 1", (email,)
-            ).fetchone()
-            enr = conn.execute(
-                "SELECT joining_date FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1", (email,)
-            ).fetchone()
-        if not user:
-            record_login_fail(email)
-            return jsonify({"error": "invalid_credentials"}), 401
-        if int(user["password_set"] or 0) != 1:
-            return jsonify({"error": "password_not_set"}), 400
-        if not verify_password(user["password_hash"], password):
-            record_login_fail(email)
-            return jsonify({"error": "invalid_credentials"}), 401
-        if is_legacy_hash(user["password_hash"]):
-            migrate_password_hash("intern_accounts", email, password)  # P17.0 lazy upgrade
-        clear_login_fails(email)
-        acct = row_to_dict(user)
-        if not _intern_payment_verified(email):
-            return jsonify({"error": "payment_not_verified"}), 403
-        joining_date_str = (enr["joining_date"] if enr and enr["joining_date"] else "")
-        if not joining_unlocked(joining_date_str):
-            return jsonify({"error": "before_joining"}), 403
-        access  = mint_mobile_access_token(acct, joining_date_str)
-        refresh = issue_refresh_token(acct["id"], email)
-        return jsonify({
-            "access_token":  access,
-            "refresh_token": refresh,
-            "expires_in":    ACCESS_TTL,
-            "user": {
-                "intern_id": str(acct["id"]),
-                "name":      acct.get("name", ""),
-                "email":     acct.get("email", ""),
-                "domain":    tutor_domain_slug(acct.get("domain", "")),
-            },
-        })
-    except Exception as e:
-        log_error("mobile-login", e)
-        return jsonify({"error": "server_error"}), 500
-
-
-@app.route('/api/tutor/mobile/refresh', methods=['POST'])
-def mobile_refresh():
-    """Validate a non-revoked, unexpired refresh token; ROTATE it (revoke old,
-    issue new) and mint a fresh access JWT."""
-    try:
-        if not TUTOR_SSO_SECRET:
-            return jsonify({"error": "server_misconfigured"}), 503
-        data = request.get_json(force=True, silent=True) or {}
-        raw  = clean_text(data.get("refresh_token"))
-        ip = get_client_ip()
-        allowed, ra = rate_check(f"mobilerefresh:ip:{ip}", *RL_LOGIN_IP)
-        if not allowed:
-            log_abuse(ip, "/api/tutor/mobile/refresh", f"mobilerefresh:ip:{ip}", "rate_limit")
-            return too_many(ra)
-        if not raw:
-            return jsonify({"error": "invalid_refresh"}), 401
-        token_hash = _hash_refresh_token(raw)
-        with get_db() as conn:
-            row = conn.execute(
-                "SELECT * FROM mobile_refresh_tokens WHERE token_hash=? LIMIT 1", (token_hash,)
-            ).fetchone()
-            if (not row) or int(row["revoked"] or 0) == 1 or (row["expires_at"] <= now_str()):
-                return jsonify({"error": "invalid_refresh"}), 401
-            acct = conn.execute(
-                "SELECT * FROM intern_accounts WHERE id=? AND is_active=1 LIMIT 1", (row["intern_id"],)
-            ).fetchone()
-            if not acct:
-                return jsonify({"error": "invalid_refresh"}), 401
-            enr = conn.execute(
-                "SELECT joining_date FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1", (row["email"],)
-            ).fetchone()
-            # Rotation: revoke the presented refresh token before issuing a new one.
-            conn.execute(
-                "UPDATE mobile_refresh_tokens SET revoked=1, last_used_at=? WHERE id=?",
-                (now_str(), row["id"]),
-            )
-            conn.commit()
-        acct = row_to_dict(acct)
-        joining_date_str = (enr["joining_date"] if enr and enr["joining_date"] else "")
-        new_refresh = issue_refresh_token(acct["id"], row["email"])
-        access      = mint_mobile_access_token(acct, joining_date_str)
-        return jsonify({
-            "access_token":  access,
-            "refresh_token": new_refresh,
-            "expires_in":    ACCESS_TTL,
-        })
-    except Exception as e:
-        log_error("mobile-refresh", e)
-        return jsonify({"error": "server_error"}), 500
-
-
-@app.route('/api/tutor/mobile/logout', methods=['POST'])
-def mobile_logout():
-    """Revoke the presented refresh token (idempotent). With {"all_devices":true}
-    and a valid Bearer access token, revoke every refresh token for that intern."""
-    try:
-        data = request.get_json(force=True, silent=True) or {}
-        raw  = clean_text(data.get("refresh_token"))
-        all_devices = bool(data.get("all_devices"))
-        intern_id = None
-        auth = request.headers.get("Authorization", "")
-        if auth.startswith("Bearer ") and TUTOR_SSO_SECRET:
-            try:
-                payload = jwt.decode(auth.split(" ", 1)[1], TUTOR_SSO_SECRET, algorithms=["HS256"])
-                intern_id = str(payload.get("intern_id") or "") or None
-            except Exception:
-                intern_id = None
-        with get_db() as conn:
-            if all_devices and intern_id:
-                conn.execute(
-                    "UPDATE mobile_refresh_tokens SET revoked=1, last_used_at=? WHERE intern_id=?",
-                    (now_str(), intern_id),
-                )
-            elif raw:
-                conn.execute(
-                    "UPDATE mobile_refresh_tokens SET revoked=1, last_used_at=? WHERE token_hash=?",
-                    (now_str(), _hash_refresh_token(raw)),
-                )
-            conn.commit()
-        return jsonify({"ok": True})
-    except Exception as e:
-        log_error("mobile-logout", e)
-        return jsonify({"error": "server_error"}), 500
-
-
-@app.route('/api/tutor/progress-update', methods=['POST'])
-def tutor_progress_update():
-    """DEPRECATED: External tutor push removed. Progress is calculated locally."""
-    return jsonify({'status': 'gone', 'message': 'External progress push is disabled.'}), 410
-
-
-@app.route('/api/tutor/coin-event', methods=['POST'])
-def tutor_coin_event():
-    """DEPRECATED: Coins are managed locally."""
-    return jsonify({'status': 'gone', 'message': 'External coin events disabled.'}), 410
-
-
-@app.route('/api/tutor/certificate-event', methods=['POST'])
-def tutor_certificate_event():
-    """DEPRECATED: Certificates are issued locally via staff decisions."""
-    return jsonify({'status': 'gone', 'message': 'External certificate events disabled.'}), 410
-
-
-@app.route("/portal/ledger")
-def portal_ledger():
-    """Intern's own combined ad+task coin ledger + certificates (Track 1 Â§6).
-
-    STRICTLY READ-ONLY â€” the tutor owns the economy; this only displays mirrored
-    rows. Current balance per kind = the latest event's balance_after."""
-    try:
-        user = require_role("intern")
-        if not user:
-            return redirect("/portal")
-        with get_db() as conn:
-            acct = conn.execute(
-                "SELECT id, name FROM intern_accounts WHERE email=?", (user["email"],)
-            ).fetchone()
-            if not acct:
-                return redirect("/portal")
-            rows = [row_to_dict(r) for r in conn.execute(
-                "SELECT ledger_kind, delta, balance_after, reason, event_ts "
-                "FROM coin_ledger_mirror WHERE intern_id=? ORDER BY event_ts, id",
-                (acct["id"],),
-            ).fetchall()]
-            certs = [row_to_dict(r) for r in conn.execute(
-                "SELECT course_title, cert_id, issued_at, url FROM intern_certificates "
-                "WHERE intern_id=? ORDER BY issued_at DESC, id DESC",
-                (acct["id"],),
-            ).fetchall()]
-            # NF2 fix: computed per ledger from SUM(delta), not from the newest
-            # balance_after (a running total across all kinds, so the old
-            # per-kind lookup showed â‚¹0 on both cards).
-            balances = get_coin_balances(conn, acct["id"])
-        rows.reverse()  # newest first for display
-        return render_template(
-            "portal_ledger.html", name=acct["name"], rows=rows, certs=certs,
-            balances=balances,
-        )
-    except Exception as e:
-        log_error("/portal/ledger", e)
-        return "Server error", 500
-
-
-@app.route("/intern/coins")
-def intern_coins():
-    """JSON for the portal Coins tab â€” the two independent ledger balances
-    (spec Â§4) plus full history."""
-    try:
-        intern = current_intern()
-        if not intern:
-            return jsonify({"status": "error", "message": "Unauthorized"}), 401
-        with get_db() as conn:
-            rows = [row_to_dict(r) for r in conn.execute(
-                "SELECT ledger_kind, delta, balance_after, reason, event_ts "
-                "FROM coin_ledger_mirror WHERE intern_id=? ORDER BY event_ts, id",
-                (intern["id"],),
-            ).fetchall()]
-            balances = get_coin_balances(conn, intern["id"])
-        rows.reverse()  # newest first for display
-        return jsonify({"status": "success", "balances": balances, "rows": rows})
-    except Exception as e:
-        log_error("intern-coins", e)
-        return jsonify({"status": "error", "message": "Error"}), 500
-
-
-@app.route("/intern/certificates")
-def intern_certificates_api():
-    """UAT #7: JSON for the portal Certificate tab â€” earned certs (mirror) + a link
-    to the tutor's sample-certificate preview (supersedes #3 discoverability)."""
-    try:
-        intern = current_intern()
-        if not intern:
-            return jsonify({"status": "error", "message": "Unauthorized"}), 401
-        with get_db() as conn:
-            certs = [row_to_dict(r) for r in conn.execute(
-                "SELECT course_title, cert_id, issued_at, url FROM intern_certificates "
-                "WHERE intern_id=? ORDER BY issued_at DESC, id DESC",
-                (intern["id"],),
-            ).fetchall()]
-        # UAT #20: resolve the download link against the ACTIVE tutor base at request
-        # time (the mirror stores a relative path; the test launcher repoints
-        # TUTOR_BASE_URL). Tolerate a legacy absolute url too.
-        for c in certs:
-            u = c.get("url") or ""
-            c["download_url"] = u
-        return jsonify({"status": "success", "certificates": certs,
-                        "sample_url": "/portal/sample-certificate"})
-    except Exception as e:
-        log_error("intern-certificates", e)
-        return jsonify({"status": "error", "message": "Error"}), 500
-
-
-@app.route("/portal/sample-certificate")
-def portal_sample_certificate():
-    """UAT #19: a portal-side sample certificate preview, visible to ANY logged-in
-    intern (every lifecycle stage) the moment their account exists â€” no tutor session
-    needed. Renders the same printed-paper artifact as the tutor sample, marked
-    SAMPLE / preview-only."""
-    intern = current_intern()
-    if not intern:
-        return redirect("/#signin")
-    name = intern.get("name") or "Your Name"
-    domain = (intern.get("domain") or "your domain")
-    return render_template("sample_certificate.html", name=name, domain=domain)
-
-
-@app.route("/verify/<cert_id>")
-def verify_certificate(cert_id):
-    """UAT #22: PUBLIC certificate verification (the target of the QR on the official
-    certificate). Reads the mirrored intern_certificates. No auth, noindex."""
-    cert = None
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT c.course_title, c.cert_id, c.issued_at, a.name "
-            "FROM intern_certificates c JOIN intern_accounts a ON a.id=c.intern_id "
-            "WHERE c.cert_id=? LIMIT 1", (cert_id,)).fetchone()
-        if row:
-            cert = row_to_dict(row)
-    return render_template("cert_verify.html", cert=cert, cert_id=cert_id), (200 if cert else 404)
-
-
-# â”€â”€ UAT #25: paid-course payment (QR + screenshot) â†’ admin verify â†’ tutor unlock â”€â”€
-def _catalogue_course(course_id):
-    """Find a published course (id/title/is_paid/price_inr) from the tutor catalogue
-    proxy (cached). Returns a dict or None."""
-    courses, _ = _public_courses()
-    for c in courses:
-        if c.get("id") == course_id:
-            return c
-    return None
-
-
-def _course_payment_status(intern_id, course_id):
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT status FROM course_payments WHERE intern_id=? AND course_id=? "
-            "ORDER BY id DESC LIMIT 1", (intern_id, course_id)).fetchone()
-    return row["status"] if row else None
-
-
-@app.route("/courses/<int:course_id>/pay", methods=["GET"])
-def course_pay_page(course_id):
-    intern = current_intern()
-    if not intern:
-        return redirect("/#signin")
-    course = _catalogue_course(course_id)
-    if not course or not course.get("is_paid"):
-        return redirect("/portal")
-    # T7: industrial-certification is an attribute on the course page -- shown only for
-    # approved, company-authored portal courses (co-signed by DBERT + that company).
-    cert_company_name = None
-    if course.get("source") == "custom" and course.get("company_id") and course.get("industrial_certification"):
-        with get_db() as conn:
-            row = conn.execute("SELECT name FROM companies WHERE id=?", (course["company_id"],)).fetchone()
-        cert_company_name = row["name"] if row else None
-    return render_template(
-        "course_pay.html", course=course,
-        status=_course_payment_status(intern["id"], course_id),
-        upi_id=UPI_ID, tutor_base=TUTOR_BASE_URL,
-        cert_company_name=cert_company_name)
-
-
-@app.route("/courses/<int:course_id>/pay", methods=["POST"])
-def course_pay_submit(course_id):
-    intern = current_intern()
-    if not intern:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
-    course = _catalogue_course(course_id)
-    if not course or not course.get("is_paid"):
-        return jsonify({"status": "error", "message": "Course is not payable."}), 400
-    if _course_payment_status(intern["id"], course_id) in ("pending", "verified"):
-        return jsonify({"status": "error", "message": "A payment for this course is already on file."}), 409
-    file = request.files.get("payment_screenshot")
-    if not file or not file.filename or not allowed_file(file.filename):
-        return jsonify({"status": "error", "message": "Allowed: png, jpg, jpeg, pdf"}), 400
-    sniffed = sniff_upload_type(file)
-    if sniffed is None:
-        log_abuse(get_client_ip(), "/courses/pay", "course:upload", "bad_magic", intern["email"])
-        return jsonify({"status": "error", "message": "File must be a real PNG, JPEG, or PDF."}), 400
-    filename = f"{uuid.uuid4().hex}.{sniffed}"
-    file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-    with get_db() as conn:
-        conn.execute(
-            "INSERT INTO course_payments (intern_id, course_id, course_title, amount, payment_screenshot, status) "
-            "VALUES (?,?,?,?,?,'pending')",
-            (intern["id"], course_id, course.get("title", ""), course.get("price_inr", 0), filename))
-        conn.commit()
-    return jsonify({"status": "success", "message": "Payment submitted â€” we'll verify it within 24 hours."})
-
-
-def _signal_tutor_course_unlock(intern_id, course_id):
-    """Tell the tutor to grant the intern access to a paid course (UAT #25).
-    Server-to-server, secret-gated. Best-effort â€” never raises into the caller."""
-    if not TUTOR_SSO_SECRET:
-        return False
-    try:
-        resp = requests.post(
-            f"{TUTOR_BASE_URL}/internal/course-access",
-            json={"intern_id": str(intern_id), "course_id": course_id},
-            headers={"X-Internal-Key": TUTOR_SSO_SECRET}, timeout=5)
-        return resp.status_code == 200
-    except Exception as e:
-        log_error("course-unlock-signal", e)
-        return False
-
-
-def _tutor_has_course_access(intern_id, course_id):
-    """UAT #41: ask the tutor whether the intern already has access to a course
-    (free, or a verified paid unlock). Returns True/False, or None if the tutor
-    is unreachable (caller then defaults to the SSO handoff â€” the tutor's own
-    #25 lock screen will gate paid content)."""
-    if not TUTOR_SSO_SECRET:
-        return None
-    try:
-        resp = requests.get(
-            f"{TUTOR_BASE_URL}/internal/course-access",
-            params={"intern_id": str(intern_id), "course_id": course_id},
-            headers={"X-Internal-Key": TUTOR_SSO_SECRET}, timeout=5)
-        if resp.status_code == 200:
-            return bool(resp.json().get("has_access"))
-        log_error("course-access-check", Exception(f"tutor http_{resp.status_code}"))
-    except Exception as e:
-        log_error("course-access-check", e)
-    return None
-
-
-@app.route("/course/<int:course_id>/start")
-def course_start(course_id):
-    """UAT #41: route an intern to a required tutor course WITHOUT the auth bounce.
-    Decision: has access (free / paid-unlocked) â†’ mint an SSO token and hand off
-    into the course; no access â†’ the #25 course-payment gate (QR + admin approval
-    â†’ unlock â†’ SSO). If the access check is unreachable, default to the SSO
-    handoff (the tutor's #25 lock screen then routes paid content to the pay
-    page), so the link is never a dead-end."""
-    intern = current_intern()
-    if not intern:
-        # Not signed in â†’ portal sign-in overlay (preserve nothing sensitive).
-        return redirect("/#signin")
-    access = _tutor_has_course_access(intern["id"], course_id)
-    if access is False:
-        return redirect(f"/courses/{course_id}/pay")
-    # access True (enrolled/free/unlocked) or unknown â†’ SSO handoff into the course.
-    if not TUTOR_SSO_SECRET:
-        return redirect(f"/courses/{course_id}/pay")
-    with get_db() as conn:
-        enr = conn.execute(
-            "SELECT joining_date FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1",
-            (intern["email"],)).fetchone()
-    joining_date_str = (enr["joining_date"] if enr and enr["joining_date"] else "")
-    token = mint_tutor_sso_token(intern, joining_date_str)
-    return redirect(
-        f"{TUTOR_BASE_URL}/sso?token={token}&next={quote(f'/courses/{course_id}', safe='')}")
+    return redirect(f"/courses/{course_id}")
 
 
 # â”€â”€ UP1.3: Guided Learning Core Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -6547,20 +5933,7 @@ def post_hire_launch_tasks():
     # Track 6 / T7: graceful fallback if the tutor SSO secret is missing or the
     # handoff can't be built -- never a raw error, just back to the portal with
     # a flag the Overview card can show a friendly retry message for.
-    if not TUTOR_SSO_SECRET:
-        log_error("post-hire-launch-tasks", Exception("TUTOR_SSO_SECRET not configured"))
-        return redirect("/portal?launch_tasks=error#overview")
-    try:
-        with get_db() as conn:
-            enr = conn.execute(
-                "SELECT joining_date FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1",
-                (intern["email"],)).fetchone()
-        joining_date_str = (enr["joining_date"] if enr and enr["joining_date"] else "")
-        token = mint_tutor_sso_token(intern, joining_date_str)
-        return redirect(f"{TUTOR_BASE_URL}/sso?token={token}&next={quote('/tasks', safe='')}")
-    except Exception as e:
-        log_error("post-hire-launch-tasks", e)
-        return redirect("/portal?launch_tasks=error#overview")
+    return redirect("/tasks")
 
 
 @app.route("/admin/post-hire-deposits")
@@ -6700,7 +6073,7 @@ def admin_course_payment_review(pay_id):
         # T10: notify_course_payment_verified's push call persists the dashboard
         # notification (#26) itself -- no separate add_notification() here (would dupe).
         link_url = ("https://internship.dbert.online/portal" if is_portal_course
-                    else f"{TUTOR_BASE_URL}/courses/{pay['course_id']}")
+                    else f"/courses/{pay['course_id']}")
         try:
             notify_course_payment_verified(pay["intern_name"], pay["intern_email"],
                                            pay["course_title"], is_portal_course, link_url)
@@ -7459,32 +6832,9 @@ def intern_login():
         login_redirect = "/profile"
         login_message = "Login successful."
         login_before_joining = False
-        if session.pop("post_login_return_to", None) == "tutor" and TUTOR_SSO_SECRET:
-            tutor_next = _safe_tutor_next(session.pop("post_login_next", None))
-            with get_db() as conn:
-                acct_row = conn.execute(
-                    "SELECT * FROM intern_accounts WHERE email=? AND is_active=1", (email,)
-                ).fetchone()
-                enr_row = conn.execute(
-                    "SELECT * FROM enrollments WHERE email=? ORDER BY id DESC LIMIT 1", (email,)
-                ).fetchone()
-            acct = row_to_dict(acct_row) if acct_row else {}
-            joining_date_str = (row_to_dict(enr_row).get("joining_date", "") if enr_row else "")
-            # T9 âš ï¸: same paid-gate as generate_tutor_token/mobile_login -- this call
-            # site mints the identical real SSO token, so it must not bypass the gate.
-            if acct and joining_unlocked(joining_date_str) and _intern_payment_verified(email):
-                tok = mint_tutor_sso_token(acct, joining_date_str)
-                login_redirect = f"{TUTOR_BASE_URL}/sso?token={tok}&next={quote(tutor_next, safe='')}"
-            elif acct and not _intern_payment_verified(email):
-                login_before_joining = False
-                login_message = "You're signed in. Complete enrollment payment verification to access the AI Tutor."
-            else:
-                pretty = _joining_pretty(joining_date_str)
-                login_before_joining = True
-                login_message = (
-                    f"You're signed in. The AI Tutor opens on {pretty} at 6:00 PM."
-                    if pretty else "You're signed in. The AI Tutor opens at 6:00 PM."
-                )
+        if session.pop("post_login_return_to", None) == "tutor":
+            tutor_next = session.pop("post_login_next", None) or "/tasks"
+            login_redirect = tutor_next
         session.pop("post_login_next", None)  # never leak a stale target
         # Track 2 Â§3 acquisition funnel: a logged-out Apply-Now stashed the post
         # URL in session['next']; resume there (only when not doing a tutor
@@ -8352,26 +7702,10 @@ _COURSES_TTL = 600  # ~10 min
 
 
 def _tutor_courses_cached():
-    """Published courses from the tutor (Track 1 Â§5), cached ~10 min.
-
-    Degrades gracefully: on a tutor outage/error, serve the last-good cache (or
-    an empty list) so posting never depends on the tutor being up (pitfall Â§9).
-    Returns (courses, from_cache)."""
-    now = time.time()
-    if _COURSES_CACHE["data"] is not None and (now - _COURSES_CACHE["at"]) < _COURSES_TTL:
-        return _COURSES_CACHE["data"], True
-    try:
-        resp = requests.get(f"{TUTOR_BASE_URL}/api/v1/public/courses", timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            courses = data.get("courses", []) if isinstance(data, dict) else []
-            _COURSES_CACHE["data"] = courses
-            _COURSES_CACHE["at"] = now
-            return courses, False
-        log_error("public-courses", Exception(f"tutor http_{resp.status_code}"))
-    except Exception as e:
-        log_error("public-courses", e)
-    return (_COURSES_CACHE["data"] or []), True  # last-good or empty
+    """Fetch published courses from local db instead of external tutor."""
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM courses WHERE is_active=1 AND content_status='approved' ORDER BY id DESC").fetchall()
+        return [dict(r) for r in rows], False
 
 
 def _portal_courses_public():
@@ -8854,7 +8188,7 @@ def _render_post_detail(post_type, slug, post_id):
         meta_desc=_meta_desc(post.get("description")), is_intern=bool(intern),
         intern_email=(intern or {}).get("email", ""),
         already_applied=already_applied, my_apps_url="/portal#myapplications",
-        tutor_base=TUTOR_BASE_URL, og_image=OG_IMAGE_URL,
+        tutor_base="https://internship.dbert.online", og_image=OG_IMAGE_URL,
         applied_count=applied_count, related_posts=related_posts, city_posts=city_posts,
         breadcrumbs=breadcrumbs, base_path=base_path, post_path=_post_path)
 
@@ -10781,7 +10115,7 @@ def intern_my_applications():
                 }
                 out.append(d)
         return jsonify({"status": "success", "applications": out,
-                        "tutor_base": TUTOR_BASE_URL})
+                        "tutor_base": "https://internship.dbert.online"})
     except Exception as e:
         log_error("intern-my-applications", e)
         return jsonify({"status": "error", "message": "Error"}), 500
