@@ -92,17 +92,19 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a href="/" class="brand">
-        <div class="brand-icon"><i class="fas fa-robot"></i></div>
+        <div class="brand-icon"><i class="fas fa-briefcase"></i></div>
         <div class="brand-text"><h2>DBERT</h2><p>Internship Portal &middot; 2026</p></div>
       </a>
       <nav id="navLinks" class="nav-links">
-        <a href="/courses" style="color:var(--gold); font-weight:700;"><i class="fas fa-graduation-cap"></i> Courses & Learning</a>
+        <a href="/" class="active">Home</a>
+        <a href="/courses"><i class="fas fa-graduation-cap"></i> Courses &amp; Learning</a>
         <a href="/tasks"><i class="fas fa-tasks"></i> Micro-Tasks</a>
         <a href="/mentors/slots"><i class="fas fa-user-tie"></i> Book Mentor</a>
         <a href="/internships">Internships</a>
         <a href="/jobs">Jobs</a>
         <a href="#benefits">Benefits</a>
         <a href="#faq">FAQ</a>
+        <a href="/jobs" class="nav-search-btn" title="Search"><i class="fas fa-magnifying-glass"></i></a>
         <span id="navAuthLinks" class="nav-auth-links">
           <a href="#" data-act-click="showAuthOverlay" data-arg-click='["signin"]' data-prevent-click>Sign In</a>
           <a href="#" data-act-click="showAuthOverlay" data-arg-click='["signup"]' data-prevent-click class="nav-cta">Sign Up</a>
@@ -113,81 +115,253 @@
   </header>
 
   <main id="marketingContent">
+    <!-- HERO (IMAGE 2) -->
     <section class="hero">
-      <div class="hero-badge"><span class="live-dot"></span>{% if job_openings and job_openings > 0 %}{{ job_openings }} Job Openings — Live Now{% else %}New Internships &amp; Jobs Posted Weekly{% endif %}</div>
-      <h1>Launch your career with the<br/><span>DBERT Internship</span></h1>
-      <p class="hero-sub">Join our 2-month remote internship for students and freshers who want real project exposure in AI, Data Analysis, Full Stack Development, and Python Automation.</p>
-      <div class="hero-cta-row">
-        <button class="btn-hero-primary" data-act-click="showAuthOverlay" data-arg-click='["signup"]'><i class="fas fa-paper-plane"></i>&nbsp; Sign Up Free</button>
-        <button class="btn-hero-secondary" data-act-click="scrollToId" data-arg-click='["positions"]'><i class="fas fa-briefcase"></i>&nbsp; Explore Roles</button>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat"><span class="hero-stat-val">2 Months</span><span class="hero-stat-lbl">Duration</span></div>
-        <div class="hero-stat-div"></div>
-        <div class="hero-stat"><span class="hero-stat-val">Certificate + LOR</span><span class="hero-stat-lbl">On Completion</span></div>
-        <div class="hero-stat-div"></div>
-        <div class="hero-stat"><span class="hero-stat-val">100% Remote</span><span class="hero-stat-lbl">Work Mode</span></div>
-      </div>
-    </section>
-
-    <section id="positions" class="section container">
-      <div class="section-header"><span class="section-tag">OPEN POSITIONS</span><h2>Browse by Domain</h2><p>Live internships and jobs posted by companies on the DBERT board — pick a domain to see what's open now.</p></div>
-      <div class="jd-grid">
-        {% set domain_emoji = {'AI Agent Development': '&#129302;', 'Data Analyst': '&#128202;', 'Full Stack Development': '&#128187;', 'Python Automation': '&#9881;&#65039;'} %}
-        {% for tile in domain_tiles %}
-        <div class="jd-card">
-          <div class="jd-card-head"><span class="jd-emoji">{{ domain_emoji.get(tile.domain, '&#128188;')|safe }}</span></div>
-          <h3>{{ tile.domain }}</h3>
-          <div class="jd-card-meta"><span class="jd-tag">{{ tile.internship_count }} Internship{{ '' if tile.internship_count == 1 else 's' }}</span><span class="jd-tag">{{ tile.job_count }} Job{{ '' if tile.job_count == 1 else 's' }}</span></div>
-          <div class="jd-tile-links">
-            <a class="jd-tile-link" href="/internships/{{ tile.slug }}">View Internships <i class="fas fa-arrow-right"></i></a>
-            <a class="jd-tile-link" href="/jobs/{{ tile.slug }}">View Jobs <i class="fas fa-arrow-right"></i></a>
+      <div class="hero-content">
+        <div class="hero-badge"><span class="badge-dot"></span> New Opportunities Every Week</div>
+        <h1>Launch your career with the<br/><span class="highlight">DBERT Internship</span></h1>
+        <p class="hero-sub">Join our 2-month remote internship for students and freshers who want real project exposure in <strong>AI, Data Analysis, Full Stack Development, and Python Automation</strong>.</p>
+        <div class="hero-cta-row">
+          <button class="btn-hero-primary" data-act-click="showAuthOverlay" data-arg-click='["signup"]'>Sign Up Free &nbsp;<i class="fas fa-arrow-right"></i></button>
+          <button class="btn-hero-secondary" data-act-click="scrollToId" data-arg-click='["positions"]'><i class="fas fa-compass"></i>&nbsp; Explore Roles</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat-badge">
+            <i class="fas fa-calendar-days"></i>
+            <div class="stat-text"><strong>2 Months</strong><span>Duration</span></div>
+          </div>
+          <div class="hero-stat-badge">
+            <i class="fas fa-award"></i>
+            <div class="stat-text"><strong>Certificate + LOR</strong><span>On Completion</span></div>
+          </div>
+          <div class="hero-stat-badge">
+            <i class="fas fa-laptop"></i>
+            <div class="stat-text"><strong>100% Remote</strong><span>Work Mode</span></div>
           </div>
         </div>
-        {% endfor %}
       </div>
-    </section>
-
-    <!-- Phase 12.4 — indirect steering: guaranteed-placement fast-track value prop -->
-    <section id="fasttrack" class="section container">
-      <div style="background:linear-gradient(135deg,rgba(15,46,15,0.55),rgba(20,24,33,0.5));border:1px solid rgba(76,175,80,0.28);border-radius:18px;padding:30px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:260px;">
-          <span class="section-tag" style="color:#7ed492;">PAID PROGRAM</span>
-          <h2 style="font-size:22px;font-weight:900;margin:8px 0 8px;">Skip the wait with our Paid Program</h2>
-          <p style="color:var(--tx-muted);font-size:14px;line-height:1.7;max-width:560px;">Prefer certainty? Get 15 days of training, a 45-day production role with mentor support, and a <strong style="color:#fff;">guaranteed placement opportunity</strong> with our hiring partners on completion + certification — plus an Offer Letter. Your seat is confirmed the moment you enrol.</p>
+      <div class="hero-visual-wrap">
+        <div class="floating-pill-top">
+          <div class="ic-box"><i class="fas fa-chart-simple"></i></div>
+          <div>Build<br/>Learn<br/>Grow</div>
         </div>
-        <a href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"index_fasttrack"}]' class="btn-hero-primary" style="white-space:nowrap;text-decoration:none;"><i class="fas fa-rocket"></i>&nbsp; Explore Paid Program</a>
+        <div class="hero-img-container">
+          <img src="/static/img/hero_student.jpg" alt="Student learning with DBERT" class="hero-img" loading="eager"/>
+        </div>
+        <div class="hero-script-text">&ldquo;Real Skills<br/>Real Opportunities&rdquo;</div>
+        <div class="floating-pill-bottom">
+          <div class="avatar-stack">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" alt="Intern"/>
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces" alt="Intern"/>
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=faces" alt="Intern"/>
+          </div>
+          <div>
+            <strong>10K+</strong>
+            <span>Students growing with DBERT</span>
+          </div>
+        </div>
       </div>
     </section>
 
+    <!-- BROWSE BY DOMAIN (IMAGE 2) -->
+    <section id="positions" class="section container">
+      <div class="section-header">
+        <span class="section-tag">OPEN POSITIONS</span>
+        <div class="section-header-row">
+          <h2>Browse by Domain</h2>
+          <a href="/jobs" class="view-all-link">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <p>Live internships and jobs posted by companies on the DBERT board — pick a domain to see what's open now.</p>
+      </div>
+      <div class="jd-grid">
+        <a class="jd-card" href="/jobs/ai-agent-development">
+          <div class="domain-icon-box ic-ai"><i class="fas fa-wand-magic-sparkles"></i></div>
+          <h3>Artificial Intelligence</h3>
+          <div class="jd-card-sub"><span>120+ openings</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+        <a class="jd-card" href="/jobs/data-analyst">
+          <div class="domain-icon-box ic-data"><i class="fas fa-chart-simple"></i></div>
+          <h3>Data Analysis</h3>
+          <div class="jd-card-sub"><span>95+ openings</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+        <a class="jd-card" href="/jobs/full-stack-development">
+          <div class="domain-icon-box ic-fullstack"><i class="fas fa-code"></i></div>
+          <h3>Full Stack Development</h3>
+          <div class="jd-card-sub"><span>110+ openings</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+        <a class="jd-card" href="/jobs/python-automation">
+          <div class="domain-icon-box ic-python"><i class="fab fa-python"></i></div>
+          <h3>Python Automation</h3>
+          <div class="jd-card-sub"><span>80+ openings</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+        <a class="jd-card" href="/jobs?domain=web-development">
+          <div class="domain-icon-box ic-web"><i class="fas fa-globe"></i></div>
+          <h3>Web Development</h3>
+          <div class="jd-card-sub"><span>75+ openings</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+        <a class="jd-card" href="/jobs">
+          <div class="domain-icon-box ic-more"><i class="fas fa-table-cells-large"></i></div>
+          <h3>More Domains</h3>
+          <div class="jd-card-sub"><span>Explore all</span><i class="fas fa-arrow-right"></i></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- PAID PROGRAM BANNER (IMAGE 2) -->
+    <section id="fasttrack" class="section container">
+      <div class="paid-banner">
+        <div class="paid-left">
+          <span class="paid-tag">PAID PROGRAM</span>
+          <h2>Skip the wait with our <span>Paid Program</span></h2>
+          <p>Prefer certainty? Get 15 days of training, a 45-day production role with mentor support, and a <strong>guaranteed placement opportunity</strong> with our hiring partners on completion + certification — plus an Offer Letter. Your seat is confirmed the moment you enrol.</p>
+          <a href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"index_fasttrack"}]' class="btn-paid-program">Explore Paid Program &nbsp;<i class="fas fa-arrow-right"></i></a>
+          <div class="paid-checks">
+            <div class="paid-check-item"><i class="fas fa-circle-check"></i> Structured mentorship</div>
+            <div class="paid-check-item"><i class="fas fa-circle-check"></i> Real-world projects</div>
+            <div class="paid-check-item"><i class="fas fa-circle-check"></i> Guaranteed placement opportunity</div>
+          </div>
+        </div>
+        <div class="paid-right">
+          <div class="paid-img-wrap">
+            <img src="/static/img/banner_student.jpg" alt="Intern in paid program" class="paid-img"/>
+          </div>
+          <div class="paid-quote">&ldquo;Skills today. A brighter tomorrow.&rdquo;</div>
+          <div class="paid-stat-badge">
+            <div class="stat-ic"><i class="fas fa-chart-column"></i></div>
+            <div>
+              <strong>95%</strong>
+              <span>Our interns report better career opportunities</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BENEFITS (IMAGE 2) -->
     <section id="benefits" class="section container">
-      <div class="section-header"><span class="section-tag">WHAT YOU GET</span><h2>Benefits &amp; Perks</h2><p>Every intern gets these on successful completion of the program</p></div>
+      <div class="section-header">
+        <span class="section-tag">WHAT YOU GET</span>
+        <h2>Benefits &amp; Perks</h2>
+        <p>Every intern gets these on successful completion of the program.</p>
+      </div>
       <div class="benefits-grid">
-        <div class="benefit-card"><div class="benefit-icon">&#127942;</div><h4>Completion Certificate</h4><p>MSME-registered certificate valid for jobs, higher studies &amp; LinkedIn.</p></div>
-        <div class="benefit-card"><div class="benefit-icon">&#128196;</div><h4>Letter of Recommendation</h4><p>Signed LOR from your assigned mentor on official DBERT letterhead.</p></div>
-        <div class="benefit-card"><div class="benefit-icon">&#128176;</div><h4>Performance Stipend</h4><p>Earn &#8377;5,000 &ndash; &#8377;18,000/month based on domain and performance milestones.</p></div>
-        <div class="benefit-card"><div class="benefit-icon">&#128203;</div><h4>Offer Letter</h4><p>Official offer letter issued after enrollment &mdash; shareable &amp; verifiable.</p></div>
+        <div class="benefit-card">
+          <div class="benefit-icon ic-data"><i class="fas fa-trophy"></i></div>
+          <h4>Completion Certificate</h4>
+          <p>MSME-registered certificate valid for jobs, higher studies &amp; LinkedIn.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon ic-web"><i class="fas fa-file-lines"></i></div>
+          <h4>Letter of Recommendation</h4>
+          <p>Signed LOR from your assigned mentor on official DBERT letterhead.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background:#FCE7F3;color:#DB2777;"><i class="fas fa-sack-dollar"></i></div>
+          <h4>Performance Stipend</h4>
+          <p>Earn &#8377;5,000 &ndash; &#8377;18,000/month based on domain and performance milestones.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon ic-ai"><i class="fas fa-file-signature"></i></div>
+          <h4>Offer Letter</h4>
+          <p>Official offer letter issued after enrollment &mdash; shareable &amp; verifiable.</p>
+        </div>
       </div>
     </section>
 
+    <!-- FAQ (IMAGE 2 2-COLUMN ACCORDION) -->
     <section id="faq" class="section container">
-      <div class="section-header"><span class="section-tag">FAQ</span><h2>Frequently Asked Questions</h2><p>Everything you need to know before applying</p></div>
-      <div class="faq-list">
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-graduation-cap" style="color:var(--gold);margin-right:10px;"></i>Who can apply?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Any student enrolled in <strong>B.Tech, BCA, B.Sc, MCA, MBA, Diploma</strong> or any tech/management course. We accept students from 1st semester to final year as well as fresh graduates.</p></div></div>
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-rupee-sign" style="color:var(--green);margin-right:10px;"></i>Is there any fee?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p><strong style="color:var(--gold);">Application is 100% free.</strong> After selection, a one-time <strong>&#8377;499 refundable security deposit</strong> is required to confirm your seat. Refunded on successful completion.</p></div></div>
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-calendar-check" style="color:var(--green);margin-right:10px;"></i>When does the batch start?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Batches start every Monday throughout 2026 up to <strong style="color:var(--gold);">31 Dec 2026</strong>. You choose your joining Monday during enrollment after selection.</p></div></div>
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-clock" style="color:var(--amber);margin-right:10px;"></i>How many hours per week?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>A minimum of <strong>10 hours per week</strong> (Sunday to Saturday). All tasks are async and remote.</p></div></div>
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-file-alt" style="color:var(--gold);margin-right:10px;"></i>What documents do I get on completion?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><ul><li><strong>Completion Certificate</strong> &mdash; MSME-registered</li><li><strong>Letter of Recommendation (LOR)</strong> &mdash; from assigned mentor</li><li><strong>Offer Letter</strong> &mdash; issued after enrollment</li></ul></div></div>
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-redo" style="color:var(--blue);margin-right:10px;"></i>Can I apply for multiple domains?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Yes. Each domain application is reviewed independently. You will be enrolled in only one domain at a time.</p></div></div>
-        <div class="faq-item"><button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'><span><i class="fas fa-shield-alt" style="color:var(--blue);margin-right:10px;"></i>Is my payment secure?</span><i class="fas fa-plus faq-icon"></i></button><div class="faq-a"><p>Yes. All payments via <strong>UPI</strong> directly &mdash; no card or bank details stored. MSME registered. Contact <strong>careers@dbert.info</strong> for queries.</p></div></div>
+      <div class="section-header">
+        <span class="section-tag">FAQ</span>
+        <div class="section-header-row">
+          <h2>Frequently Asked Questions</h2>
+          <a href="#faq" class="view-all-link">View all FAQs <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <p>Everything you need to know before applying.</p>
+      </div>
+      <div class="faq-2col">
+        <div class="faq-column">
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-user"></i><span>Who can apply?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><p>Any student enrolled in <strong>B.Tech, BCA, B.Sc, MCA, MBA, Diploma</strong> or any tech/management course. We accept students from 1st semester to final year as well as fresh graduates.</p></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-credit-card"></i><span>Is there any fee?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><p><strong>Application is 100% free.</strong> After selection, a one-time <strong>&#8377;499 refundable security deposit</strong> is required to confirm your seat. Refunded on successful completion.</p></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-calendar-days"></i><span>When does the batch start?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><p>Batches start every Monday throughout 2026 up to <strong>31 Dec 2026</strong>. You choose your joining Monday during enrollment after selection.</p></div>
+          </div>
+        </div>
+        <div class="faq-column">
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-clock"></i><span>How many hours per week?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><p>A minimum of <strong>10 hours per week</strong> (Sunday to Saturday). All tasks are async and fully remote.</p></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-file-lines"></i><span>What documents do I get on completion?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><ul><li><strong>Completion Certificate</strong> &mdash; MSME-registered</li><li><strong>Letter of Recommendation (LOR)</strong> &mdash; from assigned mentor</li><li><strong>Offer Letter</strong> &mdash; issued after enrollment</li></ul></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-layer-group"></i><span>Can I apply for multiple domains?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><p>Yes. Each domain application is reviewed independently. You will be enrolled in only one domain at a time.</p></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" data-act-click="toggleFAQ" data-arg-click='["$el"]'>
+              <div class="faq-q-left"><i class="fas fa-shield-halved"></i><span>Is my payment secure?</span></div>
+              <i class="fas fa-plus faq-icon"></i>
+            </button>
+            <div class="faq-a"><p>Yes. All payments are processed via <strong>UPI</strong> directly &mdash; no card or bank details stored. MSME registered. Contact <strong>careers@dbert.info</strong> for queries.</p></div>
+          </div>
+        </div>
       </div>
     </section>
 
+    <!-- FOOTER (IMAGE 2) -->
     <footer class="footer">
       <div class="footer-inner">
-        <div class="footer-brand"><strong>DBERT</strong><p>MSME Registered &middot; Internship Portal 2026</p></div>
-        <div class="footer-links"><a href="https://dbert.online" target="_blank">Home</a><a href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"footer"}]'>Paid Program</a><a href="mailto:careers@dbert.info">Email Us</a><a href="#" data-act-click="showAuthOverlay" data-arg-click='["signin"]' data-prevent-click>Sign In</a></div>
+        <div class="footer-brand">
+          <div class="footer-brand-ic"><i class="fas fa-briefcase"></i></div>
+          <div>
+            <strong>DBERT</strong>
+            <p>MSME Registered &middot; Internship Portal 2026</p>
+          </div>
+        </div>
+        <div class="footer-links">
+          <a href="/">Home</a>
+          <a href="/program" data-act-click="dbertGA" data-arg-click='["paid_program_cta_click", {"source":"footer"}]'>Paid Program</a>
+          <a href="/internships">Internships</a>
+          <a href="/jobs">Jobs</a>
+          <a href="#benefits">Benefits</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
         <p class="footer-copy">&copy; 2026 DBERT. All rights reserved.</p>
+        <div class="footer-socials">
+          <a href="https://linkedin.com" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+          <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+          <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
       </div>
     </footer>
   </main>
@@ -207,7 +381,7 @@
     <div class="auth-wrapper">
       <button class="auth-back" data-act-click="hideAuthOverlay"><i class="fas fa-arrow-left"></i> Back to Portal</button>
       <div class="auth-brand">
-        <div class="auth-brand-icon">&#129302;</div>
+        <div class="auth-brand-icon"><i class="fas fa-briefcase"></i></div>
         <h2>DBERT</h2>
         <p>Internship Portal 2026</p>
       </div>
@@ -223,7 +397,7 @@
           <div class="auth-success" id="signupSuccess">
             <div class="success-icon-wrap"><i class="fas fa-check"></i></div>
             <h3>Application Submitted!</h3>
-            <p>Your application is now <strong style="color:var(--gold);">Under Review</strong>. Redirecting to your portal&hellip;</p>
+            <p>Your application is now <strong style="color:var(--brand);">Under Review</strong>. Redirecting to your portal&hellip;</p>
             <div class="success-tags"><span class="success-tag">Status: Under Review</span></div>
           </div>
           <div id="signupFormWrap">
@@ -240,9 +414,8 @@
               <div class="form-grid">
                 <div class="form-section-label">Create your account</div>
                 <div class="form-group"><label class="field-label" for="su_name">Full Name *</label><input type="text" id="su_name" class="field-input" placeholder="Your full name" autocomplete="name"/></div>
-                <div class="form-group"><label class="field-label" for="su_email">Email *</label><input type="email" id="su_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
-                <div class="form-group"><label class="field-label" for="su_phone">Phone / WhatsApp *</label><input type="tel" id="su_phone" class="field-input" placeholder="10-digit mobile" maxlength="10" autocomplete="tel"/></div>
-                <div class="form-group"></div>
+                <div class="form-group"><label class="field-label" for="su_email">Email *</label><input type="email" id="su_email" class="field-input" placeholder="you@example.com" autocomplete="email" data-act-blur="checkSignupEmailExists"/></div>
+                <div class="form-group full"><label class="field-label" for="su_phone">Phone / WhatsApp *</label><div class="phone-input-wrap"><span class="phone-prefix">+91</span><input type="tel" id="su_phone" class="field-input phone-field" placeholder="10-digit mobile number" maxlength="10" autocomplete="tel"/></div></div>
                 <div class="form-group"><label class="field-label" for="su_password">Password *</label><div class="pw-field"><input type="password" id="su_password" class="field-input" placeholder="At least 8 characters" autocomplete="new-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["su_password", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
                 <div class="form-group"><label class="field-label" for="su_confirm">Confirm Password *</label><div class="pw-field"><input type="password" id="su_confirm" class="field-input" placeholder="Re-enter password" autocomplete="new-password"/><button class="pw-toggle" type="button" data-act-click="togglePw" data-arg-click='["su_confirm", "$el"]' aria-label="Show/hide"><i class="fa fa-eye"></i></button></div></div>
               </div>
@@ -252,7 +425,7 @@
               <input type="text" name="company_website" id="su_company_website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;"/>
               <input type="hidden" id="su_ts"/>
               <button class="btn-auth-submit" id="suBtn1" data-act-click="suNext1"><span class="btn-label"><i class="fas fa-user-plus"></i> &nbsp;Create account &amp; continue</span><span class="btn-spinner"></span></button>
-              <p style="text-align:center;margin-top:12px;font-size:11px;color:#94A3B8;">Takes 2 minutes &middot; Offer letter within 2 hours of enrollment</p>
+              <p style="text-align:center;margin-top:8px;margin-bottom:0;font-size:11px;color:#64748B;">Takes 2 minutes &middot; Offer letter within 2 hours of enrollment</p>
             </div>
 
             <!-- STEP 2 — academics -->
@@ -306,7 +479,7 @@
           <!-- Step 1: Email check -->
           <div id="siStepEmail">
             <div class="form-grid" style="grid-template-columns:1fr;">
-              <div class="form-group"><label class="field-label" for="si_email">Email</label><input type="email" id="si_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
+              <div class="form-group"><label class="field-label" for="si_email">Email or Mobile Number</label><input type="text" id="si_email" class="field-input" placeholder="you@example.com or 10-digit mobile" autocomplete="username"/></div>
             </div>
             <button class="btn-auth-submit" id="siEmailBtn" data-act-click="doEmailCheck"><span class="btn-label"><i class="fas fa-arrow-right"></i> &nbsp;Continue</span><span class="btn-spinner"></span></button>
             <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--tx-muted);">No account yet? <a href="#" style="color:var(--gold);font-weight:700;" data-act-click="switchAuthTab" data-arg-click='["signup"]' data-prevent-click>Sign Up &amp; Apply</a></p>
@@ -353,22 +526,25 @@
   <div id="toastEl"></div>
   <canvas id="confettiCanvas"></canvas>
 
-  <!-- FORGOT PASSWORD MODAL -->
-  <div id="forgotOverlay" style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;">
-    <div style="background:rgba(15,20,30,0.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--gold);border-radius:var(--r-md);max-width:440px;width:100%;box-shadow:var(--shadow-md);padding:28px 26px;" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <h3 id="forgotTitle" style="font-size:17px;font-weight:800;color:var(--tx-body);margin:0;">Reset your password</h3>
-        <button data-act-click="closeForgotModal" aria-label="Close" style="background:none;border:none;color:var(--tx-muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+  <!-- FORGOT PASSWORD MODAL (MATCHING IMAGE 4) -->
+  <div id="forgotOverlay" style="position:fixed;inset:0;z-index:99999;background:rgba(9,12,20,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#0E111A;border:1px solid rgba(255,255,255,0.08);border-radius:20px;max-width:440px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.7);padding:28px 26px;" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <h3 id="forgotTitle" style="font-size:18px;font-weight:800;color:#FFFFFF;margin:0;">Reset your password</h3>
+        <button data-act-click="closeForgotModal" aria-label="Close" style="background:none;border:none;color:#8E9AA8;font-size:22px;cursor:pointer;line-height:1;">&times;</button>
       </div>
-      <p style="font-size:13px;color:var(--tx-muted);line-height:1.6;margin:0 0 18px;">Enter your account email and we'll send a reset link if an account exists. The link expires in 1 hour.</p>
+      <p style="font-size:13px;color:#8E9AA8;line-height:1.6;margin:0 0 18px;">Enter your account email and we'll send a reset link if an account exists. The link expires in 1 hour.</p>
 
-      <div class="auth-error" id="forgotError" role="alert" style="display:none;align-items:center;gap:8px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);border-radius:var(--r-sm);color:var(--red);font-size:13px;font-weight:600;padding:10px 14px;margin-bottom:14px;"><i class="fa fa-circle-exclamation"></i><span></span></div>
-      <div id="forgotSuccess" role="status" aria-live="polite" style="display:none;align-items:center;gap:8px;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.25);color:var(--green);border-radius:var(--r-sm);font-size:13px;font-weight:600;padding:10px 14px;margin-bottom:14px;"><i class="fa fa-circle-check"></i><span id="forgotSuccessText"></span></div>
+      <div class="auth-error" id="forgotError" role="alert" style="display:none;align-items:center;gap:8px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);border-radius:10px;color:#F87171;font-size:13px;font-weight:600;padding:10px 14px;margin-bottom:14px;"><i class="fa fa-circle-exclamation"></i><span></span></div>
+      <div id="forgotSuccess" role="status" aria-live="polite" style="display:none;flex-direction:column;gap:10px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#22C55E;border-radius:10px;font-size:13px;font-weight:600;padding:12px 16px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;"><i class="fa fa-circle-check"></i><span id="forgotSuccessText"></span></div>
+        <div id="forgotDirectLink" style="display:none;"></div>
+      </div>
 
       <div id="forgotFormArea">
-        <div class="form-group"><label class="field-label" for="fp_email">Email</label><input type="email" id="fp_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
+        <div class="form-group"><label class="field-label" for="fp_email" style="color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:6px;display:block;">Email</label><input type="email" id="fp_email" class="field-input" placeholder="you@example.com" autocomplete="email"/></div>
         <input type="text" name="company_website" id="fp_company_website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;"/>
-        <button class="btn-auth-submit" id="forgotBtn" data-act-click="submitForgot" style="margin-top:8px;"><span class="btn-label"><i class="fas fa-paper-plane"></i> &nbsp;Send Reset Link</span><span class="btn-spinner"></span></button>
+        <button class="btn-auth-submit" id="forgotBtn" data-act-click="submitForgot" style="margin-top:14px;"><span class="btn-label"><i class="fas fa-paper-plane"></i> &nbsp;Send Reset Link</span><span class="btn-spinner"></span></button>
       </div>
     </div>
   </div>
@@ -433,6 +609,7 @@
   // ── FORGOT PASSWORD ──
   function openForgotModal(){
     const ov=document.getElementById('forgotOverlay');if(!ov)return;
+    const authOv=document.getElementById('authOverlay');if(authOv)authOv.classList.remove('active');
     document.getElementById('forgotError').style.display='none';
     document.getElementById('forgotSuccess').style.display='none';
     document.getElementById('forgotFormArea').style.display='block';
@@ -442,7 +619,10 @@
     ov.style.display='flex';
     setTimeout(()=>emailInput.focus(),80);
   }
-  function closeForgotModal(){const ov=document.getElementById('forgotOverlay');if(ov)ov.style.display='none';}
+  function closeForgotModal(){
+    const ov=document.getElementById('forgotOverlay');if(ov)ov.style.display='none';
+    showAuthOverlay('signin');
+  }
   function showForgotError(msg){const el=document.getElementById('forgotError');el.querySelector('span').textContent=msg;el.style.display='flex';}
   async function submitForgot(){
     document.getElementById('forgotError').style.display='none';
@@ -454,13 +634,32 @@
       const data=await res.json();
       if(data.status==='success'){
         document.getElementById('forgotFormArea').style.display='none';
-        document.getElementById('forgotSuccessText').textContent=data.message||'If that email exists, a reset link has been sent.';
+        document.getElementById('forgotSuccessText').textContent=data.message||'Password reset link has been sent to your email.';
+        const directEl=document.getElementById('forgotDirectLink');
+        if(data.reset_url && directEl){
+          directEl.style.display='block';
+          directEl.innerHTML=`<div style="background:rgba(212,154,55,0.12);border:1px solid rgba(212,154,55,0.3);border-radius:8px;padding:10px 12px;margin-top:6px;font-size:12px;"><span style="color:#D49A37;font-weight:800;">Password Reset Link:</span><br/><a href="${data.reset_url}" style="color:#FFFFFF;text-decoration:underline;word-break:break-all;font-weight:600;display:inline-block;margin-top:4px;">Open Password Reset Page &rarr;</a></div>`;
+        }
         document.getElementById('forgotSuccess').style.display='flex';
       }else{
-        showForgotError(data.message||'Something went wrong. Please try again.');
+        showForgotError(data.message||'No account found with this email in our database. Please check your email or Sign Up.');
         setLoading('forgotBtn',false);
       }
     }catch(e){showForgotError('Network error. Please try again.');setLoading('forgotBtn',false);}
+  }
+
+  async function checkSignupEmailExists(){
+    const inp=document.getElementById('su_email');
+    if(!inp) return;
+    const email=inp.value.trim().toLowerCase();
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+    try{
+      const res=await fetch('/check-email',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email})});
+      const data=await res.json();
+      if(data.status==='success'&&data.result!=='no_account'){
+        showAuthError('signupError','An account with this email ('+email+') already exists in our database. <a href="#" style="color:#D49A37;text-decoration:underline;font-weight:700;margin-left:4px;" data-act-click="switchAuthTab" data-arg-click=\'["signin"]\'>Sign In instead &rarr;</a>');
+      }
+    }catch(e){}
   }
 
   // ── MULTISTEP SIGNUP (Phase 13): stage1 account -> stage2 academics -> stage3 profile+intent ──
@@ -489,7 +688,9 @@
       const res=await fetch('/signup/stage1',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name,email,phone,password,terms_accepted:true,newsletter_opt_in:newsletter,visitor_id:_visitorId,company_website:document.getElementById('su_company_website').value,_ts:document.getElementById('su_ts').value,/* §6.1 attribution: the 30-day ref cookie set on landing */ref:(window.dbertRefCode?window.dbertRefCode():'')})});
       const data=await res.json(); setLoading('suBtn1',false);
       if(data.status==='success'){dbertGA('signup_stage1',{});osLogin(email);suGoStep(2);}
-      else if(res.status===409&&data.code==='account_exists'){switchAuthTab('signin');const si=document.getElementById('si_email');if(si)si.value=email;showAuthError('signinError','You already have an account — please sign in.');}
+      else if(res.status===409&&data.code==='account_exists'){
+        showAuthError('signupError','An account with this email ('+email+') already exists in our database. <a href="#" style="color:#D49A37;text-decoration:underline;font-weight:700;margin-left:4px;" data-act-click="switchAuthTab" data-arg-click=\'["signin"]\'>Sign In instead &rarr;</a>');
+      }
       else{showAuthError('signupError',data.message||'Could not create your account.');}
     }catch(e){setLoading('suBtn1',false);showAuthError('signupError','Network error. Please try again.');}
   }
@@ -549,20 +750,20 @@
   function resetSiFlow(){_siEmail='';['siStepEmail'].forEach(id=>document.getElementById(id).style.display='block');['siStepLogin','siStepSetPw'].forEach(id=>document.getElementById(id).style.display='none');['si_email','si_password','si_newpw','si_confirmpw'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});hideAuthError('signinError');setLoading('siEmailBtn',false);}
   async function doEmailCheck(){
     hideAuthError('signinError');
-    const email=document.getElementById('si_email').value.trim().toLowerCase();
-    if(!email){showAuthError('signinError','Please enter your email.');return;}
+    const inputVal=document.getElementById('si_email').value.trim();
+    if(!inputVal){showAuthError('signinError','Please enter your email or 10-digit mobile.');return;}
     setLoading('siEmailBtn',true);
     try{
-      const res=await fetch('/check-email',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email})});
+      const res=await fetch('/check-email',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:inputVal})});
       const data=await res.json();
       if(data.status!=='success'){showAuthError('signinError',data.message||'Error.');setLoading('siEmailBtn',false);return;}
-      _siEmail=email;
+      _siEmail=data.email||inputVal;
       if(data.result==='no_account'){showAuthError('signinError','No account found. Please Sign Up & Apply.');setLoading('siEmailBtn',false);}
       else if(data.result==='no_password'){
         showAuthError('signinError', 'Account requires migration. Please click "Forgot Password" to set a secure password.');
         setLoading('siEmailBtn', false);
       } else {
-        document.getElementById('siEmailDisplay').textContent=email;
+        document.getElementById('siEmailDisplay').textContent=_siEmail;
         document.getElementById('siStepEmail').style.display='none';
         document.getElementById('siStepLogin').style.display='block';
         setLoading('siEmailBtn',false);
