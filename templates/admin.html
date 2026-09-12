@@ -1093,7 +1093,8 @@
   // ── AUTH ──────────────────────────────────────────────────────
   async function doLogout(){
     try{ await fetch(API('/admin/logout'),{method:'POST',credentials:'include'}); }catch(e){}
-    window.location.href='/admin-login';
+    try{ sessionStorage.clear(); localStorage.clear(); }catch(e){}
+    window.location.replace('/admin-login');
   }
 
   // Close modals on overlay click or ESC

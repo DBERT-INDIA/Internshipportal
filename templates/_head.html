@@ -37,7 +37,7 @@
 {# ---- Type: exactly three families, loaded once (spec §2) ---- #}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
 
 {# ---- Icons. Pinned to 6.5.0 to match the 27 existing per-page loads, so the
        browser cache is shared while the migration is in flight. ---- #}
@@ -45,6 +45,12 @@
 
 {# ---- The single stylesheet ---- #}
 <link rel="stylesheet" href="/static/css/dbert-theme.css">
+
+{# ---- Modern UI Stack: Lenis Smooth Scroll + GSAP + React-Bits Interactions ---- #}
+<script src="/static/js/lenis.min.js"></script>
+<script src="/static/js/gsap.min.js"></script>
+<script src="/static/js/ScrollTrigger.min.js"></script>
+<script src="/static/js/creative-ui.js" defer></script>
 
 {# ---- Delegated event dispatch (spec §5.3, Phase 9) -------------------------
        Replaces inline on*= handlers, which a nonce-based CSP cannot cover.
