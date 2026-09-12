@@ -9,6 +9,9 @@ import pytest
 # Configure environment for testing before importing app
 os.environ["FLASK_DEBUG"] = "true"
 os.environ["TESTING"] = "true"
+import tempfile
+_temp_db_fd, _temp_db_path = tempfile.mkstemp()
+os.environ["DB_FILE"] = _temp_db_path
 
 from app import app, init_db, get_db
 
@@ -22,6 +25,11 @@ def client():
     # Initialize test DB
     with app.app_context():
         init_db()
+        # Clear any existing data first
+        with get_db() as conn:
+            conn.execute("DELETE FROM intern_accounts")
+            conn.commit()
+            
         # Seed test users
         with get_db() as conn:
             conn.execute("INSERT INTO intern_accounts (name, email, password_set, is_active) VALUES ('Intern', 'intern@example.com', 1, 1)")
@@ -40,13 +48,13 @@ def test_public_routes_accessible(client):
 
 def test_admin_routes_protected(client):
     """Ensure admin APIs reject unauthenticated requests."""
-    resp = client.get("/admin/enrollments/csv")
+    resp = client.get("/admin/csv/enrollments")
     # Our app often returns 401 for unauthorized API calls
     assert resp.status_code in (401, 403, 302)
 
 def test_intern_routes_protected(client):
     """Ensure intern APIs reject unauthenticated requests."""
-    resp = client.get("/intern/applications")
+    resp = client.get("/intern/my-applications")
     assert resp.status_code in (401, 403, 302)
 
 def test_admin_route_intern_block(client):
@@ -56,5 +64,5 @@ def test_admin_route_intern_block(client):
         sess["role"] = "intern"
         sess["email"] = "intern@example.com"
         
-    resp = client.get("/admin/enrollments/csv")
+    resp = client.get("/admin/csv/enrollments")
     assert resp.status_code in (401, 403)
