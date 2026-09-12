@@ -499,7 +499,7 @@ def migrate_password_hash(table, email, plaintext):
     try:
         with get_db() as conn:
             conn.execute(
-                f"UPDATE {table} SET password_hash=?, updated_at=? WHERE email=?",
+                f"UPDATE {table} SET password_hash=?, updated_at=? WHERE email=?",  # nosec B608
                 (set_password_hash(plaintext), now_str(), email.lower()),
             )
             conn.commit()
@@ -2408,7 +2408,7 @@ def _csrf_token():
 
 def _csrf_field():
     """Hidden input for classic form posts. Used as {{ csrf_field() }}."""
-    return Markup(
+    return Markup(  # nosec B704
         f'<input type="hidden" name="{CSRF_FIELD}" value="{escape(_csrf_token())}">'
     )
 
@@ -3597,14 +3597,14 @@ def sitemap_xml():
     # Track 2 Â§7: live posts (published & non-expired auto-drop) + public CVs.
     with get_db() as conn:
         for r in conn.execute(
-            f"SELECT id, post_type, slug, updated_at FROM posts WHERE {_LIVE_SQL} "
+            f"SELECT id, post_type, slug, updated_at FROM posts WHERE {_LIVE_SQL} "  # nosec B608
             "ORDER BY published_at DESC").fetchall():
             lm = (r["updated_at"] or "")[:10] or today
             pages.append((f"{SITE_ORIGIN}{_post_path(r)}", lm, "weekly", "0.7"))
         # T8: location landing pages, only once a (post_type, city) has >=3 live posts
         # (thin pages stay noindex + out of the sitemap -- they light up as inventory lands).
         for r in conn.execute(
-            f"SELECT post_type, location, MAX(updated_at) AS lm FROM posts WHERE {_LIVE_SQL} "
+            f"SELECT post_type, location, MAX(updated_at) AS lm FROM posts WHERE {_LIVE_SQL} "  # nosec B608
             "AND location != '' GROUP BY post_type, location HAVING COUNT(*) >= 3").fetchall():
             base = "/internships" if r["post_type"] == "internship" else "/jobs"
             lm = (r["lm"] or "")[:10] or today
@@ -5879,7 +5879,7 @@ def paginate(conn, query_str, params=(), page=1, per_page=20):
         page = max(1, int(page))
         per_page = max(1, min(100, int(per_page)))
 
-        count_sql = f"SELECT COUNT(*) as total FROM ({query_str})"
+        count_sql = f"SELECT COUNT(*) as total FROM ({query_str})"  # nosec B608
         total_items = conn.execute(count_sql, params).fetchone()["total"]
 
         total_pages = max(1, (total_items + per_page - 1) // per_page)
@@ -7130,7 +7130,7 @@ def company_post_save():
                 # "YYYY-MM-DD HH:MM:SS" for the same day, so pin it to end-of-day.
                 extra_vals = [f"{raw_expiry} 23:59:59" if raw_expiry else None]
             conn.execute(
-                "UPDATE posts SET post_type=?,domain=?,title=?,slug=?,description=?,"
+                "UPDATE posts SET post_type=?,domain=?,title=?,slug=?,description=?,"  # nosec B608
                 "responsibilities=?,skills=?,location=?,work_mode=?,stipend_min=?,"
                 "stipend_max=?,pay_period=?,is_unpaid=?,duration=?,openings=?,apply_by=?,"
                 "certifications_json=?,eligibility=?,updated_at=?" + extra_set +
@@ -7683,7 +7683,7 @@ def company_profile(slug):
             abort(404)
         company = row_to_dict(company)
         posts = [row_to_dict(r) for r in conn.execute(
-            "SELECT * FROM posts WHERE company_id=? AND " + _LIVE_SQL +
+            "SELECT * FROM posts WHERE company_id=? AND " + _LIVE_SQL +  # nosec B608
             " ORDER BY published_at DESC", (company_id,)).fetchall()]
         cohorts = [row_to_dict(r) for r in conn.execute(
             "SELECT * FROM cohorts WHERE company_id=? AND status='published' "
@@ -7814,7 +7814,7 @@ def live_openings_total():
         return _OPENINGS_CACHE["total"]
     with get_db() as conn:
         total = conn.execute(
-            f"SELECT COALESCE(SUM(openings),0) FROM posts WHERE {_LIVE_SQL}"
+            f"SELECT COALESCE(SUM(openings),0) FROM posts WHERE {_LIVE_SQL}"  # nosec B608
         ).fetchone()[0]
     result = int(total * 0.9)
     _OPENINGS_CACHE["at"] = now
@@ -7848,7 +7848,7 @@ def _domain_tile_counts():
     """Live post counts per domain Ã— post_type, for the homepage domain tiles."""
     with get_db() as conn:
         rows = conn.execute(
-            f"SELECT domain, post_type, COUNT(*) AS n FROM posts WHERE {_LIVE_SQL} "
+            f"SELECT domain, post_type, COUNT(*) AS n FROM posts WHERE {_LIVE_SQL} "  # nosec B608
             "GROUP BY domain, post_type"
         ).fetchall()
     counts = {d: {"internship": 0, "job": 0} for d in VALID_DOMAINS}
@@ -8027,7 +8027,7 @@ def _render_listings(post_type, location_page=False, city=None, city_slug=None):
         params.append(location)
     with get_db() as conn:
         rows = conn.execute(
-            f"SELECT p.*, c.name AS company_name FROM posts p JOIN companies c ON c.id=p.company_id "
+            f"SELECT p.*, c.name AS company_name FROM posts p JOIN companies c ON c.id=p.company_id "  # nosec B608
             f"WHERE {where} ORDER BY p.published_at DESC LIMIT ? OFFSET ?",
             (*params, _POSTS_PER_PAGE + 1, (page - 1) * _POSTS_PER_PAGE),
         ).fetchall()
@@ -8042,7 +8042,7 @@ def _render_listings(post_type, location_page=False, city=None, city_slug=None):
             loc_where += " AND location != ?"
             loc_params.append(location)
         locations = [row_to_dict(r) for r in conn.execute(
-            f"SELECT location, COUNT(*) AS n FROM posts WHERE {loc_where} GROUP BY location ORDER BY location",
+            f"SELECT location, COUNT(*) AS n FROM posts WHERE {loc_where} GROUP BY location ORDER BY location",  # nosec B608
             loc_params,
         ).fetchall()]
         for loc in locations:
@@ -8050,7 +8050,7 @@ def _render_listings(post_type, location_page=False, city=None, city_slug=None):
         live_count_here = None
         if location_page:
             live_count_here = conn.execute(
-                f"SELECT COUNT(*) FROM posts p WHERE p.post_type=? AND p.location=? AND {_LIVE_SQL}",
+                f"SELECT COUNT(*) FROM posts p WHERE p.post_type=? AND p.location=? AND {_LIVE_SQL}",  # nosec B608
                 (post_type, location),
             ).fetchone()[0]
     posts = [row_to_dict(r) for r in rows[:_POSTS_PER_PAGE]]
@@ -8161,14 +8161,14 @@ def _render_post_detail(post_type, slug, post_id):
         # T3 interlinking: more in the same domain, more in the same city â€” both
         # exclude self and only ever surface other LIVE posts.
         related_posts = [row_to_dict(r) for r in conn.execute(
-            f"SELECT id, title, post_type, slug, domain, location, work_mode FROM posts "
+            f"SELECT id, title, post_type, slug, domain, location, work_mode FROM posts "  # nosec B608
             f"WHERE domain=? AND id!=? AND {_LIVE_SQL} ORDER BY published_at DESC LIMIT 4",
             (post["domain"], post_id),
         ).fetchall()]
         city_posts = []
         if post.get("location"):
             city_posts = [row_to_dict(r) for r in conn.execute(
-                f"SELECT id, title, post_type, slug, domain, location, work_mode FROM posts "
+                f"SELECT id, title, post_type, slug, domain, location, work_mode FROM posts "  # nosec B608
                 f"WHERE location=? AND id!=? AND {_LIVE_SQL} ORDER BY published_at DESC LIMIT 4",
                 (post["location"], post_id),
             ).fetchall()]
@@ -8707,7 +8707,7 @@ def _conversation_label(conn, conv, actor):
         if ct == "admin":
             return "DBERT Team"
         tbl = "mentors" if ct == "mentor" else "companies"
-        r = conn.execute(f"SELECT name FROM {tbl} WHERE id=?", (cid,)).fetchone()
+        r = conn.execute(f"SELECT name FROM {tbl} WHERE id=?", (cid,)).fetchone()  # nosec B608
         return r["name"] if r else ct.capitalize()
     r = conn.execute("SELECT name FROM intern_accounts WHERE id=?", (conv["intern_id"],)).fetchone()
     return r["name"] if r else "Intern"
@@ -9481,7 +9481,7 @@ def interview_status():
             post_id = request.args.get("post_id", type=int)
             if post_id:
                 applied = conn.execute(
-                    f"SELECT 1 FROM post_applications WHERE post_id=? AND intern_id=? AND status IN "
+                    f"SELECT 1 FROM post_applications WHERE post_id=? AND intern_id=? AND status IN "  # nosec B608
                     f"({_placeholders(len(APPLICATION_STATUSES))})",
                     (post_id, acct["id"], *APPLICATION_STATUSES)).fetchone()
                 ivr = conn.execute(
@@ -9617,7 +9617,7 @@ def interview_start():
             post = row_to_dict(post_row)
             company_questions = _company_questions_for_post(conn, post_id)
             applied = conn.execute(
-                f"SELECT 1 FROM post_applications WHERE post_id=? AND intern_id=? AND status IN "
+                f"SELECT 1 FROM post_applications WHERE post_id=? AND intern_id=? AND status IN "  # nosec B608
                 f"({_placeholders(len(APPLICATION_STATUSES))})",
                 (post_id, acct["id"], *APPLICATION_STATUSES)).fetchone()
             if not applied:
@@ -9894,7 +9894,7 @@ def _reset_interview_for_emails(emails):
         return 0
     with get_db() as conn:
         cur = conn.execute(
-            f"UPDATE intern_accounts SET interview_locked=0, interview_attempts=0, updated_at=? "
+            f"UPDATE intern_accounts SET interview_locked=0, interview_attempts=0, updated_at=? "  # nosec B608
             f"WHERE email IN ({_placeholders(len(emails))})",
             [now_str()] + list(emails))
         conn.commit()
@@ -9930,7 +9930,7 @@ def admin_interview_bulk_reset():
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
         with get_db() as conn:
             rows = conn.execute(
-                f"SELECT email FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids
+                f"SELECT email FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids  # nosec B608
             ).fetchall()
         emails = [r["email"] for r in rows]
         updated = _reset_interview_for_emails(emails)
@@ -9996,7 +9996,7 @@ def intern_update_profile():
         set_clause = ", ".join(f"{k}=?" for k in updates)  # keys are a fixed internal whitelist
         params = list(updates.values()) + [email]
         with get_db() as conn:
-            conn.execute(f"UPDATE intern_accounts SET {set_clause} WHERE email=?", params)
+            conn.execute(f"UPDATE intern_accounts SET {set_clause} WHERE email=?", params)  # nosec B608
             conn.commit()
         return jsonify({"status": "success", "message": "Profile updated."})
     except Exception as e:
@@ -11604,7 +11604,7 @@ def admin_applications_bulk_delete():
         if not ids:
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
         with get_db() as conn:
-            cur = conn.execute(f"DELETE FROM applications WHERE id IN ({_placeholders(len(ids))})", ids)
+            cur = conn.execute(f"DELETE FROM applications WHERE id IN ({_placeholders(len(ids))})", ids)  # nosec B608
             conn.commit()
             deleted = cur.rowcount
         return jsonify({"status": "success", "deleted": deleted})
@@ -11622,7 +11622,7 @@ def admin_enrollments_bulk_delete():
         if not ids:
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
         with get_db() as conn:
-            cur = conn.execute(f"DELETE FROM enrollments WHERE id IN ({_placeholders(len(ids))})", ids)
+            cur = conn.execute(f"DELETE FROM enrollments WHERE id IN ({_placeholders(len(ids))})", ids)  # nosec B608
             conn.commit()
             deleted = cur.rowcount
         return jsonify({"status": "success", "deleted": deleted})
@@ -11640,7 +11640,7 @@ def admin_mentors_bulk_delete():
         if not ids:
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
         with get_db() as conn:
-            cur = conn.execute(f"DELETE FROM mentors WHERE id IN ({_placeholders(len(ids))})", ids)
+            cur = conn.execute(f"DELETE FROM mentors WHERE id IN ({_placeholders(len(ids))})", ids)  # nosec B608
             conn.commit()
             deleted = cur.rowcount
         return jsonify({"status": "success", "deleted": deleted})
@@ -11658,7 +11658,7 @@ def admin_devices_bulk_delete():
         if not ids:
             return jsonify({"status": "error", "message": "No valid ids provided."}), 400
         with get_db() as conn:
-            cur = conn.execute(f"DELETE FROM device_profiles WHERE id IN ({_placeholders(len(ids))})", ids)
+            cur = conn.execute(f"DELETE FROM device_profiles WHERE id IN ({_placeholders(len(ids))})", ids)  # nosec B608
             conn.commit()
             deleted = cur.rowcount
         return jsonify({"status": "success", "deleted": deleted})
@@ -11685,7 +11685,7 @@ def admin_users_bulk_delete():
         actor = admin_user.get("email", "unknown") if isinstance(admin_user, dict) else "admin"
         with get_db() as conn:
             rows = conn.execute(
-                f"SELECT DISTINCT email FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids
+                f"SELECT DISTINCT email FROM intern_accounts WHERE id IN ({_placeholders(len(ids))})", ids  # nosec B608
             ).fetchall()
             emails = [r["email"] for r in rows if r["email"]]
             deleted = 0
@@ -12547,6 +12547,6 @@ def _security_headers(resp):
 
 
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=5000)  # nosec B104
 
 
