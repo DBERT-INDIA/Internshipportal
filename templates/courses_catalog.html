@@ -45,7 +45,7 @@
             <div class="row" style="gap:8px">
               <span class="badge">{{ course.level or 'Beginner' }}</span>
               {% if course.is_paid %}
-                <span class="badge">₹{{ course.price_inr }}</span>
+                <span class="badge">₹{{ course.price_inr | formatINR }}</span>
               {% else %}
                 <span class="badge b-green">Free</span>
               {% endif %}
@@ -64,7 +64,7 @@
 
             <div class="card-foot">
               <span class="price-tag" style="font-size:17px">
-                {% if course.is_paid %}₹{{ course.price_inr }}{% else %}Free{% endif %}
+                {% if course.is_paid %}₹{{ course.price_inr | formatINR }}{% else %}Free{% endif %}
               </span>
               <a href="/courses/{{ course.id }}" class="btn btn-primary btn-sm">
                 View Syllabus <i class="fa-solid fa-arrow-right"></i>
