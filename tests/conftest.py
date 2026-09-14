@@ -1,10 +1,16 @@
-﻿import os
+import os
 import tempfile
 import pytest
 
 os.environ["TESTING"] = "true"
 os.environ.setdefault("FLASK_DEBUG", "false")
 os.environ.setdefault("SMTP_PASS", "")
+
+# Provide strong dummy values so app.py doesn't crash on production security guards during tests
+os.environ.setdefault("FLASK_SECRET_KEY", "test-secret-key-for-ci-must-be-32c")
+os.environ.setdefault("ADMIN_PASSWORD", "test_admin_strong_pass_123")
+os.environ.setdefault("ADMIN_KEY", "test_admin_strong_key_123")
+os.environ.setdefault("ADMIN_USERNAME", "test_admin")
 
 from app import app as _app, init_db, get_db, set_password_hash, create_session, AUTH_COOKIE
 
