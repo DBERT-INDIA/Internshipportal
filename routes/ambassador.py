@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, flash
 from markupsafe import escape
-from app import get_db, require_role, current_intern, current_staff, clean_text, record_referral_click, log_error, encrypt_upi, decrypt_upi, now_str, log_security_event, app_logger
+from app import get_db, is_admin_request, current_intern, current_staff, clean_text, record_referral_click, log_error, encrypt_upi, decrypt_upi, now_str
 
 ambassador_bp = Blueprint('ambassador', __name__)
 

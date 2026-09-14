@@ -119,6 +119,7 @@ else:
 # Prevent double logging
 if app_logger.hasHandlers():
     app_logger.handlers.clear()
+    app_logger.filters.clear()
 app_logger.addHandler(handler)
 
 app.config["SESSION_COOKIE_SECURE"] = COOKIE_SECURE

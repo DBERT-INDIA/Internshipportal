@@ -32,6 +32,10 @@ def e2e_db():
     yield db_path
     
     os.close(db_fd)
+    try:
+        os.unlink(db_path)
+    except OSError:
+        pass
 
 @pytest.fixture(scope="session")
 def live_server_url(e2e_db):
