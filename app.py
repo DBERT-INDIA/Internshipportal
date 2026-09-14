@@ -10,6 +10,7 @@ import smtplib
 import sqlite3
 import secrets
 import hashlib
+import logging
 import hmac
 import base64
 import string
@@ -79,10 +80,64 @@ is_prod = os.environ.get("FLASK_DEBUG", "false").lower() != "true"
 _is_debug = not is_prod
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "1" if is_prod else "0") == "1"
 
+# Phase 11: Structured Logger Setup
+class RequestIDFilter(logging.Filter):
+    def filter(self, record):
+        record.request_id = getattr(g, "request_id", "") if has_request_context() else ""
+        record.client_ip = request.headers.get("X-Forwarded-For", request.remote_addr) if has_request_context() else ""
+        record.path = request.path if has_request_context() else ""
+        return True
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "ts": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "msg": record.getMessage(),
+            "req_id": getattr(record, "request_id", ""),
+            "ip": getattr(record, "client_ip", ""),
+            "path": getattr(record, "path", "")
+        }
+        if record.exc_info:
+            log_record["exc_info"] = self.formatException(record.exc_info)
+        # Include any extra kwargs bound to the record
+        if hasattr(record, "security"):
+            log_record["event"] = record.msg
+            log_record["security"] = True
+            if hasattr(record, "details"):
+                log_record["details"] = record.details
+        return json.dumps(log_record)
+
+app_logger = logging.getLogger("dbert_app")
+app_logger.setLevel(logging.INFO if is_prod else logging.DEBUG)
+app_logger.addFilter(RequestIDFilter())
+handler = logging.StreamHandler()
+if is_prod:
+    handler.setFormatter(JsonFormatter())
+else:
+    handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s [%(request_id)s] %(message)s'))
+# Prevent double logging
+if app_logger.hasHandlers():
+    app_logger.handlers.clear()
+app_logger.addHandler(handler)
+
 app.config["SESSION_COOKIE_SECURE"] = COOKIE_SECURE
 # Phase 8.0: trust exactly ONE proxy hop (Nginx). Safe only because Nginx overwrites
 # X-Forwarded-For / X-Real-IP with the true client IP (see SECURITY_DEPLOY.md).
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# Phase 11: Request Tracing
+@app.before_request
+def assign_request_id():
+    # If the reverse proxy sets X-Request-ID, use it; otherwise generate a new one.
+    g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+
+@app.after_request
+def inject_request_id(response):
+    if hasattr(g, "request_id"):
+        response.headers["X-Request-ID"] = g.request_id
+    return response
+
 def csp_nonce():
     """The per-response script nonce. Templates call this in every inline
     <script nonce="{{ csp_nonce() }}">.
@@ -457,25 +512,24 @@ def row_to_dict(row):
     return {k: row[k] for k in row.keys()}
 
 
-def log_error(context, e): print(f"[{context}] Error: {e}")
+def log_error(context, e): 
+    app_logger.error(f"[{context}] Error: {e}", exc_info=True)
+
 def log_security_event(event, details=None, severity="INFO"):
     """P2-4: Structured security event logging for monitoring/SIEM."""
-    from flask import g
-    import json as _json
-    entry = {
-        "ts": now_str(),
-        "event": event,
-        "severity": severity,
-        "ip": get_client_ip() if has_request_context() else "",
-        "path": request.path if has_request_context() else "",
-        "req_id": getattr(g, "request_id", "") if has_request_context() else "",
-    }
+    kwargs = {"extra": {"security": True}}
     if details:
-        entry["details"] = details
-    print(f"[SECURITY] {_json.dumps(entry)}")
+        kwargs["extra"]["details"] = details
+        
+    if severity.upper() == "ERROR":
+        app_logger.error(event, **kwargs)
+    elif severity.upper() == "WARNING":
+        app_logger.warning(event, **kwargs)
+    else:
+        app_logger.info(event, **kwargs)
 
-
-def log_info(context, msg): print(f"[{context}] {msg}")
+def log_info(context, msg): 
+    app_logger.info(f"[{context}] {msg}")
 def now_str(): return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 def hash_password(p): return hashlib.sha256((p or "").encode()).hexdigest()
 
@@ -621,6 +675,7 @@ def too_many(retry_after):
 def log_abuse(ip, route, bucket, reason, email=None):
     """Record a blocked/abusive request for the admin Security tab (8.6)."""
     try:
+        log_security_event("abuse_blocked", {"ip": ip, "route": route, "bucket": bucket, "reason": reason, "email": email}, severity="WARNING")
         with get_db() as conn:
             conn.execute(
                 "INSERT INTO abuse_log (timestamp, ip, route, bucket, reason, email) VALUES (?,?,?,?,?,?)",
@@ -658,6 +713,7 @@ def login_locked(identity):
 
 def record_login_fail(identity):
     try:
+        log_security_event("login_failure", {"identity": identity}, severity="WARNING")
         with get_db() as conn:
             conn.execute("INSERT INTO rate_events (bucket, created_at) VALUES (?,?)",
                          (_login_fail_bucket(identity), time.time())); conn.commit()
@@ -2383,6 +2439,7 @@ def create_session(email, role):
             (email.lower(), role, token, expires_at)
         )
         conn.commit()
+    log_security_event("login_success", {"email": email.lower(), "role": role})
     return token
 
 
