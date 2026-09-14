@@ -1068,11 +1068,13 @@ def init_db():
             );
             CREATE TABLE IF NOT EXISTS password_resets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                intern_id INTEGER,
+                account_type TEXT NOT NULL DEFAULT 'intern',
+                account_id INTEGER,
                 email TEXT NOT NULL,
                 token TEXT NOT NULL UNIQUE,
                 expires_at TEXT NOT NULL,
                 used INTEGER DEFAULT 0,
+                used_at TEXT,
                 created_at TEXT DEFAULT (datetime('now','localtime'))
             );
             CREATE TABLE IF NOT EXISTS rate_events (
@@ -1717,6 +1719,11 @@ def init_db():
                 )
             conn.commit()
         # Migrate existing tables safely
+        # SEC-001: password_resets -- add structured account_type/account_id columns
+        # (replaces the legacy email|intern / email|company string encoding).
+        ensure_column(conn, "password_resets", "account_type", "TEXT NOT NULL DEFAULT 'intern'")
+        ensure_column(conn, "password_resets", "account_id",   "INTEGER")
+        ensure_column(conn, "password_resets", "used_at",      "TEXT")
         for col, defn in [
             ("city", "TEXT"), ("course", "TEXT"), ("year_of_passing", "TEXT"),
             ("visitor_id", "TEXT"), ("source", "TEXT DEFAULT 'web'"), ("updated_at", "TEXT"),
@@ -11792,22 +11799,26 @@ def admin_reset_intern_password():
             acct = conn.execute("SELECT * FROM intern_accounts WHERE email=? AND is_active=1", (email,)).fetchone()
             if not acct:
                 return jsonify({"status": "error", "message": "Intern not found."}), 404
-            
-            # SEC-005 fix: Do not return password. Send reset link instead.
-            email_role = email + "|intern"
-            conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
-            token = secrets.token_urlsafe(32)
-            token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+            # SEC-001: use structured account_type/account_id; invalidate old tokens by email+type.
+            conn.execute(
+                "UPDATE password_resets SET used=1, used_at=? WHERE email=? AND account_type='intern' AND used=0",
+                (now_str(), email)
+            )
+            token      = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
             expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
             conn.execute(
-                "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                (email_role, token_hash, expires_at)
+                "INSERT INTO password_resets (account_type, account_id, email, token, expires_at) VALUES (?,?,?,?,?)",
+                ("intern", acct["id"], email, token_hash, expires_at)
             )
             conn.commit()
-            
+
             reset_url = f"{SITE_ORIGIN}/reset?token={token}"
             send_password_reset_email(acct["name"], email, reset_url)
-            
+            # SEC-003: log account id only, never the token or URL.
+            log_security_event("admin_password_reset_sent", {"intern_id": acct["id"]})
+
         return jsonify({"status": "success", "message": "Password reset email sent to the intern."})
     except Exception as e:
         log_error("admin-reset-password", e)
@@ -12352,9 +12363,14 @@ def set_password():
 
 @app.route("/forgot-password", methods=["POST"])
 def forgot_password():
-    """Request a password reset. Always returns a neutral success message to
-    avoid account enumeration; only actually emails a link if an active account
-    exists with password_set=1."""
+    """Request a password reset.
+    SEC-001: account_type stored explicitly (not encoded in email string).
+    SEC-002: reset token is NEVER returned in the API response.
+    SEC-003: reset URL/token is NEVER logged.
+    AUTH-002: always returns the same neutral response regardless of whether
+              the email exists — prevents account enumeration.
+    """
+    # Neutral response — always identical for existing / non-existing accounts (AUTH-002).
     neutral = jsonify({"status": "success",
                        "message": "If that email exists, a reset link has been sent."})
     try:
@@ -12386,51 +12402,55 @@ def forgot_password():
                     "SELECT * FROM companies WHERE email=? AND is_active=1 LIMIT 1", (email,)
                 ).fetchone()
 
+            # AUTH-002: unknown email -> return same neutral response, never reveal existence.
             if not acct and not (comp and comp["password_hash"]):
-                return jsonify({
-                    "status": "error",
-                    "code": "email_not_found",
-                    "message": "No account found with this email in our database. Please check your email or Sign Up."
-                }), 404
+                return neutral
 
-            token = secrets.token_urlsafe(32)
-            token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+            # SEC-001: derive account_type and account_id explicitly.
+            if acct:
+                account_type = "intern"
+                account_id   = acct["id"]
+                target_name  = acct["name"]
+            else:
+                account_type = "company"
+                account_id   = comp["id"]
+                target_name  = comp["name"]
+
+            # Generate a cryptographically random token; store only its hash (SEC-003).
+            token      = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
             expires_at = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
 
-            if acct:
-                email_role = email + "|intern"
-                conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
-                conn.execute(
-                    "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                    (email_role, token_hash, expires_at)
-                )
-                conn.commit()
-                reset_url = f"{SITE_ORIGIN}/reset?token={token}"
-                target_name = acct["name"]
-            else:
-                email_role = email + "|company"
-                conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND used=0", (email_role,))
-                conn.execute(
-                    "INSERT INTO password_resets (email, token, expires_at) VALUES (?,?,?)",
-                    (email_role, token_hash, expires_at)
-                )
-                conn.commit()
-                reset_url = f"{SITE_ORIGIN}/reset?token={token}"
-                target_name = comp["name"]
+            # Invalidate any previous unused tokens for this account.
+            conn.execute(
+                "UPDATE password_resets SET used=1, used_at=? WHERE email=? AND account_type=? AND used=0",
+                (now_str(), email, account_type)
+            )
+            # SEC-001: store account_type + account_id explicitly — no more email|role encoding.
+            conn.execute(
+                "INSERT INTO password_resets (account_type, account_id, email, token, expires_at) "
+                "VALUES (?,?,?,?,?)",
+                (account_type, account_id, email, token_hash, expires_at)
+            )
+            conn.commit()
 
-            print(f"[FORGOT_PASSWORD] Reset URL for {email}: {reset_url}", flush=True)
+            reset_url = f"{SITE_ORIGIN}/reset?token={token}"
+
+            # SEC-003: structured audit event — account id only, never token or URL.
+            log_security_event("password_reset_requested", {"account_type": account_type, "account_id": account_id})
+
             try:
                 send_password_reset_email(target_name, email, reset_url)
+                log_security_event("password_reset_email_sent", {"account_type": account_type, "account_id": account_id})
             except Exception as mail_err:
                 log_error("forgot-password:email", mail_err)
 
-            payload = {
+            # SEC-002: token is NEVER returned in any environment — not debug, not SMTP-less.
+            # Use mock mail transport or check test fixtures to retrieve tokens in tests.
+            return jsonify({
                 "status": "success",
-                "message": f"Password reset link has been sent to {email}."
-            }
-            if app.debug or not SMTP_PASS:
-                payload["reset_url"] = reset_url
-            return jsonify(payload)
+                "message": "If that email exists, a reset link has been sent."
+            })
     except Exception as e:
         log_error("forgot-password", e)
         return jsonify({"status": "error", "message": "Something went wrong. Please try again."}), 500
@@ -12438,8 +12458,10 @@ def forgot_password():
 
 @app.route("/reset-password", methods=["POST"])
 def reset_password():
-    """Complete a password reset using a token. Sets new password, marks the
-    token used, and auto-logs the intern in."""
+    """Complete a password reset using a token.
+    SEC-001: reads account_type from the reset record to set the correct session role.
+             A company reset MUST create a company session, not an intern session.
+    """
     try:
         data = request.get_json(force=True)
         ip = get_client_ip()
@@ -12456,31 +12478,72 @@ def reset_password():
             return jsonify({"status": "error", "message": "Password must be at least 8 characters."}), 400
         if password != confirm:
             return jsonify({"status": "error", "message": "Passwords do not match."}), 400
+
+        # Hash the presented token and look up by hash — never store/compare raw tokens.
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+
         with get_db() as conn:
             row = conn.execute(
                 "SELECT * FROM password_resets WHERE token=? AND used=0 AND expires_at>? LIMIT 1",
-                (token, now_str())
+                (token_hash, now_str())
             ).fetchone()
             if not row:
                 return jsonify({"status": "error", "message": "This reset link is invalid or has expired."}), 400
-            email = clean_text(row["email"]).lower()
-            updated = conn.execute(
-                "UPDATE intern_accounts SET password_hash=?, password_set=1, updated_at=? WHERE email=?",
-                (set_password_hash(password), now_str(), email)
-            ).rowcount
-            if not updated:
-                conn.execute(
+
+            email        = clean_text(row["email"]).lower()
+            account_type = row["account_type"] if row["account_type"] else "intern"
+
+            # SEC-001: update the correct account table based on account_type.
+            new_hash = set_password_hash(password)
+            if account_type == "intern":
+                updated = conn.execute(
+                    "UPDATE intern_accounts SET password_hash=?, password_set=1, updated_at=? WHERE email=?",
+                    (new_hash, now_str(), email)
+                ).rowcount
+            else:  # company
+                updated = conn.execute(
                     "UPDATE companies SET password_hash=?, updated_at=? WHERE email=?",
-                    (set_password_hash(password), now_str(), email)
-                )
-            conn.execute("UPDATE password_resets SET used=1 WHERE id=?", (row["id"],))
+                    (new_hash, now_str(), email)
+                ).rowcount
+
+            if not updated:
+                # Fallback: try the other table if the account_type column was legacy.
+                fallback_table = "companies" if account_type == "intern" else "intern_accounts"
+                if fallback_table == "companies":
+                    conn.execute(
+                        "UPDATE companies SET password_hash=?, updated_at=? WHERE email=?",
+                        (new_hash, now_str(), email)
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE intern_accounts SET password_hash=?, password_set=1, updated_at=? WHERE email=?",
+                        (new_hash, now_str(), email)
+                    )
+
+            # Mark token consumed with timestamp.
+            conn.execute(
+                "UPDATE password_resets SET used=1, used_at=? WHERE id=?",
+                (now_str(), row["id"])
+            )
+
+            # Revoke all existing sessions for this account (prevents session fixation
+            # and forces re-authentication everywhere after a password change).
+            conn.execute("DELETE FROM user_sessions WHERE email=?", (email,))
             conn.commit()
-        token_sess = create_session(email, "intern")
+
+        # SEC-001: create session with the CORRECT role from the reset record.
+        session_role = account_type  # "intern" or "company"
+        token_sess = create_session(email, session_role)
         link_device_to_email(data.get("visitor_id"), email)
+
+        log_security_event("password_reset_consumed", {"account_type": account_type})
+
+        # Redirect to the role-appropriate dashboard.
+        redirect_url = "/company/dashboard" if session_role == "company" else "/profile"
         resp = make_response(jsonify({
             "status": "success",
             "message": "Password reset successfully.",
-            "redirect": "/profile"
+            "redirect": redirect_url
         }))
         _set_session_cookie(resp, token_sess)
         return resp
