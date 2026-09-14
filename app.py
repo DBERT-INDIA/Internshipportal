@@ -55,6 +55,25 @@ app.config["SESSION_COOKIE_NAME"] = "dbert_flask"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
+def format_inr(value):
+    try:
+        val = int(value)
+        is_neg = val < 0
+        val = abs(val)
+        s = str(val)
+        if len(s) <= 3: return ("-" if is_neg else "") + s
+        res = s[-3:]
+        s = s[:-3]
+        while len(s) > 2:
+            res = s[-2:] + "," + res
+            s = s[:-2]
+        if s:
+            res = s + "," + res
+        return ("-" if is_neg else "") + res
+    except (ValueError, TypeError):
+        return str(value)
+app.jinja_env.filters["formatINR"] = format_inr
+
 # SEC-009: Default COOKIE_SECURE to True in production
 is_prod = os.environ.get("FLASK_DEBUG", "false").lower() != "true"
 _is_debug = not is_prod
@@ -353,7 +372,7 @@ DOMAIN_SLUGS = {
     d: d.lower().replace(" ", "-") for d in VALID_DOMAINS
 }
 
-_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime'))"
+_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime')) AND EXISTS (SELECT 1 FROM companies c WHERE c.id=posts.company_id AND c.is_approved=1 AND c.is_active=1)"
 
 # T7: public ids for portal-authored courses are offset so they never collide with
 # tutor course ids in certifications_json / course_payments.course_id.
@@ -7846,7 +7865,7 @@ _POSTS_PER_PAGE = 200  # T2: bumped from 20 so client-side filters see the whole
 # live result set (currently 74 published posts total) instead of a partial page;
 # pagination logic stays in place and will kick back in automatically once volume
 # exceeds this.
-_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime'))"
+_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime')) AND EXISTS (SELECT 1 FROM companies c WHERE c.id=posts.company_id AND c.is_approved=1 AND c.is_active=1)"
 
 # T1: homepage's one real metric — Σ openings of all live posts × 0.9. Cached briefly
 # since the homepage is the highest-traffic page and this is a full-table aggregate.

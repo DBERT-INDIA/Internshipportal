@@ -65,7 +65,7 @@
             <div class="info-row">
               <span class="info-label">Access type</span>
               <span class="info-val">
-                {% if course.is_paid %}Paid (₹{{ course.price_inr }}){% else %}Free quota{% endif %}
+                {% if course.is_paid %}Paid (₹{{ course.price_inr | formatINR }}){% else %}Free quota{% endif %}
               </span>
             </div>
 

@@ -15,7 +15,7 @@
     <div class="card mt-16">
       <div class="eyebrow">Course access</div>
       <h1 style="font-size:20px;margin-bottom:6px">Unlock {{ course.title }}</h1>
-      <div class="price-tag">₹{{ course.price_inr }}</div>
+      <div class="price-tag">₹{{ course.price_inr | formatINR }}</div>
       <p class="t-sm t-muted mt-16">{{ course.description or 'Pay to unlock this course on the AI Tutor.' }}</p>
 
       {% if cert_company_name %}
@@ -47,7 +47,7 @@
 
       {% else %}
         <img class="qr-code" src="/static/qr.jpg" alt="UPI QR code" data-act-error="$hide">
-        <p class="t-sm t-muted t-center">Scan the QR or pay ₹{{ course.price_inr }} to:</p>
+        <p class="t-sm t-muted t-center">Scan the QR or pay ₹{{ course.price_inr | formatINR }} to:</p>
         <div class="upi-chip">{{ upi_id }}</div>
 
         <form id="payForm" data-act-submit="submitPay" data-arg-submit='["$event"]' data-ret-submit>

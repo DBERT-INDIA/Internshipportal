@@ -99,7 +99,7 @@
 
     <!-- Price + domains -->
     <div class="glass-card">
-      <div class="price-row"><span class="price">&#8377;{{ '{:,}'.format(paid_amount) }}</span><span class="price-sub">one-time &middot; all taxes included</span></div>
+      <div class="price-row"><span class="price">&#8377;{{ paid_amount | formatINR }}</span><span class="price-sub">one-time &middot; all taxes included</span></div>
       <p style="color:var(--tx-muted);font-size:13.5px;line-height:1.7;">No selection lottery, no waiting to be shortlisted — your place is confirmed the moment you enrol.</p>
       <div style="margin-top:16px;">
         <div class="field-label">Open to all four DBERT domains</div>
@@ -116,7 +116,7 @@
     <div class="glass-card terms-card">
       <div class="card-h" style="font-size:15px;color:var(--amber);"><i class="fas fa-circle-info"></i> Good to know before you enrol</div>
       <p>Your placement, Offer Letter, and Certificate are <strong>guaranteed when you successfully complete the training and your 45-day production period</strong> — finish the program and your placement is assured.</p>
-      <p>Enrolment is a committed seat, so the <strong>&#8377;{{ '{:,}'.format(paid_amount) }} fee is non-refundable</strong>.</p>
+      <p>Enrolment is a committed seat, so the <strong>&#8377;{{ paid_amount | formatINR }} fee is non-refundable</strong>.</p>
       <p>Open to all four DBERT domains: AI Agent Development, Data Analyst, Full Stack Development, and Python Automation.</p>
       <p style="color:var(--tx-muted);">By enrolling you confirm you've read and accepted these terms.</p>
     </div>
@@ -145,11 +145,11 @@
 
       <!-- eligible: enrol form -->
       <div class="hidden" id="ctaForm">
-        <div class="card-h"><i class="fas fa-lock" style="color:var(--green);"></i> Confirm your seat &mdash; &#8377;{{ '{:,}'.format(paid_amount) }}</div>
+        <div class="card-h"><i class="fas fa-lock" style="color:var(--green);"></i> Confirm your seat &mdash; &#8377;{{ paid_amount | formatINR }}</div>
         <div class="hidden" id="paidRejectNote"><div class="info-banner" style="color:var(--amber);"><i class="fas fa-circle-exclamation"></i><span>We couldn't verify your previous payment &mdash; please re-upload your payment proof to continue.</span></div></div>
         <div class="field-label">Pay to UPI ID</div>
         <div class="upi-id-box"><span id="upiId">{{ upi_id }}</span><button type="button" data-act-click="copyUpi" aria-label="Copy UPI"><i class="fas fa-copy"></i></button></div>
-        <p style="color:var(--tx-muted);font-size:12px;margin-bottom:14px;">Amount: <strong style="color:var(--gold);">&#8377;{{ '{:,}'.format(paid_amount) }}</strong> (all taxes included, non-refundable) &middot; use any UPI app.</p>
+        <p style="color:var(--tx-muted);font-size:12px;margin-bottom:14px;">Amount: <strong style="color:var(--gold);">&#8377;{{ paid_amount | formatINR }}</strong> (all taxes included, non-refundable) &middot; use any UPI app.</p>
         <div style="margin-bottom:14px;">
           <label class="field-label" for="paidJoining">Choose your joining Monday *</label>
           <select id="paidJoining" class="field-select"><option value="">-- Select --</option></select>
@@ -158,7 +158,7 @@
           <label class="field-label">Upload payment screenshot *</label>
           <div class="file-wrap"><input type="file" id="paidFile" accept=".png,.jpg,.jpeg,.pdf" data-act-change="onPaidFile" data-arg-change='["$el"]'/><i class="fas fa-cloud-upload-alt"></i> <span id="paidFileName">Click or drop your payment proof (PNG, JPG, PDF · max 6MB)</span></div>
         </div>
-        <label class="chk-row"><input type="checkbox" id="paidAgree"/><span>I confirm I've read and accepted the terms above, including that the &#8377;{{ '{:,}'.format(paid_amount) }} fee is non-refundable and my placement is guaranteed on successful completion of the program.</span></label>
+        <label class="chk-row"><input type="checkbox" id="paidAgree"/><span>I confirm I've read and accepted the terms above, including that the &#8377;{{ paid_amount | formatINR }} fee is non-refundable and my placement is guaranteed on successful completion of the program.</span></label>
         <div class="err" id="paidErr"><i class="fas fa-circle-exclamation"></i><span></span></div>
         <button class="btn-primary" id="paidSubmit" data-act-click="submitPaid" style="width:100%;"><i class="fas fa-check-circle"></i> Confirm enrolment</button>
       </div>

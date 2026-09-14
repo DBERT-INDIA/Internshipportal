@@ -513,9 +513,18 @@
   async function apiFetch(path, method='GET', body=null){
     const opts = {method, credentials:'include', headers:{}};
     if(body){ opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
-    const res = await fetch(API(path), opts);
-    if(res.status===401){ window.location.href='/admin-login'; return null; }
-    return res.json();
+    try {
+      const res = await fetch(API(path), opts);
+      if(res.status===401){ window.location.href='/admin-login'; return null; }
+      const data = await res.json();
+      if (!res.ok || data.status === 'error') {
+        alert(data.message || 'An error occurred during the request.');
+      }
+      return data;
+    } catch (e) {
+      alert('Network error. Please try again.');
+      return null;
+    }
   }
 
   // ── STATS ─────────────────────────────────────────────────────
