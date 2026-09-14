@@ -2492,9 +2492,9 @@ def require_admin():
     user = get_current_user()
     if user and user.get("role") == "admin":
         return user
-    if session.get("admin_id") or session.get("staff_id"):
+    if session.get("admin_id"):
         return {
-            "id": session.get("admin_id") or session.get("staff_id"),
+            "id": session.get("admin_id"),
             "role": "admin",
             "email": session.get("staff_email", "admin@dbert.online")
         }

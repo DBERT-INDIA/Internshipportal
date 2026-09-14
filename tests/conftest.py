@@ -22,7 +22,7 @@ def app_client():
     
     # Disable CSRF globally during tests by adding everything to exempt list
     from app import CSRF_EXEMPT_ENDPOINTS
-    CSRF_EXEMPT_ENDPOINTS.update(["intern_login", "company_login", "forgot_password", "reset_password", "check_email", "admin_reset_intern_password", "intern_book_slot", "cohort_enroll", "staff_project_decision"])
+    CSRF_EXEMPT_ENDPOINTS.update(["intern_login", "company_login", "forgot_password", "reset_password", "check_email", "admin_reset_intern_password", "intern_book_slot", "cohort_enroll", "staff_project_decision", "staff_login", "admin_login", "mentor_login", "logout"])
 
     with _app.app_context():
         init_db()
@@ -41,7 +41,7 @@ def app_client():
         pass
 
 
-def seed_intern(db_path, email="intern@test.com", password="TestPass123", name="Test Intern"):
+def seed_intern(db_path, email="test_intern99@test.com", password="TestPass123", name="Test Intern"):
     os.environ["DB_FILE"] = db_path
     with get_db() as conn:
         conn.execute(
@@ -53,7 +53,7 @@ def seed_intern(db_path, email="intern@test.com", password="TestPass123", name="
         return conn.execute("SELECT id FROM intern_accounts WHERE email=?", (email,)).fetchone()["id"]
 
 
-def seed_company(db_path, email="company@test.com", password="CompPass123", name="Test Corp"):
+def seed_company(db_path, email="test_comp99@test.com", password="CompPass123", name="Test Corp"):
     os.environ["DB_FILE"] = db_path
     with get_db() as conn:
         conn.execute(
@@ -65,14 +65,14 @@ def seed_company(db_path, email="company@test.com", password="CompPass123", name
         return conn.execute("SELECT id FROM companies WHERE email=?", (email,)).fetchone()["id"]
 
 
-def login_as_intern(client, db_path, email="intern@test.com", password="TestPass123", name="Test Intern"):
+def login_as_intern(client, db_path, email="test_intern99@test.com", password="TestPass123", name="Test Intern"):
     seed_intern(db_path, email, password, name)
     resp = client.post("/intern/login", json={"email": email, "password": password})
     assert resp.status_code == 200, f"login_as_intern failed {resp.status_code}: {resp.data}"
     return resp
 
 
-def login_as_company(client, db_path, email="company@test.com", password="CompPass123", name="Test Corp"):
+def login_as_company(client, db_path, email="test_comp99@test.com", password="CompPass123", name="Test Corp"):
     seed_company(db_path, email, password, name)
     resp = client.post("/company/login", json={"email": email, "password": password})
     assert resp.status_code == 200, f"login_as_company failed {resp.status_code}: {resp.data}"
@@ -112,3 +112,37 @@ def inject_reset_token(db_path, email, account_type="intern"):
         )
         conn.commit()
     return raw
+
+def seed_staff(db_path, email="test_staff99@test.com", password="StaffPass123", name="Test Staff", roles=None):
+    import os
+    from app import get_db, set_password_hash
+    os.environ["DB_FILE"] = db_path
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO staff_accounts (name, email, password_hash, is_active) VALUES (?, ?, ?, 1)",
+            (name, email, set_password_hash(password))
+        )
+        staff_id = conn.execute("SELECT id FROM staff_accounts WHERE email=?", (email,)).fetchone()["id"]
+        if roles:
+            for role in roles:
+                conn.execute(
+                    "INSERT OR IGNORE INTO staff_queue_roles (staff_id, queue_name) VALUES (?, ?)",
+                    (staff_id, role)
+                )
+        conn.commit()
+        return staff_id
+
+def login_as_staff(client, db_path, email="test_staff99@test.com", password="StaffPass123", name="Test Staff", roles=None):
+    seed_staff(db_path, email, password, name, roles)
+    resp = client.post("/staff/login", json={"email": email, "password": password})
+    assert resp.status_code in (200, 302), f"login_as_staff failed {resp.status_code}: {resp.data}"
+    return resp
+
+def login_as_admin(client, db_path, email="test_admin99@test.com", password="AdminPass123", name="Test Admin"):
+    seed_staff(db_path, email, password, name)
+    resp = client.post("/admin/login", json={"email": email, "password": password})
+    assert resp.status_code in (200, 302), f"login_as_admin failed {resp.status_code}: {resp.data}"
+    return resp
+
+def logout(client):
+    return client.get("/logout")
