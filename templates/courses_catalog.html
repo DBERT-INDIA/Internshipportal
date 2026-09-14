@@ -8,7 +8,7 @@
 {% set active_page = 'courses' %}
 {% include '_intern_sidebar.html' %}
 
-<div class="main">
+<main class="main">
   <div class="content content-wide">
 
     <div class="page-head">
@@ -76,14 +76,14 @@
       {% else %}
         <div class="card empty" style="grid-column:1 / -1">
           <i class="fa-solid fa-graduation-cap"></i>
-          <h4>No courses published yet</h4>
+          <h2>No courses published yet</h2>
           <p>Check back soon for flagship AI &amp; Automation learning tracks.</p>
         </div>
       {% endif %}
     </div>
 
   </div>
-</div>
+</main>
 
 <script nonce="{{ csp_nonce() }}">
     let currentDomain = 'all';

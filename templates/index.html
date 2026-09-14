@@ -82,7 +82,7 @@
 </head>
 <body class="home">
 
-  <div id="urgencyBanner" class="urgency-banner">
+  <div id="urgencyBanner" class="urgency-banner" role="region" aria-label="Announcement">
     <div class="urgency-inner">
       <div class="urgency-left"><i class="fas fa-bolt"></i><span><strong>DBERT Internship 2026</strong> — Applications open. Batches start every Monday. Limited seats per domain.</span></div>
       <button class="urgency-close" type="button" aria-label="Dismiss" data-act-click="dismissBanner"><i class="fas fa-times"></i></button>
@@ -247,22 +247,22 @@
       <div class="benefits-grid">
         <div class="benefit-card">
           <div class="benefit-icon ic-data"><i class="fas fa-trophy"></i></div>
-          <h4>Completion Certificate</h4>
+          <h3>Completion Certificate</h3>
           <p>MSME-registered certificate valid for jobs, higher studies &amp; LinkedIn.</p>
         </div>
         <div class="benefit-card">
           <div class="benefit-icon ic-web"><i class="fas fa-file-lines"></i></div>
-          <h4>Letter of Recommendation</h4>
+          <h3>Letter of Recommendation</h3>
           <p>Signed LOR from your assigned mentor on official DBERT letterhead.</p>
         </div>
-        <div class="benefit-card">
+        <div class="benefit-card spotlight-card">
           <div class="benefit-icon" style="background:#FCE7F3;color:#DB2777;"><i class="fas fa-sack-dollar"></i></div>
-          <h4>Performance Stipend</h4>
+          <h3>Performance Stipend</h3>
           <p>Earn &#8377;5,000 &ndash; &#8377;18,000/month based on domain and performance milestones.</p>
         </div>
         <div class="benefit-card">
           <div class="benefit-icon ic-ai"><i class="fas fa-file-signature"></i></div>
-          <h4>Offer Letter</h4>
+          <h3>Offer Letter</h3>
           <p>Official offer letter issued after enrollment &mdash; shareable &amp; verifiable.</p>
         </div>
       </div>
@@ -524,7 +524,7 @@
   </div>
 
   <div id="toastEl"></div>
-  <canvas id="confettiCanvas"></canvas>
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
 
   <!-- FORGOT PASSWORD MODAL (MATCHING IMAGE 4) -->
   <div id="forgotOverlay" style="position:fixed;inset:0;z-index:99999;background:rgba(9,12,20,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:16px;">
