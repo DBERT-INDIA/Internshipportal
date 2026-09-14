@@ -428,7 +428,7 @@ DOMAIN_SLUGS = {
     d: d.lower().replace(" ", "-") for d in VALID_DOMAINS
 }
 
-_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime')) AND EXISTS (SELECT 1 FROM companies c WHERE c.id=posts.company_id AND c.is_approved=1 AND c.is_active=1)"
+_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime')) AND EXISTS (SELECT 1 FROM companies comp_live WHERE comp_live.id=company_id AND comp_live.is_approved=1 AND comp_live.is_active=1)"
 
 # T7: public ids for portal-authored courses are offset so they never collide with
 # tutor course ids in certifications_json / course_payments.course_id.
@@ -7684,7 +7684,7 @@ _POSTS_PER_PAGE = 200  # T2: bumped from 20 so client-side filters see the whole
 # live result set (currently 74 published posts total) instead of a partial page;
 # pagination logic stays in place and will kick back in automatically once volume
 # exceeds this.
-_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime')) AND EXISTS (SELECT 1 FROM companies c WHERE c.id=posts.company_id AND c.is_approved=1 AND c.is_active=1)"
+_LIVE_SQL = "status='published' AND (expires_at IS NULL OR expires_at > datetime('now','localtime')) AND EXISTS (SELECT 1 FROM companies comp_live WHERE comp_live.id=company_id AND comp_live.is_approved=1 AND comp_live.is_active=1)"
 
 # T1: homepage's one real metric — Σ openings of all live posts × 0.9. Cached briefly
 # since the homepage is the highest-traffic page and this is a full-table aggregate.

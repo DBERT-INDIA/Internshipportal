@@ -189,7 +189,7 @@
         <div class="step-bar hidden" id="overviewStepBar"></div>
 
         <!-- SELECTED: payment block -->
-        <div class="glass-card hidden" id="ovSelected" style="margin-bottom:20px;">
+        <div class="glass-card hidden" id="ovSelected" style="margin-bottom:20px; max-width:640px;">
           <h3 style="color:#fff;font-size:16px;font-weight:800;margin-bottom:16px;"><i class="fas fa-lock" style="color:var(--green);margin-right:8px;"></i>Secure Your Seat &mdash; &#8377;499 Refundable Deposit</h3>
           <ul class="perks">
             <li class="perks-title"><i class="fas fa-gift"></i> What you get when you enroll</li>
@@ -243,7 +243,7 @@
         <!-- Track 5: ₹499 deposit for a job-board Hired applicant (separate from the
              legacy ovSelected card above -- no joining-date calendar here, since the
              company already sets its own start date). -->
-        <div class="glass-card hidden" id="ovJobDeposit" style="margin-bottom:20px;">
+        <div class="glass-card hidden" id="ovJobDeposit" style="margin-bottom:20px; max-width:640px;">
           <h3 style="color:#fff;font-size:16px;font-weight:800;margin-bottom:16px;"><i class="fas fa-lock" style="color:var(--green);margin-right:8px;"></i>Secure Your Role &mdash; &#8377;499 Refundable Deposit</h3>
           <p id="jdIntro" style="color:var(--tx-muted);font-size:13.5px;margin-bottom:14px;"></p>
           <div class="upi-card" id="jdUpiCard">
@@ -273,7 +273,7 @@
         </div>
 
         <!-- ENROLLED / PAID-ENROLLED: payment under review -->
-        <div class="glass-card enrolled-wait hidden" id="ovEnrolled" style="margin-bottom:20px;">
+        <div class="glass-card enrolled-wait hidden" id="ovEnrolled" style="margin-bottom:20px; max-width:640px;">
           <div class="big-icon" id="enrolledIcon">&#9889;</div>
           <h2 id="enrolledWaitTitle">Payment verification in progress</h2>
           <p id="enrolledWaitBody">We typically verify payments within <strong style="color:var(--gold);">24 hours</strong>. You&apos;ll receive an email once your enrollment is confirmed.</p>
@@ -281,7 +281,7 @@
         </div>
 
         <!-- REJECTED: empathetic + heavy paid CTA + reapply -->
-        <div class="glass-card hidden" id="ovRejected" style="margin-bottom:20px;text-align:center;">
+        <div class="glass-card hidden" id="ovRejected" style="margin-bottom:20px; text-align:center; max-width:640px;">
           <div style="font-size:48px;margin-bottom:14px;">&#128140;</div>
           <h2 style="color:var(--red);font-size:20px;font-weight:800;margin-bottom:8px;">Not moving forward this time</h2>
           <p id="rejectionNote" style="color:var(--tx-muted);font-size:14px;line-height:1.8;margin-bottom:18px;">Thank you for applying. Our team has reviewed your application carefully.</p>
@@ -322,55 +322,6 @@
 
         <!-- ACCEPTED: attendance + enrollment details -->
         <div id="ovAccepted" class="hidden">
-          <div class="dash-grid">
-            <div class="glass-card">
-              <div class="att-live-header">
-                <h3><span class="ping-dot"></span>This Week&apos;s Attendance</h3>
-                <span class="att-week-label" id="weekLabel">Sun &ndash; Sat</span>
-              </div>
-              <div class="att-counter">
-                <span class="att-hours" id="liveHours" style="color:var(--gold);">0</span>
-                <span style="font-size:22px;font-weight:900;color:var(--gold);padding-bottom:2px;">h</span>
-                <span class="att-hours" id="liveMinutes" style="color:var(--tx-muted);font-size:24px;">00</span>
-                <span class="att-unit">min</span>
-              </div>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar-bg"><div class="progress-bar-fill amber" id="attProgressBar" style="width:0%"></div></div>
-                <div class="progress-label"><span>0h</span><span>Goal: 10h</span></div>
-              </div>
-              <p class="att-threshold" id="attStatus">Minimum 10 hours / week (Sun &ndash; Sat)</p>
-            </div>
-            <div class="glass-card tutor-card" id="tutorCard">
-              <div id="tutorLocked">
-                <div class="tutor-locked-icon"><i class="fas fa-graduation-cap"></i></div>
-                <h3><i class="fas fa-lock" style="color:var(--violet);margin-right:8px;font-size:13px;"></i>Online Classes</h3>
-                <div class="locked-badge" style="margin-bottom:12px;"><i class="fas fa-clock"></i> Starting soon</div>
-                <p id="lockedMsg" style="margin-bottom:10px;color:var(--tx-muted);font-size:13px;">Your classes begin on your joining date at 6:00 PM. Get ready to learn!</p>
-                <div class="countdown-row" id="countdownRow">
-                  <div class="cd-unit"><span class="cd-num" id="cdDays">--</span><span class="cd-label">Days</span></div>
-                  <div class="cd-unit"><span class="cd-num" id="cdHours">--</span><span class="cd-label">Hours</span></div>
-                  <div class="cd-unit"><span class="cd-num" id="cdMins">--</span><span class="cd-label">Mins</span></div>
-                  <div class="cd-unit"><span class="cd-num" id="cdSecs">--</span><span class="cd-label">Secs</span></div>
-                </div>
-                <p style="color:var(--tx-muted);font-size:11px;text-align:center;">Learning unlocks at 6:00 PM on your joining day.</p>
-              </div>
-              <div id="tutorUnlocked" class="hidden">
-                <h3><i class="fas fa-graduation-cap" style="color:var(--violet);margin-right:8px;"></i>Online Classes</h3>
-                <p>Access your learning platform, course materials, and AI-guided sessions for your domain.</p>
-                <div class="progress-bar-wrap">
-                  <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
-                    <span class="progress-pct" id="tutorPct">0%</span>
-                    <span style="color:var(--tx-muted);font-size:13px;">course complete</span>
-                  </div>
-                  <div class="progress-bar-bg"><div class="progress-bar-fill" id="tutorProgressBar" style="width:0%;background:linear-gradient(90deg,#5b21b6,var(--violet));"></div></div>
-                </div>
-                <button class="btn-tutor" id="tutorBtn" data-act-click="launchTutor">
-                  <span class="btn-lbl"><i class="fas fa-external-link-alt"></i>&nbsp; Launch Online Classes</span>
-                  <span class="btn-spinner"></span>
-                </button>
-              </div>
-            </div>
-          </div>
           <div class="dash-grid">
             <div class="glass-card">
               <h3 style="color:#fff;font-size:15px;font-weight:800;margin-bottom:14px;"><i class="fas fa-id-card" style="color:var(--gold);margin-right:8px;"></i>Enrollment Details</h3>
@@ -521,7 +472,7 @@
       <!-- ══════════════ INTERVIEW ══════════════ -->
       <div class="panel" id="panel-interview">
         <div class="panel-head"><h1>Virtual Interview</h1><p>A short, AI-guided screening tailored to your domain.</p></div>
-        <div class="glass-card iv-card" id="interviewCard">
+        <div class="glass-card iv-card" id="interviewCard" style="max-width:640px;">
           <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
             <div style="font-size:30px;line-height:1;" id="ivCardIcon">&#129302;</div>
             <div style="flex:1;min-width:200px;">
@@ -1596,21 +1547,27 @@
   }
   function onUnlock(){
     _isUnlocked=true;
-    document.getElementById('learnLockDot').classList.add('hidden');
-    document.getElementById('tutorLocked').classList.add('hidden');
-    document.getElementById('tutorUnlocked').classList.remove('hidden');
-    document.getElementById('learnLockedCard').classList.add('hidden');
-    document.getElementById('learnUnlockedWrap').classList.remove('hidden');
+    const lDot=document.getElementById('learnLockDot'); if(lDot) lDot.classList.add('hidden');
+    const tL=document.getElementById('tutorLocked'); if(tL) tL.classList.add('hidden');
+    const tU=document.getElementById('tutorUnlocked'); if(tU) tU.classList.remove('hidden');
+    const llC=document.getElementById('learnLockedCard'); if(llC) llC.classList.add('hidden');
+    const luW=document.getElementById('learnUnlockedWrap'); if(luW) luW.classList.remove('hidden');
     if(!_pingInterval){_pingInterval=setInterval(pingAttendance,3*60*1000);}
   }
   function renderTutorCard(){const pct=Math.round((_intern&&(_intern.learning_completion_pct||_intern.tutor_completion_pct))||0);const p=document.getElementById('tutorPct');if(p)p.textContent=pct+'%';const b=document.getElementById('tutorProgressBar');if(b)b.style.width=pct+'%';}
   function updateLiveCounter(mins){
     const h=Math.floor(mins/60),m=mins%60;
-    document.getElementById('liveHours').textContent=h;document.getElementById('liveMinutes').textContent=String(m).padStart(2,'0');
-    const pct=Math.min(100,Math.round((mins/600)*100));const bar=document.getElementById('attProgressBar');bar.style.width=pct+'%';bar.className='progress-bar-fill '+(mins>=600?'green':mins>=360?'amber':'red');
+    const lh = document.getElementById('liveHours'), lm = document.getElementById('liveMinutes');
+    if(lh) lh.textContent=h;
+    if(lm) lm.textContent=String(m).padStart(2,'0');
+    const pct=Math.min(100,Math.round((mins/600)*100));
+    const bar=document.getElementById('attProgressBar');
+    if(bar) { bar.style.width=pct+'%'; bar.className='progress-bar-fill '+(mins>=600?'green':mins>=360?'amber':'red'); }
     const statusEl=document.getElementById('attStatus');
-    if(mins>=600){statusEl.innerHTML='<span style="color:var(--green);">&#10003; Weekly goal met! Great work.</span>';}
-    else{const rem=600-mins;const rh=Math.floor(rem/60),rm=rem%60;statusEl.innerHTML=`<span style="color:var(--amber);">&#9888; ${rh}h ${rm}m more to reach 10-hour goal</span>`;}
+    if(statusEl){
+      if(mins>=600){statusEl.innerHTML='<span style="color:var(--green);">&#10003; Weekly goal met! Great work.</span>';}
+      else{const rem=600-mins;const rh=Math.floor(rem/60),rm=rem%60;statusEl.innerHTML=`<span style="color:var(--amber);">&#9888; ${rh}h ${rm}m more to reach 10-hour goal</span>`;}
+    }
     const summEl=document.getElementById('summThisWeek');if(summEl)summEl.innerHTML=`${h}h ${m}m ${mins>=600?'<span style="color:var(--green);">&#10003;</span>':'<span style="color:var(--amber);">&#9888;</span>'}`;
   }
   function renderAttHistory(weeks){
