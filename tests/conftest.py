@@ -22,36 +22,31 @@ def app_client():
     
     # Disable CSRF globally during tests by adding everything to exempt list
     from app import CSRF_EXEMPT_ENDPOINTS
-    CSRF_EXEMPT_ENDPOINTS.update(["intern_login", "company_login", "forgot_password", "reset_password", "check_email", "admin_reset_intern_password", "intern_book_slot", "cohort_enroll", "staff_project_decision"])
+    CSRF_EXEMPT_ENDPOINTS.update([
+        "intern_login", "company_login", "forgot_password", "reset_password", "check_email", 
+        "admin_reset_intern_password", "intern_book_slot", "cohort_enroll", "staff_project_decision",
+        "staff_login", "admin_login", "mentor_login", "logout"
+    ])
 
     with _app.app_context():
         init_db()
-        # Clear rate limits
-        with get_db() as conn:
-            conn.execute("DELETE FROM rate_events")
-            conn.commit()
 
     with _app.test_client() as client:
         yield client, db_path
-        
-    os.close(db_fd)
-    try:
-        os.unlink(db_path)
-    except OSError:
-        pass
 
+    os.close(db_fd)
+    os.unlink(db_path)
 
 def seed_intern(db_path, email="intern@test.com", password="TestPass123", name="Test Intern"):
     os.environ["DB_FILE"] = db_path
     with get_db() as conn:
         conn.execute(
             "INSERT OR IGNORE INTO intern_accounts "
-            "(name, email, password_hash, password_set, is_active) VALUES (?,?,?,1,1)",
+            "(name, email, password_hash, is_active, is_verified) VALUES (?,?,?,1,1)",
             (name, email, set_password_hash(password))
         )
         conn.commit()
         return conn.execute("SELECT id FROM intern_accounts WHERE email=?", (email,)).fetchone()["id"]
-
 
 def seed_company(db_path, email="company@test.com", password="CompPass123", name="Test Corp"):
     os.environ["DB_FILE"] = db_path
@@ -64,6 +59,22 @@ def seed_company(db_path, email="company@test.com", password="CompPass123", name
         conn.commit()
         return conn.execute("SELECT id FROM companies WHERE email=?", (email,)).fetchone()["id"]
 
+def seed_staff(db_path, email="staff@test.com", password="StaffPass123", name="Test Staff", roles=None):
+    os.environ["DB_FILE"] = db_path
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO staff_accounts (name, email, password_hash, is_active) VALUES (?, ?, ?, 1)",
+            (name, email, set_password_hash(password))
+        )
+        staff_id = conn.execute("SELECT id FROM staff_accounts WHERE email=?", (email,)).fetchone()["id"]
+        if roles:
+            for role in roles:
+                conn.execute(
+                    "INSERT OR IGNORE INTO staff_queue_roles (staff_id, queue_name) VALUES (?, ?)",
+                    (staff_id, role)
+                )
+        conn.commit()
+        return staff_id
 
 def login_as_intern(client, db_path, email="intern@test.com", password="TestPass123", name="Test Intern"):
     seed_intern(db_path, email, password, name)
@@ -71,13 +82,26 @@ def login_as_intern(client, db_path, email="intern@test.com", password="TestPass
     assert resp.status_code == 200, f"login_as_intern failed {resp.status_code}: {resp.data}"
     return resp
 
-
 def login_as_company(client, db_path, email="company@test.com", password="CompPass123", name="Test Corp"):
     seed_company(db_path, email, password, name)
     resp = client.post("/company/login", json={"email": email, "password": password})
     assert resp.status_code == 200, f"login_as_company failed {resp.status_code}: {resp.data}"
     return resp
 
+def login_as_staff(client, db_path, email="staff@test.com", password="StaffPass123", name="Test Staff", roles=None):
+    seed_staff(db_path, email, password, name, roles)
+    resp = client.post("/staff/login", json={"email": email, "password": password})
+    assert resp.status_code in (200, 302), f"login_as_staff failed {resp.status_code}: {resp.data}"
+    return resp
+
+def login_as_admin(client, db_path, email="admin@test.com", password="AdminPass123", name="Test Admin"):
+    seed_staff(db_path, email, password, name)
+    resp = client.post("/admin/login", json={"email": email, "password": password})
+    assert resp.status_code in (200, 302), f"login_as_admin failed {resp.status_code}: {resp.data}"
+    return resp
+
+def logout(client):
+    return client.get("/logout")
 
 def get_latest_reset_token_hash(db_path, email, account_type="intern"):
     os.environ["DB_FILE"] = db_path
@@ -89,7 +113,6 @@ def get_latest_reset_token_hash(db_path, email, account_type="intern"):
         ).fetchone()
     return row["token"] if row else None
 
-
 def inject_reset_token(db_path, email, account_type="intern"):
     import secrets, hashlib, datetime
     os.environ["DB_FILE"] = db_path
@@ -99,16 +122,16 @@ def inject_reset_token(db_path, email, account_type="intern"):
     with get_db() as conn:
         acct_id = None
         if account_type == "intern":
-            row = conn.execute("SELECT id FROM intern_accounts WHERE email=? LIMIT 1", (email,)).fetchone()
-        else:
-            row = conn.execute("SELECT id FROM companies WHERE email=? LIMIT 1", (email,)).fetchone()
-        if row:
-            acct_id = row["id"]
-        conn.execute("UPDATE password_resets SET used=1 WHERE email=? AND account_type=? AND used=0",
-                     (email, account_type))
+            acct = conn.execute("SELECT id FROM intern_accounts WHERE email=?", (email,)).fetchone()
+            if acct: acct_id = acct["id"]
+        elif account_type == "company":
+            acct = conn.execute("SELECT id FROM companies WHERE email=?", (email,)).fetchone()
+            if acct: acct_id = acct["id"]
+        
         conn.execute(
-            "INSERT INTO password_resets (account_type, account_id, email, token, expires_at) VALUES (?,?,?,?,?)",
-            (account_type, acct_id, email, token_hash, expires_at)
+            "INSERT INTO password_resets (email, token, expires_at, account_type, account_id) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (email, token_hash, expires_at, account_type, acct_id)
         )
         conn.commit()
     return raw
