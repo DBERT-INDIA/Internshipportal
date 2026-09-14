@@ -5388,12 +5388,16 @@ def task_submit(task_id):
         sub_file = ""
         file = request.files.get("submission_file")
         if file and file.filename:
-            if allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'dat'
-                sniffed = sniff_upload_type(file) or ext
-                filename = f"task_{intern['id']}_{task_id}_{uuid.uuid4().hex[:8]}.{sniffed}"
-                file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-                sub_file = f"/uploads/{filename}"
+            if not allowed_file(file.filename):
+                return jsonify({"status": "error", "message": "Allowed: png,jpg,jpeg,pdf"}), 400
+            
+            sniffed = sniff_upload_type(file)
+            if sniffed is None:
+                return jsonify({"status": "error", "message": "File must be a real PNG, JPEG, or PDF."}), 400
+                
+            filename = f"task_{intern['id']}_{task_id}_{uuid.uuid4().hex[:8]}.{sniffed}"
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            sub_file = f"/uploads/{filename}"
 
         if not content and not sub_file:
             return jsonify({"status": "error", "message": "Submission content (URL/text) or uploaded file is required."}), 400
