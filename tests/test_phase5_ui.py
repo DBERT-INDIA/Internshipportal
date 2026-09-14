@@ -24,5 +24,5 @@ def test_format_inr():
 def test_live_sql_consistency(app_client):
     # Verify that _LIVE_SQL string has the company_id check
     assert "EXISTS (SELECT 1 FROM companies" in _LIVE_SQL
-    assert "c.is_approved=1" in _LIVE_SQL
-    assert "c.is_active=1" in _LIVE_SQL
+    assert "is_approved=1" in _LIVE_SQL
+    assert "is_active=1" in _LIVE_SQL

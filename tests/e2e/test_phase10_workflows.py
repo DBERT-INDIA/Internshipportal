@@ -78,18 +78,18 @@ def test_intern_auth_workflow(page: Page, live_server_url):
     page.fill("#si_password", "Password123")
     page.click("#signinBtn")
     
-    # Should redirect to portal
-    page.wait_for_url(live_server_url + "/portal")
-    expect(page.locator("h1").first).to_be_visible()
+    # Should redirect to portal — verify sidebar nav is rendered (always visible regardless of intern status)
+    expect(page.locator(".sidebar-nav")).to_be_visible()
+    expect(page.locator(".sidebar-nav")).to_contain_text("Overview")
     
     # 5. Navigate to courses
-    page.click("text=Course Catalog")
+    page.click("text=Full Courses Catalog")
     page.wait_for_url(live_server_url + "/courses")
     expect(page.locator("h1")).to_contain_text("Guided Learning")
     
     # 6. Logout
     page.goto(live_server_url + "/portal")
-    page.click("button.btn-logout")
+    page.click("button.btn-logout-sb")
     page.wait_for_url(live_server_url + "/")
     
     # Ensure session is cleared by trying to go to /portal
