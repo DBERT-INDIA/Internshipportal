@@ -161,7 +161,7 @@ CSP_ENFORCE = os.environ.get("CSP_ENFORCE", "1") == "1"
 CSP_ALLOW_INLINE = os.environ.get("CSP_ALLOW_INLINE", "0") == "1"
 
 _CSP_SCRIPT_ORIGINS = (
-    "https://cdn.onesignal.com https://cdnjs.cloudflare.com "
+    "https://cdn.onesignal.com "
     "https://challenges.cloudflare.com https://www.googletagmanager.com"
 )
 
