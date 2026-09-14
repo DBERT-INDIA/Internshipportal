@@ -22,7 +22,7 @@ def app_client():
     
     # Disable CSRF globally during tests by adding everything to exempt list
     from app import CSRF_EXEMPT_ENDPOINTS
-    CSRF_EXEMPT_ENDPOINTS.update(["intern_login", "company_login", "forgot_password", "reset_password", "check_email", "admin_reset_intern_password"])
+    CSRF_EXEMPT_ENDPOINTS.update(["intern_login", "company_login", "forgot_password", "reset_password", "check_email", "admin_reset_intern_password", "intern_book_slot", "cohort_enroll", "staff_review_project"])
 
     with _app.app_context():
         init_db()

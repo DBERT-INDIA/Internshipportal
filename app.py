@@ -2543,8 +2543,11 @@ def transition_application_status(conn, app_id, new_status, actor="system"):
         log_info("state_transition_denied",
                  f"app={app_id} {old!r}->{new_status!r} by {actor}")
         return False, old
-    conn.execute("UPDATE applications SET status=?,updated_at=? WHERE id=?",
-                 (new_status, now_str(), app_id))
+    # DATA-001: atomic transition
+    res = conn.execute("UPDATE applications SET status=?,updated_at=? WHERE id=? AND status=?",
+                 (new_status, now_str(), app_id, old))
+    if res.rowcount == 0:
+        return False, old
     log_info("state_transition",
              f"app={app_id} {old!r}->{new_status!r} by {actor}")
     return True, old
@@ -4759,10 +4762,13 @@ def staff_project_decision(submission_id):
         if not sub:
             return jsonify({"status": "error", "message": "Submission not found"}), 404
 
-        conn.execute(
-            "UPDATE project_submissions SET status = ?, reviewed_by_staff_id = ? WHERE id = ?",
+        # DATA-001: atomic state machine transition
+        res = conn.execute(
+            "UPDATE project_submissions SET status = ?, reviewed_by_staff_id = ? WHERE id = ? AND status = 'pending'",
             (decision, staff["id"], submission_id)
         )
+        if res.rowcount == 0:
+            return jsonify({"status": "error", "message": "Submission already processed or invalid."}), 400
 
         log_staff_review(
             queue_name="projects",
@@ -5228,10 +5234,13 @@ def staff_task_decision(submission_id):
 
         coins_awarded = sub["coin_reward"] if (decision == "approved" and (sub["payment_type"] or "paid") != "unpaid") else 0
 
-        conn.execute(
-            "UPDATE task_submissions SET status = ?, coins_awarded = ?, reviewed_by_staff_id = ? WHERE id = ?",
+        # DATA-001: atomic state machine transition
+        res = conn.execute(
+            "UPDATE task_submissions SET status = ?, coins_awarded = ?, reviewed_by_staff_id = ? WHERE id = ? AND status = 'pending'",
             (decision, coins_awarded, staff["id"], submission_id)
         )
+        if res.rowcount == 0:
+            return jsonify({"status": "error", "message": "Submission already processed or invalid."}), 400
 
         log_staff_review(
             queue_name="tasks",
@@ -5651,24 +5660,21 @@ def intern_book_slot(slot_id):
                 "message": "You already have an active mentor session booked. Please complete or cancel your existing session before booking another."
             }), 400
 
-        slot = conn.execute(
-            "SELECT * FROM mentor_availability_slots WHERE id = ? AND is_booked = 0",
-            (slot_id,)
-        ).fetchone()
-
-        if not slot:
-            return jsonify({"status": "error", "message": "Slot is no longer available."}), 400
-
         meeting_link = f"https://meet.google.com/dbert-mentor-slot-{slot_id}"
+
+        # Atomic check-and-set: prevent double booking race condition (PAY-001)
+        res = conn.execute(
+            "UPDATE mentor_availability_slots SET is_booked = 1 WHERE id = ? AND is_booked = 0",
+            (slot_id,)
+        )
+        
+        if res.rowcount == 0:
+            return jsonify({"status": "error", "message": "Slot is no longer available."}), 400
 
         conn.execute(
             "INSERT INTO mentor_session_bookings (slot_id, intern_id, meeting_link, status) "
             "VALUES (?, ?, ?, 'booked')",
             (slot_id, intern["id"], meeting_link)
-        )
-        conn.execute(
-            "UPDATE mentor_availability_slots SET is_booked = 1 WHERE id = ?",
-            (slot_id,)
         )
         conn.commit()
 
@@ -7626,17 +7632,28 @@ def cohort_enroll(cohort_id):
         if not c:
             return jsonify({"status": "error", "message": "Cohort not found."}), 404
         c = row_to_dict(c)
+        cap = c.get("capacity") or 0
+
         already = conn.execute(
             "SELECT 1 FROM cohort_enrollments WHERE cohort_id=? AND intern_id=?",
             (cohort_id, intern["id"])).fetchone()
+        
         if not already:
-            seats = _cohort_seats_left(conn, c)
-            if seats is not None and seats <= 0:
-                return jsonify({"status": "error", "message": "This cohort is full."}), 409
-            conn.execute(
-                "INSERT OR IGNORE INTO cohort_enrollments (cohort_id, intern_id) VALUES (?,?)",
-                (cohort_id, intern["id"]))
-            conn.commit()
+            try:
+                res = conn.execute(
+                    """
+                    INSERT INTO cohort_enrollments (cohort_id, intern_id)
+                    SELECT ?, ?
+                    WHERE ? = 0 OR (SELECT COUNT(*) FROM cohort_enrollments WHERE cohort_id=?) < ?
+                    """,
+                    (cohort_id, intern["id"], cap, cohort_id, cap)
+                )
+                if res.rowcount == 0:
+                    return jsonify({"status": "error", "message": "This cohort is full."}), 409
+                conn.commit()
+            except sqlite3.IntegrityError:
+                pass  # Concurrently enrolled, which is fine
+
     add_notification(intern["id"], f"You're in: {c['title']}",
                      f"Joining link: {c['meeting_url']} Â· starts {c['starts_at']}.",
                      kind="cohort", link="/portal#cohorts")
@@ -10865,11 +10882,16 @@ def mentor_update_status():
             if not app_row:
                 return jsonify({"status": "error", "message": "Application not found."}), 404
             old_status = app_row["status"]
+            if old_status == new_status:
+                return jsonify({"status": "success", "message": f"Status is already {new_status}."})
             rejected_at_val = now_str() if new_status == STATUS_REJECTED else app_row["rejected_at"]
-            conn.execute(
-                "UPDATE applications SET status=?,mentor_note=?,reviewed_at=?,rejected_at=?,updated_at=? WHERE id=?",
-                (new_status, note, now_str(), rejected_at_val, now_str(), app_id)
+            # DATA-001: atomic update to prevent duplicate emails
+            res = conn.execute(
+                "UPDATE applications SET status=?,mentor_note=?,reviewed_at=?,rejected_at=?,updated_at=? WHERE id=? AND status=?",
+                (new_status, note, now_str(), rejected_at_val, now_str(), app_id, old_status)
             )
+            if res.rowcount == 0:
+                return jsonify({"status": "error", "message": "Application status changed concurrently."}), 409
             conn.commit()
         if old_status != new_status:
             send_status_update_email(app_row["name"], app_row["email"], app_row["domain"], new_status, note)
@@ -11307,11 +11329,16 @@ def admin_update_application_status():
             app_row = conn.execute("SELECT * FROM applications WHERE id=?", (app_id,)).fetchone()
             if not app_row:
                 return jsonify({"status": "error", "message": "Application not found."}), 404
-            old_status     = app_row["status"]
+            old_status = app_row["status"]
+            if old_status == new_status:
+                return jsonify({"status": "success", "message": f"Status is already {new_status}."})
             rejected_at_val = now_str() if new_status == STATUS_REJECTED else app_row["rejected_at"]
-            conn.execute(
-                "UPDATE applications SET status=?,mentor_note=?,reviewed_at=?,rejected_at=?,updated_at=? WHERE id=?",
-                (new_status, note, now_str(), rejected_at_val, now_str(), app_id))
+            # DATA-001: atomic state transition
+            res = conn.execute(
+                "UPDATE applications SET status=?,mentor_note=?,reviewed_at=?,rejected_at=?,updated_at=? WHERE id=? AND status=?",
+                (new_status, note, now_str(), rejected_at_val, now_str(), app_id, old_status))
+            if res.rowcount == 0:
+                return jsonify({"status": "error", "message": "Application status changed concurrently."}), 409
             if new_status == STATUS_ACCEPTED:
                 joining_date_for_email = auto_assign_joining_date_on_accept(conn, app_row)
             conn.commit()
@@ -11341,10 +11368,15 @@ def admin_update_enrollment_status():
             if not enr:
                 return jsonify({"status": "error", "message": "Enrollment not found."}), 404
             ops = enr["payment_status"]
+            if ops == nps:
+                return jsonify({"status": "success", "message": f"Payment status is already {nps}."})
             is_paid = (enr["product"] or "free_deposit") == "paid_program"
             reject_status = STATUS_PAID_ENROLLED if is_paid else STATUS_ENROLLMENT_PENDING
-            conn.execute("UPDATE enrollments SET payment_status=?,admin_note=?,updated_at=? WHERE id=?",
-                         (nps, note, now_str(), eid))
+            # DATA-001: atomic state machine transition
+            res = conn.execute("UPDATE enrollments SET payment_status=?,admin_note=?,updated_at=? WHERE id=? AND payment_status=?",
+                         (nps, note, now_str(), eid, ops))
+            if res.rowcount == 0:
+                return jsonify({"status": "error", "message": "Enrollment status changed concurrently."}), 409
             if nps == "Accepted":
                 conn.execute("UPDATE applications SET status=?,updated_at=? WHERE email=? AND domain=?",
                              (STATUS_ACCEPTED, now_str(), enr["email"], enr["domain"]))
