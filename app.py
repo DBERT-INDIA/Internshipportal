@@ -769,7 +769,8 @@ def verify_turnstile(token, ip):
         return True
 
 def get_db():
-    conn = sqlite3.connect(DB_FILE, timeout=15)
+    target_db = os.environ.get("DB_FILE") or DB_FILE
+    conn = sqlite3.connect(target_db, timeout=15)
     conn.row_factory = sqlite3.Row
     # Production: with multiple Gunicorn workers sharing one SQLite file, wait for locks
     # instead of failing instantly with "database is locked".

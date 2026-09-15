@@ -1,4 +1,4 @@
-﻿"""
+"""
 Phase 2 Security & Concurrency Regression Suite
 Covers: PAY-001 (Mentor slots), PAY-002 (Cohort seats), DATA-001 (State Machine)
 """
@@ -30,8 +30,9 @@ def phase2_setup(app_client):
             "INSERT OR REPLACE INTO project_submissions (id, intern_id, course_id, status, enrollment_id, github_repo_url, project_title, project_description) VALUES (777, ?, 1, 'pending', 1, 'url', 'title', 'desc')",
             (i1,)
         )
-        # Clear existing mentor bookings if any to prevent pacing checks from failing
+        # Clear existing mentor bookings and cohort enrollments to prevent fixture pollution
         conn.execute("DELETE FROM mentor_session_bookings")
+        conn.execute("DELETE FROM cohort_enrollments WHERE cohort_id=888")
         conn.commit()
     
     return client, db_path
@@ -58,7 +59,7 @@ def test_pay002_cohort_capacity_atomic_enrollment(phase2_setup):
     # Intern 1 enrolls in cohort (capacity 1)
     login_as_intern(client, db_path, "intern1@test.com", "TestPass123")
     resp1 = client.post("/cohorts/888/enroll")
-    assert resp1.status_code == 200, "First enrollment should succeed"
+    assert resp1.status_code == 200, f"First enrollment should succeed: {resp1.status_code} {resp1.get_data(as_text=True)}"
     
     # Intern 2 tries to enroll in same cohort
     login_as_intern(client, db_path, "intern2@test.com", "TestPass123")
