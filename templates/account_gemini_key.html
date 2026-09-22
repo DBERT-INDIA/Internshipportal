@@ -53,65 +53,90 @@
             <form id="keyForm" data-act-submit="saveKey" data-arg-submit='["$event"]'>
                 <div class="form-group">
                     <label for="apiKey">Enter Google Gemini API Key</label>
-                    <input type="password" id="apiKey" name="api_key" placeholder="AIzaSy..." required>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="apiKey" name="api_key" placeholder="Enter key (e.g. AIzaSy... or AQ...)" required style="padding-right: 2.75rem;">
+                        <button type="button" data-act-click="toggleKeyVis" style="position: absolute; right: 0.6rem; background: none; border: none; cursor: pointer; color: var(--tx-muted); padding: 0.4rem; font-size: 1rem;" aria-label="Toggle key visibility" title="Show/Hide API Key">
+                            <i class="fa-regular fa-eye" id="toggleKeyIcon"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--gold); text-decoration: none; font-size: 0.875rem;">
-                        🔑 Get Free Key from Google AI Studio ↗
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link-get-key">
+                        <i class="fa-solid fa-key"></i> Get Free Key from Google AI Studio ↗
                     </a>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="saveKeyBtn">
                         Validate & Save Key →
                     </button>
                 </div>
             </form>
-            <div id="formMsg" style="margin-top: 1rem; font-size: 0.9rem; display: none;"></div>
+            <div id="formMsg" class="form-msg-box"></div>
         </div>
 
         <div class="guide-box">
-            <h4 style="margin: 0 0 0.5rem 0; color: var(--tx-head); font-family: var(--f-display);">How to get your free key (30 seconds):</h4>
-            <ol style="margin: 0; padding-left: 1.25rem;">
-                <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--gold);">aistudio.google.com/app/apikey</a> and log in with Google.</li>
+            <h4>How to get your free key (30 seconds):</h4>
+            <ol>
+                <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a> and log in with Google.</li>
                 <li>Click <strong>"Create API Key"</strong>.</li>
-                <li>Copy the key starting with <code>AIzaSy...</code> and paste it above.</li>
+                <li>Copy the generated API key (e.g. <code>AIzaSy...</code> or <code>AQ...</code>) and paste it above.</li>
             </ol>
         </div>
     </div>
 
     <script nonce="{{ csp_nonce() }}">
-        function saveKey(e) {
+        window.toggleKeyVis = function() {
+            const input = document.getElementById('apiKey');
+            const icon = document.getElementById('toggleKeyIcon');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        };
+
+        window.saveKey = function(e) {
             e.preventDefault();
             const input = document.getElementById('apiKey');
             const msg = document.getElementById('formMsg');
-            const key = input.value.trim();
+            const btn = document.getElementById('saveKeyBtn');
+            const raw = input.value.trim().replace(/^["'`]|["'`]$/g, '');
 
-            if (!key) return;
+            if (!raw) {
+                msg.className = 'form-msg-box msg-error';
+                msg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Please enter an API key.';
+                return;
+            }
 
-            msg.style.display = 'block';
-            msg.style.color = 'var(--tx-muted)';
-            msg.textContent = 'Verifying key live with Google API...';
+            msg.className = 'form-msg-box msg-loading';
+            msg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying key live with Google Generative Language API...';
+            if (btn) btn.disabled = true;
 
             fetch('/account/gemini-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ api_key: key })
+                body: JSON.stringify({ api_key: raw })
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    msg.style.color = '#10B981';
-                    msg.textContent = data.message;
+            .then(r => r.json().then(data => ({ status: r.status, data })))
+            .then(res => {
+                if (btn) btn.disabled = false;
+                if (res.data.status === 'success') {
+                    msg.className = 'form-msg-box msg-success';
+                    msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (res.data.message || 'Key validated successfully!');
                     setTimeout(() => window.location.reload(), 1200);
                 } else {
-                    msg.style.color = '#F43F5E';
-                    msg.textContent = data.message || 'Validation failed.';
+                    msg.className = 'form-msg-box msg-error';
+                    msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + (res.data.message || 'Validation failed.');
                 }
             })
             .catch(() => {
-                msg.style.color = '#F43F5E';
-                msg.textContent = 'Server error during key validation.';
+                if (btn) btn.disabled = false;
+                msg.className = 'form-msg-box msg-error';
+                msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Server or network error during key validation. Please try again.';
             });
-        }
+        };
     </script>
 </body>
 </html>
