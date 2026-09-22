@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from urllib.parse import quote
 from markupsafe import Markup, escape
 import os
+import sys
+sys.modules.setdefault("app", sys.modules[__name__])
 import io
 import csv
 import re
@@ -882,19 +884,48 @@ def can_use_fallback(intern_id, usage_date=None):
     return current < limit
 
 def _validate_gemini_key_live(raw_key: str):
-    if not raw_key or not raw_key.startswith("AIza"):
-        return False, None
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={raw_key.strip()}"
+    clean_key = (raw_key or "").strip().strip('"\'`')
+    if not clean_key:
+        return False, None, "API key cannot be empty."
+    if len(clean_key) < 15:
+        return False, None, "The provided key is too short. Please copy the complete key from Google AI Studio."
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={clean_key}"
+    headers = {"User-Agent": "DBERT-Internship-Portal/1.0"}
     try:
-        r = requests.get(url, timeout=6)
+        r = requests.get(url, headers=headers, timeout=12)
         if r.status_code == 200:
             data = r.json()
             models = [m.get("name") for m in data.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])]
-            return True, models
-        return False, None
+            return True, models, None
+
+        # Parse Google's error response details
+        err_msg = None
+        try:
+            err_json = r.json().get("error", {})
+            err_msg = err_json.get("message")
+        except Exception:
+            pass
+
+        if r.status_code == 400:
+            return False, None, f"Google rejected this key: {err_msg or 'API key not valid. Please verify your key at aistudio.google.com.'}"
+        elif r.status_code == 401:
+            return False, None, f"Google rejected this key: {err_msg or 'Invalid API key or authentication credentials. Please verify your key at aistudio.google.com.'}"
+        elif r.status_code == 403:
+            return False, None, f"Google access denied: {err_msg or 'Generative Language API is disabled or restricted for this key.'}"
+        elif r.status_code == 429:
+            return False, None, "Google Gemini rate limit reached for this key. Please check your quota on Google AI Studio."
+        else:
+            return False, None, f"Google API error (HTTP {r.status_code}): {err_msg or 'Verification failed. Please check your key.'}"
+    except requests.exceptions.Timeout:
+        log_error("validate_gemini_key", "Timeout reaching Google Generative Language API")
+        return False, None, "Verification timed out connecting to Google API. Please check your internet connection and try again."
+    except requests.exceptions.RequestException as e:
+        log_error("validate_gemini_key", e)
+        return False, None, "Network error connecting to Google API. Please check your internet connection and try again."
     except Exception as e:
         log_error("validate_gemini_key", e)
-        return False, None
+        return False, None, "An unexpected error occurred during key verification. Please try again."
 
 # â”€â”€ UP3.2: Unified Staff Review Audit Logging â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def log_staff_review(queue_name, staff_id, subject_type, subject_id, decision, reason_code=None, reviewed_input_snapshot=None):
@@ -4307,9 +4338,9 @@ def account_gemini_key():
         if existing:
             return jsonify({"status": "error", "message": "This Gemini API key is already registered by another user."}), 409
 
-    is_valid, models = _validate_gemini_key_live(raw_key)
+    is_valid, models, err_msg = _validate_gemini_key_live(raw_key)
     if not is_valid:
-        return jsonify({"status": "error", "message": "Invalid Gemini API key or Google API verification failed."}), 400
+        return jsonify({"status": "error", "message": err_msg or "Invalid Gemini API key or Google API verification failed."}), 400
 
     enc_key = _encrypt_gemini_key(raw_key)
     models_json = json.dumps(models or [])
