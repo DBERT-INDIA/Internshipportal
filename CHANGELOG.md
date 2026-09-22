@@ -2,6 +2,19 @@
 
 All notable changes to the DBERT Internship Portal project are documented in this file.
 
+## [2.3.1] - 2026-09-22
+
+### Fixed
+- **Gemini API Key Configuration Contrast & Visibility**:
+  - Fixed severe CSS leak where unscoped `body { color: var(--bg-inset); }` in [dbert-theme.css](file:///d:/Internshipportal/static/css/dbert-theme.css) turned body paragraphs, lists, and instructions near-white on light backgrounds across the application.
+  - Properly scoped all `body`, `h2`, `ul`, `li`, `label`, `input`, and `button` rules in [dbert-theme.css](file:///d:/Internshipportal/static/css/dbert-theme.css) to their respective views (`pg-cv-pdf`, `pg-post-form`, and `pg-account-gemini-key`).
+  - Restyled `.nudge-banner`, `.guide-box`, and `.link-get-key` with high-contrast text (`#78350F`, `#0F172A`, `#2563EB`) ensuring full WCAG compliance.
+- **Gemini API Key Live Validation Error Feedback & Usability**:
+  - Allowed both classic (`AIzaSy...`) and newer Google key formats (e.g. `AQ...`) by removing arbitrary prefix constraints and delegating verification directly to Google's Generative Language API.
+  - Upgraded `_validate_gemini_key_live` in [app.py](file:///d:/Internshipportal/app.py) to sanitize input (stripping whitespace, quotes, and copy artifacts), increased timeout from 6s to 12s, and parsed Google Generative Language API responses to return precise, actionable feedback (distinguishing between wrong key formats, invalid API keys, disabled APIs, quota limits, and timeouts).
+  - Added show/hide password visibility toggle in [account_gemini_key.html](file:///d:/Internshipportal/templates/account_gemini_key.html) to allow users to verify their pasted key before submission.
+  - Replaced generic error text with styled alert containers (`.msg-error`, `.msg-success`, `.msg-loading`).
+
 ## [2.3.0] - 2026-09-12
 
 ### Added
