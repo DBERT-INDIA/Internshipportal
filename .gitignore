@@ -24,3 +24,5 @@ videos/
 artifacts/
 *.webm
 *.mp4
+test/
+requirements-local.txt
