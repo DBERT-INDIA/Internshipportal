@@ -24,3 +24,4 @@ videos/
 artifacts/
 *.webm
 *.mp4
+.venv/

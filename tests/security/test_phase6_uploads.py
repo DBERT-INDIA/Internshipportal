@@ -19,11 +19,15 @@ def test_sniff_upload_type():
     class DummyFile:
         def __init__(self, content):
             self.stream = io.BytesIO(content)
-            
+
     assert sniff_upload_type(DummyFile(b"\x89PNG\r\n\x1a\n...")) == "png"
     assert sniff_upload_type(DummyFile(b"\xff\xd8\xff...")) == "jpg"
     assert sniff_upload_type(DummyFile(b"%PDF-1.4...")) == "pdf"
     assert sniff_upload_type(DummyFile(b"<?php echo 'malware'; ?>")) == None
+    # Verify that the file stream is rewound after checking
+    image_file = DummyFile(b"\x89PNG\r\n\x1a\nimage-data")
+    assert sniff_upload_type(image_file) == "png"
+    assert image_file.stream.tell() == 0
 
 def test_task_submit_rejects_spoofed_file(app_client):
     client, db_path = app_client
