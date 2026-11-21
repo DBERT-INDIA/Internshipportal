@@ -500,6 +500,18 @@ DOMAIN_ALIASES = {
 # HELPERS
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+def sanitize_csv_value(value):
+    """Prevent CSV formula injection."""
+    if value is None:
+        return ""
+
+    value = str(value)
+
+    if value.lstrip().startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + value
+
+    return value
+
 def normalize_domain(raw):
     if not raw: return None
     cleaned = raw.strip().lower()

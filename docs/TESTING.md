@@ -1,4 +1,4 @@
-﻿# DBERT Internship Portal - Test Documentation
+# DBERT Internship Portal - Test Documentation
 
 ## Overview
 
@@ -45,5 +45,5 @@ Available helper functions:
 
 ## Test Suites
 
-1. `tests/test_auth.py`: Basic route protection tests (legacy).
+1. `tests/test_auth.py`: Authorization regression matrix using real login helpers; covers anonymous access, intern/admin role boundaries, and authenticated admin access.
 2. `tests/security/test_phase1_auth.py`: Complete coverage for Phase 1 password-reset and enumeration vulnerabilities (SEC-001, SEC-002, SEC-003, AUTH-002).
