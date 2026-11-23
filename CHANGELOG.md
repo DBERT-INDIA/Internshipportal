@@ -2,6 +2,12 @@
 
 All notable changes to the DBERT Internship Portal project are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Reworked authorization regression tests to use the shared isolated-database fixture and real login helpers instead of manually injecting Flask session values.
+- Added coverage for anonymous access, intern-to-admin privilege boundaries, and authenticated admin access.
+
 ## [2.3.1] - 2026-09-22
 
 ### Fixed

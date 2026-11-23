@@ -76,3 +76,4 @@ On a fresh database initialization, a default admin account is automatically cre
 * **Motion & Timelines**: Powered by **GSAP** & **ScrollTrigger** (`static/js/gsap.min.js`, `static/js/ScrollTrigger.min.js`) for micro-interactions, hero entrance sequences, and viewport-triggered reveals.
 * **React-Bits Component Patterns**: Vanilla JS + CSS implementation of modern interactive patterns including cursor-following Spotlight Cards (`.spotlight-card`), ambient Aurora floating mesh backgrounds (`.aurora-bg`), and physics-based magnetic CTA buttons (`.btn-magnetic`).
 * **Design System & Aesthetics**: Luminous layered cosmic obsidian surfaces (`#07080E`, `#0E111D`), frosted glassmorphic navigation (`backdrop-filter`), celestial amber and electric indigo accents, and modern typography (Plus Jakarta Sans, Outfit, Inter).
+"# Internship-Portal" 
