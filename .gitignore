@@ -26,3 +26,4 @@ artifacts/
 *.mp4
 test/
 requirements-local.txt
+.venv/
