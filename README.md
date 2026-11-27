@@ -76,3 +76,19 @@ On a fresh database initialization, a default admin account is automatically cre
 * **Motion & Timelines**: Powered by **GSAP** & **ScrollTrigger** (`static/js/gsap.min.js`, `static/js/ScrollTrigger.min.js`) for micro-interactions, hero entrance sequences, and viewport-triggered reveals.
 * **React-Bits Component Patterns**: Vanilla JS + CSS implementation of modern interactive patterns including cursor-following Spotlight Cards (`.spotlight-card`), ambient Aurora floating mesh backgrounds (`.aurora-bg`), and physics-based magnetic CTA buttons (`.btn-magnetic`).
 * **Design System & Aesthetics**: Luminous layered cosmic obsidian surfaces (`#07080E`, `#0E111D`), frosted glassmorphic navigation (`backdrop-filter`), celestial amber and electric indigo accents, and modern typography (Plus Jakarta Sans, Outfit, Inter).
+
+## 🧪 Audited Intern Contributions & Python Automation Proof
+
+This repository hosts live cohort engineering work reviewed by senior staff (`@ainabhinavsharma`), including Flask services, automated file/upload validation tests, CI workflows (`.github/workflows/`), and verification tooling.
+
+### Sample Merged Intern Pull Requests
+| PR | Contributor | Track Scope | Merged Date | Verified Credential |
+|---|---|---|---|---|
+| [PR #16 — `test: verify upload stream rewinds after type check`](https://github.com/DBERT-INDIA/Internshipportal/pull/16) | `@kundankumhar` (Kundan Kumhar) | Automated pytest binary stream rewind regression verification | 2026-11-21 | [`CERT-DBERT-2026-FSD-056`](https://dbert.in/verify/CERT-DBERT-2026-FSD-056) |
+| [PR #15 — `fix(gemini & ui): support new API key formats, contrast & circular blueprint import`](https://github.com/DBERT-INDIA/Internshipportal/pull/15) | `@editor-shannu` (Shanu Sri Gowtham) | Circular blueprint resolution, credential format parsing, UI contrast | 2026-09-22 | [`CERT-DBERT-2026-AIML-013`](https://dbert.in/verify/CERT-DBERT-2026-AIML-013) |
+| [PR #17 — `Fix/authentication tests`](https://github.com/DBERT-INDIA/Internshipportal/pull/17) | `@thanveshburra-cell` (Burra Thanvesh) | Auth test coverage & session checks (In Review) | Open | [`CERT-DBERT-2026-AIML-023`](https://dbert.in/verify/CERT-DBERT-2026-AIML-023) |
+
+### Related Automation & Ecosystem Repositories
+- **Python Automation Workers & E2E Suites:** Hosted in [`DBERT-INDIA/dbert-website-lms/scripts`](https://github.com/DBERT-INDIA/dbert-website-lms/tree/main/scripts) (Playwright dual-account headless automation, SQLite WAL deduplication, SMTP cooldown probes, and EC2 standalone deployment scripts).
+- **Companion Audited Repos:** [`Alkameinc/alkame-nifty-50-educational`](https://github.com/Alkameinc/alkame-nifty-50-educational/pull/35) (`PR #35, #32, #31`) & [`Gayatri-Education/Gayatri-Demo`](https://github.com/Gayatri-Education/Gayatri-Demo/pull/17) (`PR #17, #16, #15, #14`).
+- **Live Verification & Policies:** [`dbert.in/labs/opensource`](https://dbert.in/labs/opensource) · [`dbert.in/verify/directory`](https://dbert.in/verify/directory) · [`dbert.in/refund`](https://dbert.in/refund) · [`dbert.in/api/public/outcomes`](https://dbert.in/api/public/outcomes)
